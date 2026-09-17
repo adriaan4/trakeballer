@@ -1,0 +1,19 @@
+{
+  "name": "trakeballer",
+  "version": "1.0.0",
+  "description": "Tienda online de camisetas de futbol (selecciones y equipos) con carrito, personalizacion y aviso de pedidos por email/SMS/WhatsApp.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "dotenv": "^16.4.5",
+    "nodemailer": "^6.9.14",
+    "twilio": "^5.2.2",
+    "cors": "^2.8.5"
+  }
+}

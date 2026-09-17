@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trakeballer — Tienda de Camisetas de Fútbol</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <a href="#inicio" class="brand">Trake<span>baller</span></a>
+    <nav class="nav">
+      <a href="#selecciones">Selecciones</a>
+      <a href="#equipos">Equipos</a>
+      <a href="#ofertas">Ofertas</a>
+      <a href="#amigo-invisible">Amigo invisible</a>
+    </nav>
+    <button class="cart-btn" id="btnAbrirCarrito" aria-label="Abrir carrito">
+      🛒 <span id="cartCount">0</span>
+    </button>
+  </div>
+</header>
+
+<section class="hero" id="inicio">
+  <div class="hero__field" aria-hidden="true"></div>
+  <div class="hero__content">
+    <p class="hero__kicker">Personalízala en 30 segundos</p>
+    <h1 class="hero__title">Tu nombre.<br>Tu dorsal.<br>Tu leyenda.</h1>
+    <p class="hero__sub">Camisetas oficiales de selecciones y clubes, actuales y retro, con nombre y dorsal a tu gusto. Envío a domicilio.</p>
+    <div class="hero__ctas">
+      <a href="#selecciones" class="btn btn--primary">Ver selecciones</a>
+      <a href="#equipos" class="btn btn--ghost">Ver equipos</a>
+    </div>
+  </div>
+</section>
+
+<section class="franja-precios">
+  <div><strong>25 €</strong> camiseta actual</div>
+  <div class="franja-precios__sep"></div>
+  <div><strong>30 €</strong> camiseta retro</div>
+  <div class="franja-precios__sep"></div>
+  <div><strong>+1 €</strong> nombre o dorsal</div>
+</section>
+
+<section class="seccion" id="selecciones">
+  <div class="seccion__head">
+    <h2>Selecciones</h2>
+    <p>Las camisetas de tu selección nacional, versión actual o retro.</p>
+  </div>
+  <div class="grid" id="gridSelecciones"></div>
+</section>
+
+<section class="seccion seccion--alt" id="equipos">
+  <div class="seccion__head">
+    <h2>Equipos</h2>
+    <p>Elige una liga y personaliza la camiseta de tu equipo favorito.</p>
+  </div>
+  <div class="ligas-tabs" id="ligasTabs"></div>
+  <div class="grid" id="gridEquipos"></div>
+</section>
+
+<section class="seccion" id="ofertas">
+  <div class="seccion__head">
+    <h2>Ofertas especiales</h2>
+    <p>Cuantas más camisetas pidas, más barata sale cada una.</p>
+  </div>
+  <div class="ofertas">
+    <div class="oferta-card">
+      <span class="oferta-card__tag">Evento de grupo</span>
+      <h3 id="amigo-invisible">Amigo invisible futbolero</h3>
+      <p>Organiza el amigo invisible de camisetas con tu peña o tu grupo de amigos: añade los participantes y sorteamos quién le regala la camiseta a quién.</p>
+      <button class="btn btn--primary" id="btnAbrirAmigoInvisible">Organizar sorteo</button>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>Trakeballer · Tienda de camisetas de fútbol personalizadas · Hecho con ⚽ para tu peña</p>
+</footer>
+
+<!-- MODAL: personalizar camiseta -->
+<div class="overlay" id="overlayProducto">
+  <div class="modal" role="dialog" aria-modal="true">
+    <button class="modal__cerrar" data-cerrar="overlayProducto">✕</button>
+    <div class="modal__grid">
+      <div class="modal__visual">
+        <div class="camiseta-preview" id="previewCamiseta"></div>
+      </div>
+      <div class="modal__form">
+        <p class="modal__categoria" id="prodCategoria"></p>
+        <h3 id="prodNombre"></h3>
+
+        <label class="campo">
+          <span>Versión</span>
+          <div class="segmentado" id="prodTipo">
+            <button type="button" data-tipo="actual" class="activo">Actual · 25€</button>
+            <button type="button" data-tipo="retro">Retro · 30€</button>
+          </div>
+        </label>
+
+        <label class="campo">
+          <span>Nombre para la espalda (+1€)</span>
+          <input type="text" id="prodNombreTexto" maxlength="14" placeholder="Ej: RODRI">
+        </label>
+
+        <div class="campo-fila">
+          <label class="campo">
+            <span>Dorsal (+1€)</span>
+            <input type="number" id="prodDorsal" min="0" max="99" placeholder="Ej: 9">
+          </label>
+          <label class="campo">
+            <span>Talla</span>
+            <select id="prodTalla">
+              <option>XS</option><option>S</option><option selected>M</option>
+              <option>L</option><option>XL</option><option>XXL</option>
+              <option>Niño 8</option><option>Niño 10</option><option>Niño 12</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="campo campo--cantidad">
+          <span>Cantidad</span>
+          <div class="stepper">
+            <button type="button" id="prodMenos">−</button>
+            <input type="number" id="prodCantidad" min="1" value="1">
+            <button type="button" id="prodMas">+</button>
+          </div>
+        </label>
+
+        <div class="modal__precio">
+          <span>Precio <small id="prodPrecioUnidad"></small></span>
+          <strong id="prodPrecioTotal">25 €</strong>
+        </div>
+
+        <button class="btn btn--primary btn--full" id="btnAnadirCarrito">Añadir al carrito</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: carrito -->
+<div class="overlay" id="overlayCarrito">
+  <aside class="panel-carrito" role="dialog" aria-modal="true">
+    <div class="panel-carrito__head">
+      <h3>Tu carrito</h3>
+      <button class="modal__cerrar" data-cerrar="overlayCarrito">✕</button>
+    </div>
+
+    <div class="panel-carrito__items" id="listaCarrito">
+      <p class="carrito-vacio" id="carritoVacioMsg">Tu carrito está vacío. Elige tu camiseta y personalízala.</p>
+    </div>
+
+    <div class="panel-carrito__resumen">
+      <div class="resumen-linea resumen-linea--total"><span>Total</span><strong id="resTotal">0,00 €</strong></div>
+
+      <button class="btn btn--primary btn--full" id="btnIrEnvio">Continuar con el envío</button>
+    </div>
+
+    <!-- Formulario de envío -->
+    <form class="form-envio" id="formEnvio">
+      <h4>Datos de envío y contacto</h4>
+      <label class="campo">
+        <span>Nombre completo</span>
+        <input type="text" id="clienteNombre" required>
+      </label>
+      <label class="campo">
+        <span>Dirección de envío</span>
+        <textarea id="clienteDireccion" rows="2" required placeholder="Calle, número, piso, ciudad, CP"></textarea>
+      </label>
+      <label class="campo">
+        <span>Teléfono de contacto</span>
+        <input type="tel" id="clienteTelefono" required placeholder="+34 600 000 000">
+      </label>
+      <label class="campo">
+        <span>Email (opcional)</span>
+        <input type="email" id="clienteEmail" placeholder="para el justificante del pedido">
+      </label>
+      <button type="submit" class="btn btn--primary btn--full" id="btnEnviarPedido">Enviar pedido</button>
+      <p class="form-envio__estado" id="estadoPedido"></p>
+    </form>
+  </aside>
+</div>
+
+<!-- MODAL: amigo invisible -->
+<div class="overlay" id="overlayAmigo">
+  <div class="modal modal--estrecho" role="dialog" aria-modal="true">
+    <button class="modal__cerrar" data-cerrar="overlayAmigo">✕</button>
+    <h3>Amigo invisible futbolero</h3>
+    <p class="modal__ayuda">Añade los nombres de los participantes (mínimo 3) y haz el sorteo. Cada uno elige después su nombre en la lista para ver, en privado, a quién le regala la camiseta.</p>
+
+    <div class="amigo-anadir">
+      <input type="text" id="amigoNombreInput" placeholder="Nombre del participante">
+      <button type="button" class="btn btn--ghost" id="btnAmigoAnadir">Añadir</button>
+    </div>
+    <ul class="amigo-lista" id="amigoLista"></ul>
+
+    <button class="btn btn--primary btn--full" id="btnAmigoSortear">Hacer el sorteo</button>
+
+    <div id="amigoResultadoBloque" style="display:none">
+      <hr class="separador">
+      <label class="campo">
+        <span>¿Quién eres?</span>
+        <select id="amigoSelectYo"></select>
+      </label>
+      <button type="button" class="btn btn--ghost btn--full" id="btnAmigoVer">Ver mi amigo invisible</button>
+      <p class="amigo-revelado" id="amigoRevelado"></p>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
