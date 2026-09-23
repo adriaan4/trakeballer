@@ -970,61 +970,217 @@ function guardarCarrito() {
 }
 
 /* =========================================================
-   RENDER CATÁLOGO
+   ESCUDOS DISPONIBLES
+   Solo se muestran los escudos suministrados que tienen una
+   camiseta correspondiente en el catálogo.
 ========================================================= */
-function renderGrid(lista, contenedorId, categoria) {
-  const cont = document.getElementById(contenedorId);
-  cont.innerHTML = lista.map(p => {
-    const fotoTarjeta = p.imgLocal || p.imgVisitante;
-    const visual = fotoTarjeta
-      ? `<img src="${fotoTarjeta}" alt="Camiseta ${p.nombre}" class="tarjeta__foto" loading="lazy">`
-      : svgCamiseta(p.c1, p.c2, 'mini-camiseta');
-    const barra = p.c1 ? `style="background:${p.c1}"` : '';
-    return `
-    <div class="tarjeta" data-id="${p.id}" data-categoria="${categoria}">
-      <div class="tarjeta__top" ${barra}></div>
-      <div class="tarjeta__visual">${visual}</div>
-      <div class="tarjeta__cuerpo">
-        <h4>${p.nombre}</h4>
-        <p class="tarjeta__precio">Desde ${PRECIO_ACTUAL}€</p>
-      </div>
-    </div>
-  `;
-  }).join('');
+const ESCUDOS = {
+  "mundial-alemania": "img/escudos/mundial/alemania.jpg",
+  "mundial-arabia-saudi": "img/escudos/mundial/arabiasaudita.jpg",
+  "mundial-argelia": "img/escudos/mundial/argelia.jpg",
+  "mundial-argentina": "img/escudos/mundial/argentina.jpg",
+  "mundial-austria": "img/escudos/mundial/austria.jpg",
+  "mundial-belgica": "img/escudos/mundial/belgica.jpg",
+  "mundial-brasil": "img/escudos/mundial/brasil.jpg",
+  "mundial-cabo-verde": "img/escudos/mundial/caboverde.jpg",
+  "mundial-canada": "img/escudos/mundial/canada.jpg",
+  "mundial-chequia": "img/escudos/mundial/republicacheca.jpg",
+  "mundial-colombia": "img/escudos/mundial/colombia.jpg",
+  "mundial-corea-del-sur": "img/escudos/mundial/coreadelsur.jpg",
+  "mundial-croacia": "img/escudos/mundial/croacia.jpg",
+  "mundial-curazao": "img/escudos/mundial/curazao.jpg",
+  "mundial-egipto": "img/escudos/mundial/egipto.jpg",
+  "mundial-escocia": "img/escudos/mundial/escocia.jpg",
+  "mundial-espana": "img/escudos/mundial/espana.jpg",
+  "mundial-estados-unidos": "img/escudos/mundial/estadosunidos.jpg",
+  "mundial-francia": "img/escudos/mundial/francia.jpg",
+  "mundial-ghana": "img/escudos/mundial/ghana.jpg",
+  "mundial-inglaterra": "img/escudos/mundial/inglaterra.jpg",
+  "mundial-japon": "img/escudos/mundial/japon.jpg",
+  "mundial-jordania": "img/escudos/mundial/jordania.jpg",
+  "mundial-marruecos": "img/escudos/mundial/marruecos.jpg",
+  "mundial-mexico": "img/escudos/mundial/mexico.jpg",
+  "mundial-noruega": "img/escudos/mundial/noruega.jpg",
+  "mundial-paises-bajos": "img/escudos/mundial/paisesbajos.jpg",
+  "mundial-paraguay": "img/escudos/mundial/paraguay.jpg",
+  "mundial-portugal": "img/escudos/mundial/portugal.jpg",
+  "mundial-qatar": "img/escudos/mundial/qatar.jpg",
+  "mundial-senegal": "img/escudos/mundial/senegal.jpg",
+  "mundial-sudafrica": "img/escudos/mundial/sudafrica.jpg",
+  "mundial-suecia": "img/escudos/mundial/suecia.jpg",
+  "mundial-suiza": "img/escudos/mundial/suiza.jpg",
+  "mundial-tunez": "img/escudos/mundial/tunez.jpg",
+  "mundial-turquia": "img/escudos/mundial/turquia.jpg",
+  "mundial-uruguay": "img/escudos/mundial/uruguay.jpg",
+  "pl-manutd": "img/escudos/premier-league/manunited.jpg",
+  "pl-mancity": "img/escudos/premier-league/mancity.jpg",
+  "pl-liverpool": "img/escudos/premier-league/liverpool.jpg",
+  "pl-chelsea": "img/escudos/premier-league/chelsea.jpg",
+  "pl-arsenal": "img/escudos/premier-league/arsenal.jpg",
+  "pl-tottenham": "img/escudos/premier-league/tottenham.jpg",
+  "pl-newcastle": "img/escudos/premier-league/newcastle.jpg",
+  "pl-astonvilla": "img/escudos/premier-league/astonvilla.jpg",
+  "ll-realmadrid": "img/escudos/laliga/realmadrid.jpg",
+  "ll-barcelona": "img/escudos/laliga/barcelona.jpg",
+  "ll-atletico": "img/escudos/laliga/atlmadrid.jpg",
+  "ll-sevilla": "img/escudos/laliga/sevilla.jpg",
+  "ll-espanyol": "img/escudos/laliga/espanyol.jpg",
+  "ll-realsociedad": "img/escudos/laliga/realsociedad.jpg",
+  "ll-betis": "img/escudos/laliga/betis.jpg",
+  "ll-athletic": "img/escudos/laliga/athletic.jpg",
+  "ll-valencia": "img/escudos/laliga/valencia.jpg",
+  "ll-alaves": "img/escudos/laliga/alaves.jpg",
+  "ll-celta": "img/escudos/laliga/celta.jpg",
+  "ll-deportivo": "img/escudos/laliga/deportivocoruna.jpg",
+  "ll-getafe": "img/escudos/laliga/getafe.jpg",
+  "ll-levante": "img/escudos/laliga/levante.jpg",
+  "ll-malaga": "img/escudos/laliga/malaga.jpg",
+  "ll-osasuna": "img/escudos/laliga/osasuna.jpg",
+  "ll-villarreal": "img/escudos/laliga/villarreal.jpg",
+  "ll-elche": "img/escudos/laliga/elche.jpg",
+  "sa-juventus": "img/escudos/serie-a/juventus.jpg",
+  "sa-milan": "img/escudos/serie-a/milan.jpg",
+  "sa-inter": "img/escudos/serie-a/inter.jpg",
+  "sa-napoli": "img/escudos/serie-a/napoli.jpg",
+  "sa-roma": "img/escudos/serie-a/roma.jpg",
+  "sa-lazio": "img/escudos/serie-a/lazio.jpg",
+  "sa-fiorentina": "img/escudos/serie-a/fiorentina.jpg",
+  "sa-torino": "img/escudos/serie-a/torino.jpg",
+  "sa-cagliari": "img/escudos/serie-a/cagliari.jpg",
+  "sa-bologna": "img/escudos/serie-a/bologna.jpg",
+  "sa-atalanta": "img/escudos/serie-a/atalanta.jpg",
+  "bl-bayern": "img/escudos/bundesliga/bayernmmunchen.jpg",
+  "bl-dortmund": "img/escudos/bundesliga/borussiadortmund.jpg",
+  "bl-leipzig": "img/escudos/bundesliga/rbleipzig.jpg",
+  "bl-leverkusen": "img/escudos/bundesliga/bayerleverkusen.jpg",
+  "bl-frankfurt": "img/escudos/bundesliga/eintrachtfrankfurt.jpg",
+  "bl-gladbach": "img/escudos/bundesliga/bmonchengladbach.jpg",
+  "bl-stuttgart": "img/escudos/bundesliga/stuttgart.jpg",
+  "bl-koln": "img/escudos/bundesliga/koln.jpg",
+  "l1-psg": "img/escudos/ligue-1/psg.jpg",
+  "l1-marsella": "img/escudos/ligue-1/olympiquemarsella.jpg",
+  "l1-lyon": "img/escudos/ligue-1/lyon.jpg",
+  "l1-monaco": "img/escudos/ligue-1/monaco.jpg",
+  "l1-lille": "img/escudos/ligue-1/lille.jpg",
+  "l1-nice": "img/escudos/ligue-1/niza.jpg",
+  "l1-rennes": "img/escudos/ligue-1/staderennais.jpg",
+  "l1-lens": "img/escudos/ligue-1/racinglens.jpg",
+  "l2-racing": "img/escudos/laliga2/racingsantander.jpg",
+  "l2-zaragoza": "img/escudos/laliga2/zaragoza.png",
+  "l2-sporting": "img/escudos/laliga2/sporting.jpg",
+  "l2-eibar": "img/escudos/laliga2/eibar.jpg",
+  "l2-tenerife": "img/escudos/laliga2/tenerife.jpg",
+  "l2-granada": "img/escudos/laliga2/granada.jpg",
+  "l2-valladolid": "img/escudos/laliga2/valladolid.jpg",
+  "pt-benfica": "img/escudos/liga-portugal/benfica.jpg",
+  "pt-porto": "img/escudos/liga-portugal/porto.jpg",
+  "pt-sporting": "img/escudos/liga-portugal/sporting.jpg",
+  "pt-braga": "img/escudos/liga-portugal/braga.jpg",
+  "mls-lagalaxy": "img/escudos/mls/losangelesgalaxy.jpg",
+  "mls-nycfc": "img/escudos/mls/newyorkcity.jpg",
+  "mls-montreal": "img/escudos/mls/montreal.jpg",
+  "mls-toronto": "img/escudos/mls/toronto.jpg",
+  "ar-boca": "img/escudos/argentina/boca.jpg",
+  "ar-river": "img/escudos/argentina/river.jpg",
+  "sau-alhilal": "img/escudos/saudi/al_hilal.png",
+  "sau-alnassr": "img/escudos/saudi/al_nassr.png",
+  "mas-olympiacos": "img/escudos/mas/olympiacos.jpg",
+  "mas-fenerbahce": "img/escudos/mas/fenerbache.jpg",
+  "mas-besiktas": "img/escudos/mas/besiktas.jpeg",
+  "mas-galatasaray": "img/escudos/mas/galatasaray.jpg",
+  "ch-sunderland": "img/escudos/efl-championship/sunderland.jpg",
+  "sb-parma": "img/escudos/serie-b/parma.jpg",
+  "sb-venezia": "img/escudos/serie-b/venezia.jpg",
+  "b2-hamburgo": "img/escudos/2-bundesliga/hamburgo.jpg",
+  "mls-lafc": "img/escudos/mls/lafc.jpg"
+};
 
-  cont.querySelectorAll('.tarjeta').forEach(el => {
+function escudoSrc(producto) {
+  return producto && ESCUDOS[producto.id] ? ESCUDOS[producto.id] : null;
+}
+
+function miniCamisetas(producto) {
+  const items = [];
+  if (producto.imgLocal) items.push({src: producto.imgLocal, label: 'Local'});
+  if (producto.imgVisitante) items.push({src: producto.imgVisitante, label: 'Visitante'});
+  const retros = retrosDisponibles(producto);
+  if (retros.length) items.push({src: retros[0].img, label: 'Retro'});
+  return items.slice(0, 3).map(item => `
+    <div class="equipo-mini-camiseta" title="${item.label}">
+      <img src="${item.src}" alt="${item.label}" loading="lazy">
+      <span>${item.label}</span>
+    </div>
+  `).join('');
+}
+
+function renderTeamCards(lista, contenedorId, categoria, soloConEscudo = false) {
+  const cont = document.getElementById(contenedorId);
+  const visibles = soloConEscudo ? lista.filter(p => escudoSrc(p)) : lista;
+  cont.innerHTML = visibles.map(p => {
+    const shield = escudoSrc(p);
+    const camisetas = miniCamisetas(p);
+    const fallback = p.imgLocal || p.imgVisitante;
+    return `
+      <article class="equipo-escudo-card" data-id="${p.id}" data-categoria="${categoria}">
+        <div class="equipo-escudo-card__shield">
+          ${shield ? `<img src="${shield}" alt="Escudo de ${p.nombre}" loading="lazy">` : (fallback ? `<img src="${fallback}" alt="Camiseta ${p.nombre}" loading="lazy">` : svgCamiseta(p.c1,p.c2,'mini-camiseta'))}
+        </div>
+        <div class="equipo-escudo-card__body">
+          <h3>${p.nombre}</h3>
+          <div class="equipo-mini-camisetas">${camisetas || '<span class="sin-camisetas">Camisetas disponibles en el catálogo</span>'}</div>
+          <p class="equipo-escudo-card__cta">Ver camisetas y personalizar →</p>
+        </div>
+      </article>
+    `;
+  }).join('') || '<p class="catalogo-vacio">No hay equipos con escudo y camiseta disponibles.</p>';
+
+  cont.querySelectorAll('.equipo-escudo-card').forEach(el => {
     el.addEventListener('click', () => {
-      const producto = lista.find(p => p.id === el.dataset.id);
-      abrirModalProducto(producto, categoria);
+      const producto = visibles.find(p => p.id === el.dataset.id);
+      if (producto) abrirModalProducto(producto, categoria);
     });
   });
 }
 
-renderGrid(SELECCIONES, 'gridSelecciones', 'Selección');
+/* =========================================================
+   RENDER CATÁLOGO
+========================================================= */
+function renderGrid(lista, contenedorId, categoria) {
+  renderTeamCards(lista, contenedorId, categoria, false);
+}
 
 /* =========================================================
-   LIGAS Y EQUIPOS
+   MUNDIAL · ESCUDOS + CAMISETAS
+========================================================= */
+const seleccionesConEscudo = SELECCIONES.filter(p => escudoSrc(p));
+renderTeamCards(seleccionesConEscudo, 'gridSelecciones', 'Selección', true);
+
+/* =========================================================
+   LIGAS · LOGO DE LIGA + EQUIPOS
 ========================================================= */
 function renderLigasTabs() {
   const cont = document.getElementById('ligasTabs');
   cont.innerHTML = LIGAS.map(l => `
-    <button type="button" class="liga-tab ${l.id === ligaActiva ? 'activo' : ''}" data-id="${l.id}">
-      ${l.nombre}
+    <button type="button" class="liga-card ${l.id === ligaActiva ? 'activo' : ''}" data-id="${l.id}">
+      <img src="img/escudos/ligas-${l.id}.svg" alt="Logo de ${l.nombre}" loading="lazy">
+      <span>${l.nombre}</span>
+      <small>${l.equipos.length} equipos en catálogo</small>
     </button>
   `).join('');
 
-  cont.querySelectorAll('.liga-tab').forEach(btn => {
+  cont.querySelectorAll('.liga-card').forEach(btn => {
     btn.addEventListener('click', () => {
       ligaActiva = btn.dataset.id;
       renderLigasTabs();
       renderEquiposGrid();
+      document.getElementById('gridEquipos').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
 }
 
 function renderEquiposGrid() {
   const liga = LIGAS.find(l => l.id === ligaActiva);
-  renderGrid(liga.equipos, 'gridEquipos', liga.nombre);
+  renderTeamCards(liga.equipos, 'gridEquipos', liga.nombre, false);
 }
 
 renderLigasTabs();

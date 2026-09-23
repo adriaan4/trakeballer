@@ -382,6 +382,38 @@ a { color: inherit; text-decoration: none; }
   background: var(--chalk);
 }
 
+/* ---------- Tabla de ofertas ---------- */
+.tabla-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 18px; }
+.tabla-scroll table {
+  width: 100%;
+  min-width: 320px;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.tabla-scroll th, .tabla-scroll td {
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 0.92rem;
+}
+.tabla-scroll thead th {
+  background: var(--pitch-950);
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  letter-spacing: .3px;
+  font-size: 0.85rem;
+}
+.tabla-scroll tbody tr:nth-child(even) { background: rgba(13,38,24,.035); }
+.tabla-scroll tbody td:first-child { font-weight: 700; color: var(--pitch-600); }
+.tabla-scroll tbody td { color: var(--ink); border-bottom: 1px solid var(--line); }
+.tabla-scroll tbody tr:last-child td { border-bottom: none; }
+@media (max-width: 480px) {
+  .tabla-scroll th, .tabla-scroll td { padding: 10px 8px; font-size: 0.85rem; }
+}
+
 /* ---------- Ofertas ---------- */
 .ofertas { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
 .oferta-card {
@@ -574,10 +606,25 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 720px) {
-  .modal__grid { grid-template-columns: 1fr; }
-  .modal__visual { display: none; }
+  .modal__grid { grid-template-columns: 1fr; gap: 16px; }
+  /* Antes la foto de la camiseta se ocultaba entera en móvil.
+     Ahora se muestra arriba del formulario, más pequeña. */
+  .modal__visual { width: 100%; max-width: 260px; margin: 0 auto; aspect-ratio: 1 / 1; }
+  .camiseta-preview { width: 100%; height: 100%; max-width: 100%; }
   .panel-carrito { width: 100%; }
   .campo-fila { grid-template-columns: 1fr; }
+  .modal { padding: 20px 16px; }
+}
+
+@media (max-width: 480px) {
+  /* Menos aire en tarjetas y secciones para que todo respire mejor
+     en pantallas estrechas, sin perder el diseño. */
+  .seccion { padding: 32px 16px; }
+  .hero { margin: 12px; padding: 32px 20px; }
+  .oferta-card, .sugerencia__card, .resenas__form-card { padding: 18px; }
+  .modal--legal { padding: 22px 16px; }
+  .panel-carrito { padding: 18px 16px; }
+  .search-resultados { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 430px) {
@@ -752,4 +799,117 @@ a { color: inherit; text-decoration: none; }
 .contacto-flotante:hover { background: var(--amber-dark); transform: translateY(-2px); }
 @media (max-width: 480px) {
   .contacto-flotante { right: 14px; bottom: 14px; width: 48px; height: 48px; font-size: 1.2rem; }
+}
+
+
+/* ---------- Mundial y ligas: escudos ---------- */
+.equipo-escudo-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform .15s, box-shadow .15s;
+}
+.equipo-escudo-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0,0,0,.12);
+}
+.equipo-escudo-card__shield {
+  min-height: 180px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--chalk);
+  padding: 22px;
+}
+.equipo-escudo-card__shield img {
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+}
+.equipo-escudo-card__body { padding: 12px 13px 14px; }
+.equipo-escudo-card__body h3 {
+  margin: 0 0 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.1rem;
+}
+.equipo-mini-camisetas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.equipo-mini-camiseta {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px;
+  background: #fff;
+  text-align: center;
+}
+.equipo-mini-camiseta img {
+  width: 100%;
+  height: 74px;
+  object-fit: contain;
+  display: block;
+}
+.equipo-mini-camiseta span {
+  display: block;
+  font-size: .68rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.equipo-escudo-card__cta {
+  margin: 10px 0 0;
+  color: var(--pitch-600);
+  font-size: .82rem;
+  font-weight: 700;
+}
+.sin-camisetas, .catalogo-vacio { opacity: .7; font-size: .85rem; }
+.ligas-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 12px;
+}
+.liga-card {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 12px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: var(--shadow);
+  transition: transform .15s, border-color .15s, background .15s;
+}
+.liga-card:hover, .liga-card.activo {
+  transform: translateY(-2px);
+  border-color: var(--pitch-600);
+}
+.liga-card.activo { background: #eef6f0; }
+.liga-card img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 8px;
+}
+.liga-card span {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 1rem;
+}
+.liga-card small {
+  display: block;
+  margin-top: 4px;
+  opacity: .65;
+  font-size: .72rem;
+}
+@media (max-width: 520px) {
+  .equipo-mini-camisetas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .equipo-escudo-card__shield { min-height: 145px; }
 }
