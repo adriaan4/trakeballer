@@ -153,7 +153,7 @@ const LIGAS = [
       { id: 'br-gremio', nombre: 'Grêmio', c1: '#0033A0', c2: '#1A1A1A', imgLocal: 'img/equipos/brasileirao/br-gremio.jpg' },
       { id: 'br-internacional', nombre: 'Internacional', c1: '#C60C30', c2: '#FFFFFF', imgLocal: 'img/equipos/brasileirao/br-internacional.jpg' },
       { id: 'br-fluminense', nombre: 'Fluminense', c1: '#7A1E3C', c2: '#006437', imgLocal: 'img/equipos/brasileirao/br-fluminense.jpg' },
-      { id: 'br-cruzeiro', nombre: 'Cruzeiro', c1: '#003DA5', c2: '#FFFFFF', imgLocal: 'img/equipos/brasileirao/br-cruzeiro.jpg' },
+      { id: 'br-cruzeiro', nombre: 'Cruzeiro', c1: '#003DA5', c2: '#FFFFFF', imgLocal: 'img/equipos/brasileirao/br-cruzeiro.png' },
       { id: 'br-botafogo', nombre: 'Botafogo', c1: '#1A1A1A', c2: '#FFFFFF', imgLocal: 'img/equipos/brasileirao/br-botafogo.jpg' },
     ],
   },
