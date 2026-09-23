@@ -866,4 +866,26 @@ app.listen(PORT, () => {
   console.log(`[email] EMAIL_FROM: ${process.env.EMAIL_FROM || 'NO CONFIGURADO'}`);
 
   console.log(`[email] Brevo: ${process.env.BREVO_API_KEY ? 'CONFIGURADO' : 'NO CONFIGURADO'}`);
+
+  // ----------------------------------------------------------
+  // MANTENER DESPIERTA LA WEB EN RENDER
+  // Render pone RENDER_EXTERNAL_URL solo. Cada 10 minutos la web
+  // se llama a sí misma para que no se duerma por inactividad.
+  // ----------------------------------------------------------
+  const URL_PUBLICA = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL;
+ 
+  if (URL_PUBLICA) {
+    setInterval(async () => {
+      try {
+        const r = await fetch(`${URL_PUBLICA}/api/salud`);
+        console.log(`[keep-alive] ping ${r.status}`);
+      } catch (error) {
+        console.warn('[keep-alive] error:', error.message);
+      }
+    }, 60 * 1000);
+ 
+    console.log(`[keep-alive] Activo: ${URL_PUBLICA}`);
+  } else {
+    console.log('[keep-alive] Desactivado (no hay RENDER_EXTERNAL_URL)');
+  }
 });
