@@ -259,25 +259,7 @@ ${productos}
 
 ${subtotal !== null ? `Subtotal: ${subtotal}€\n` : ''}${envio !== null ? `Envío: ${envio > 0 ? envio.toFixed(2) + '€' : 'Gratis'}\n` : ''}TOTAL: ${total}€
 
-------------------------------------------
-PAGO: UNICAMENTE POR PAYPAL
-------------------------------------------
-Recuerda enviar el dinero (${total}€) por PayPal a:
 
-  trakeballer@gmail.com
-
-IMPORTANTE: al enviar el dinero NO pongas ningun concepto ni mensaje, recuerda enviar el dinero como AMIGOS Y FAMILIARES.
-
-Despues, manda el comprobante de pago y la captura o el numero de pedido
-(#${pedido.id}) a ese mismo correo: trakeballer@gmail.com
-
-El pedido no se tramita hasta que recibamos el pago y el comprobante.
-------------------------------------------
-
-Nos pondremos en contacto contigo para confirmar el pedido. ¡Gracias por tu compra!
-
-Para cualquier duda sobre tu pedido, escribenos a trakeballer@gmail.com
-- Trakeballer`;
 }
 
 // ============================================================
@@ -323,7 +305,7 @@ Recuerda enviar el dinero (${total}€) por PayPal a:
 
   trakeballer@gmail.com
 
-IMPORTANTE: al enviar el dinero NO pongas ningun concepto ni mensaje.
+IMPORTANTE: al enviar el dinero NO pongas ningun concepto ni mensaje, recuerda enviar el dinero como AMIGOS Y FAMILIARES.
 
 Despues, manda el comprobante de pago y la captura o el numero de pedido
 (#${pedido.id}) a ese mismo correo: trakeballer@gmail.com
@@ -444,53 +426,7 @@ function crearHTMLPedido(pedido, esCliente = false) {
     pedido.cliente?.nombre || 'cliente';
 
   let bloquePaypal = `
-    <hr>
-
-    <h3>PAGO: UNICAMENTE POR PAYPAL</h3>
-
-    <p>
-      Recuerda enviar el dinero
-      <strong>(${total}€)</strong>
-      por PayPal a:
-    </p>
-
-    <p>
-      <strong>trakeballer@gmail.com</strong>
-    </p>
-
-    <p>
-      <strong>
-IMPORTANTE: al enviar el dinero NO pongas ningun concepto ni mensaje, recuerda enviar el dinero como AMIGOS Y FAMILIARES.
-      </strong>
-    </p>
-
-    <p>
-      Despues, manda el comprobante de pago y la captura o el numero de pedido
-      <strong>(#${pedido.id})</strong>
-      a ese mismo correo:
-      <strong>trakeballer@gmail.com</strong>
-    </p>
-
-    <p>
-      El pedido no se tramita hasta que recibamos el pago y el comprobante.
-    </p>
-
-    <hr>
-
-    <p>
-      Nos pondremos en contacto contigo para confirmar el pedido.
-      ¡Gracias por tu compra!
-    </p>
-
-    <p>
-      Para cualquier duda sobre tu pedido, escribenos a
-      <strong>trakeballer@gmail.com</strong>
-    </p>
-
-    <p>- Trakeballer</p>
-  `;
-
-  return `
+    
 <!DOCTYPE html>
 <html lang="es">
 <head>
