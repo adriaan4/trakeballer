@@ -460,7 +460,7 @@ function crearHTMLPedido(pedido, esCliente = false) {
 
     <p>
       <strong>
-        IMPORTANTE: al enviar el dinero NO pongas ningun concepto ni mensaje.
+IMPORTANTE: al enviar el dinero NO pongas ningun concepto ni mensaje, recuerda enviar el dinero como AMIGOS Y FAMILIARES.
       </strong>
     </p>
 
