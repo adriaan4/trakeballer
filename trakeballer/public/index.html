@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trakeballer — Tienda de Camisetas de Fútbol</title>
+<meta name="description" content="Camisetas de fútbol actuales y retro de clubes y selecciones, personalizadas con nombre y dorsal. Pide la tuya en Trakeballer.">
+<meta name="theme-color" content="#0d2618">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Trakeballer — Tienda de Camisetas de Fútbol">
+<meta property="og:description" content="Camisetas de fútbol actuales y retro de clubes y selecciones, personalizadas con nombre y dorsal.">
+<meta property="og:image" content="img/marca/logo-trakeballer.png">
+<link rel="icon" type="image/png" href="img/marca/logo-trakeballer-header.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  /* Estilos propios del menú lateral ampliado (ligas, equipos y botas).
+     No se ha tocado css/style.css: todo vive aquí, dentro de index.html. */
+  .menu-list details.menu-ligas > summary,
+  .menu-list details.submenu-liga > summary {
+    cursor: pointer;
+    list-style: none;
+  }
+  .menu-list details.menu-ligas > summary::-webkit-details-marker,
+  .menu-list details.submenu-liga > summary::-webkit-details-marker { display: none; }
+  /* La entrada "Ligas y equipos" debe verse igual que el resto de apartados
+     del menú (mismo padding, tamaño de letra y borde inferior). */
+  .menu-list details.menu-ligas > summary {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 14px 18px; font-size: 15.5px; font-weight: 500; color: var(--ink);
+    border-bottom: 1px solid var(--line);
+  }
+  .menu-list details.menu-ligas > summary:hover { background: #eef6f0; }
+  .menu-list details.menu-ligas[open] > summary { border-bottom: 1px solid var(--line); }
+  .submenu-ligas { padding-left: 1.1rem; margin-top: .35rem; max-height: 55vh; overflow-y: auto; }
+  details.submenu-liga { margin: .15rem 0; }
+  details.submenu-liga > summary {
+    font-weight: 600;
+    font-size: .92rem;
+    padding: .3rem 0;
+  }
+  .submenu-equipos { list-style: none; padding-left: .9rem; margin: 0 0 .35rem; }
+  .submenu-equipos li { margin: 0; }
+  .btn-equipo-menu {
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    padding: .28rem 0;
+    font-size: .88rem;
+    cursor: pointer;
+    color: inherit;
+    opacity: .85;
+  }
+  .btn-equipo-menu:hover { opacity: 1; text-decoration: underline; }
+  .menu-proximamente {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    opacity: .7;
+    cursor: default;
+  }
+  .etiqueta-proximamente {
+    margin-left: auto;
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    background: rgba(0,0,0,.08);
+    border-radius: 999px;
+    padding: .15rem .5rem;
+  }
+
+  /* Parches (escudos de liga / Champions / Europa League / Conference League
+     en equipos, y parche del Mundial en selecciones). Igual que el resto de
+     estilos de esta sección, vive aquí para no tocar css/style.css. */
+  .campo-parches { display: none; }
+  .campo-parches.visible { display: block; }
+  .parches-ayuda { font-size: .78rem; opacity: .75; margin: -2px 0 8px; }
+  .parches-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .parche-opcion {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid var(--line, rgba(0,0,0,.12));
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: .9rem;
+  }
+  .parche-opcion input { width: 16px; height: 16px; cursor: pointer; }
+  .parche-opcion span { flex: 1; }
+  .parche-opcion small { opacity: .65; }
+  .item-carrito__parches { font-size: .78rem; opacity: .75; margin-top: 2px; font-style: italic; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <button class="hamburger" id="btnAbrirMenu" aria-label="Abrir menú">
+      <span></span><span></span><span></span>
+    </button>
+    <a href="#inicio" class="brand">
+      <img src="img/marca/logo-trakeballer.png" alt="Trakeballer" class="brand__logo">
+      <span class="brand__texto">TRAKE<span>BALLER</span></span>
+    </a>
+    <button class="search-btn" id="btnAbrirBuscador" aria-label="Buscar camiseta">🔍</button>
+    <button class="cart-btn" id="btnAbrirCarrito" aria-label="Abrir carrito">
+      🛒<span id="cartCount">0</span>
+    </button>
+  </div>
+  <div class="search-bar" id="searchBar">
+    <div class="search-bar__inner">
+      <input type="search" id="inputBuscador" placeholder="Busca tu equipo o selección..." autocomplete="off">
+      <button type="button" id="btnCerrarBuscador" aria-label="Cerrar buscador">✕</button>
+    </div>
+    <div class="search-resultados" id="searchResultados"></div>
+  </div>
+</header>
+
+<!-- Menú lateral (drawer), solo navegación: no toca carrito ni pedidos -->
+<div class="overlay-menu" id="overlayMenu"></div>
+<nav class="drawer" id="drawerMenu" aria-label="Menú principal">
+  <div class="drawer-header">
+    <h4>Menú</h4>
+    <button id="btnCerrarMenu" aria-label="Cerrar menú">×</button>
+  </div>
+  <ul class="menu-list">
+    <li><a href="#selecciones" data-cerrar-menu><span class="menu-icon">🌍</span> Selecciones</a></li>
+
+    <li>
+      <details class="menu-ligas" id="menuLigas">
+        <summary><span class="menu-icon">📋</span> Ligas y equipos</summary>
+        <div class="submenu-ligas">
+          <details class="submenu-liga">
+            <summary>Premier League</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="premier-league" data-equipo="pl-manutd">Manchester United</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="premier-league" data-equipo="pl-mancity">Manchester City</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="premier-league" data-equipo="pl-liverpool">Liverpool</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="premier-league" data-equipo="pl-chelsea">Chelsea</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="premier-league" data-equipo="pl-arsenal">Arsenal</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="premier-league" data-equipo="pl-tottenham">Tottenham Hotspur</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="premier-league" data-equipo="pl-newcastle">Newcastle United</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="premier-league" data-equipo="pl-astonvilla">Aston Villa</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>Spanish La Liga</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-realmadrid">Real Madrid</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-barcelona">FC Barcelona</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-atletico">Atlético de Madrid</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-sevilla">Sevilla FC</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-realsociedad">Real Sociedad</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-betis">Real Betis</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-athletic">Athletic Club</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-valencia">Valencia CF</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-alaves">Deportivo Alavés</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-celta">RC Celta de Vigo</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-deportivo">Deportivo de La Coruña</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-getafe">Getafe CF</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-levante">Levante UD</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-malaga">Málaga CF</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-osasuna">CA Osasuna</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga" data-equipo="ll-villarreal">Villarreal CF</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>Serie A</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-a" data-equipo="sa-juventus">Juventus</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-a" data-equipo="sa-milan">AC Milan</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-a" data-equipo="sa-inter">Inter de Milán</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-a" data-equipo="sa-napoli">Napoli</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-a" data-equipo="sa-roma">AS Roma</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-a" data-equipo="sa-lazio">Lazio</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-a" data-equipo="sa-fiorentina">Fiorentina</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-a" data-equipo="sa-atalanta">Atalanta</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>Bundesliga</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="bundesliga" data-equipo="bl-bayern">Bayern de Múnich</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="bundesliga" data-equipo="bl-dortmund">Borussia Dortmund</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="bundesliga" data-equipo="bl-leipzig">RB Leipzig</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="bundesliga" data-equipo="bl-leverkusen">Bayer Leverkusen</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="bundesliga" data-equipo="bl-frankfurt">Eintracht Frankfurt</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="bundesliga" data-equipo="bl-gladbach">Borussia Mönchengladbach</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="bundesliga" data-equipo="bl-stuttgart">VfB Stuttgart</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="bundesliga" data-equipo="bl-wolfsburg">VfL Wolfsburg</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>Ligue 1</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-1" data-equipo="l1-psg">Paris Saint-Germain</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-1" data-equipo="l1-marsella">Olympique de Marsella</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-1" data-equipo="l1-lyon">Olympique de Lyon</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-1" data-equipo="l1-monaco">AS Mónaco</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-1" data-equipo="l1-lille">LOSC Lille</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-1" data-equipo="l1-nice">OGC Nice</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-1" data-equipo="l1-rennes">Stade Rennais</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-1" data-equipo="l1-lens">RC Lens</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>Campeonato Brasileiro Série A</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="brasileirao" data-equipo="br-flamengo">Flamengo</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="brasileirao" data-equipo="br-palmeiras">Palmeiras</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="brasileirao" data-equipo="br-corinthians">Corinthians</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="brasileirao" data-equipo="br-saopaulo">São Paulo</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="brasileirao" data-equipo="br-santos">Santos</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="brasileirao" data-equipo="br-gremio">Grêmio</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="brasileirao" data-equipo="br-internacional">Internacional</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="brasileirao" data-equipo="br-fluminense">Fluminense</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>EFL Championship</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="efl-championship" data-equipo="ch-leeds">Leeds United</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="efl-championship" data-equipo="ch-leicester">Leicester City</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="efl-championship" data-equipo="ch-southampton">Southampton</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="efl-championship" data-equipo="ch-norwich">Norwich City</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="efl-championship" data-equipo="ch-westbrom">West Bromwich Albion</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="efl-championship" data-equipo="ch-sunderland">Sunderland</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="efl-championship" data-equipo="ch-middlesbrough">Middlesbrough</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="efl-championship" data-equipo="ch-sheffieldunited">Sheffield United</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>La Liga 2</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga2" data-equipo="l2-racing">Racing de Santander</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga2" data-equipo="l2-zaragoza">Real Zaragoza</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga2" data-equipo="l2-sporting">Sporting de Gijón</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga2" data-equipo="l2-eibar">SD Eibar</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga2" data-equipo="l2-almeria">UD Almería</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga2" data-equipo="l2-albacete">Albacete Balompié</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga2" data-equipo="l2-levante">Levante UD</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="laliga2" data-equipo="l2-mirandes">CD Mirandés</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>MLS</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="mls" data-equipo="mls-lagalaxy">LA Galaxy</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="mls" data-equipo="mls-intermiami">Inter Miami</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="mls" data-equipo="mls-seattle">Seattle Sounders</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="mls" data-equipo="mls-atlanta">Atlanta United</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="mls" data-equipo="mls-lafc">LAFC</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="mls" data-equipo="mls-nycfc">New York City FC</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="mls" data-equipo="mls-columbus">Columbus Crew</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="mls" data-equipo="mls-orlando">Orlando City</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>J1 League</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="j1-league" data-equipo="j1-kashima">Kashima Antlers</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="j1-league" data-equipo="j1-urawa">Urawa Red Diamonds</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="j1-league" data-equipo="j1-yokohama">Yokohama F. Marinos</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="j1-league" data-equipo="j1-vissel">Vissel Kobe</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="j1-league" data-equipo="j1-kawasaki">Kawasaki Frontale</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="j1-league" data-equipo="j1-gamba">Gamba Osaka</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="j1-league" data-equipo="j1-cerezo">Cerezo Osaka</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="j1-league" data-equipo="j1-fctokyo">FC Tokyo</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>Liga MX</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-mx" data-equipo="mx-america">Club América</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-mx" data-equipo="mx-chivas">Chivas Guadalajara</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-mx" data-equipo="mx-cruzazul">Cruz Azul</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-mx" data-equipo="mx-pumas">Pumas UNAM</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-mx" data-equipo="mx-monterrey">Monterrey</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-mx" data-equipo="mx-tigres">Tigres UANL</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-mx" data-equipo="mx-toluca">Toluca</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-mx" data-equipo="mx-santoslaguna">Santos Laguna</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>Argentina LPF League</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="argentina-lpf" data-equipo="ar-boca">Boca Juniors</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="argentina-lpf" data-equipo="ar-river">River Plate</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="argentina-lpf" data-equipo="ar-racing">Racing Club</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="argentina-lpf" data-equipo="ar-independiente">Independiente</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="argentina-lpf" data-equipo="ar-sanlorenzo">San Lorenzo</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="argentina-lpf" data-equipo="ar-velez">Vélez Sarsfield</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="argentina-lpf" data-equipo="ar-estudiantes">Estudiantes de La Plata</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="argentina-lpf" data-equipo="ar-talleres">Talleres</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>Liga Portugal</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-portugal" data-equipo="pt-benfica">Benfica</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-portugal" data-equipo="pt-porto">FC Porto</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-portugal" data-equipo="pt-sporting">Sporting CP</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-portugal" data-equipo="pt-braga">SC Braga</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-portugal" data-equipo="pt-guimaraes">Vitória de Guimarães</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="liga-portugal" data-equipo="pt-boavista">Boavista</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>Dutch Eredivisie</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="eredivisie" data-equipo="nl-ajax">Ajax</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="eredivisie" data-equipo="nl-psv">PSV Eindhoven</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="eredivisie" data-equipo="nl-feyenoord">Feyenoord</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="eredivisie" data-equipo="nl-az">AZ Alkmaar</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="eredivisie" data-equipo="nl-utrecht">FC Utrecht</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="eredivisie" data-equipo="nl-twente">FC Twente</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>Saudi Arabian League</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="saudi-league" data-equipo="sau-alhilal">Al Hilal</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="saudi-league" data-equipo="sau-alnassr">Al Nassr</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="saudi-league" data-equipo="sau-alittihad">Al Ittihad</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="saudi-league" data-equipo="sau-alahli">Al Ahli</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="saudi-league" data-equipo="sau-alshabab">Al Shabab</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="saudi-league" data-equipo="sau-alettifaq">Al Ettifaq</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>Serie B</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-b" data-equipo="sb-parma">Parma</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-b" data-equipo="sb-palermo">Palermo</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-b" data-equipo="sb-bari">Bari</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-b" data-equipo="sb-sampdoria">Sampdoria</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-b" data-equipo="sb-venezia">Venezia</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="serie-b" data-equipo="sb-cremonese">Cremonese</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>2. Bundesliga</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="2-bundesliga" data-equipo="b2-hamburgo">Hamburger SV</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="2-bundesliga" data-equipo="b2-dusseldorf">Fortuna Düsseldorf</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="2-bundesliga" data-equipo="b2-nuremberg">FC Nürnberg</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="2-bundesliga" data-equipo="b2-hertha">Hertha BSC</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="2-bundesliga" data-equipo="b2-stpauli">FC St. Pauli</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="2-bundesliga" data-equipo="b2-karlsruher">Karlsruher SC</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>Ligue 2</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-2" data-equipo="lg2-metz">FC Metz</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-2" data-equipo="lg2-guingamp">En Avant Guingamp</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-2" data-equipo="lg2-amiens">Amiens SC</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-2" data-equipo="lg2-bastia">SC Bastia</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-2" data-equipo="lg2-grenoble">Grenoble Foot 38</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="ligue-2" data-equipo="lg2-parisfc">Paris FC</button></li>
+            </ul>
+          </details>
+          <details class="submenu-liga">
+            <summary>Más</summary>
+            <ul class="submenu-equipos">
+              <li><button type="button" class="btn-equipo-menu" data-liga="mas" data-equipo="mas-olympiacos">Olympiacos</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="mas" data-equipo="mas-fenerbahce">Fenerbahçe</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="mas" data-equipo="mas-besiktas">Beşiktaş</button></li>
+              <li><button type="button" class="btn-equipo-menu" data-liga="mas" data-equipo="mas-galatasaray">Galatasaray</button></li>
+            </ul>
+          </details>
+        </div>
+      </details>
+    </li>
+
+    <li><a href="#ofertas" data-cerrar-menu><span class="menu-icon">🔥</span> Ofertas</a></li>
+    <li><a href="#amigo-invisible" data-cerrar-menu><span class="menu-icon">🎁</span> Amigo invisible</a></li>
+    <li><a href="#como-funciona" data-cerrar-menu><span class="menu-icon">❓</span> Cómo funciona</a></li>
+    <li><a href="#resenas" data-cerrar-menu><span class="menu-icon">⭐</span> Reseñas</a></li>
+
+    <li><a href="mailto:trakeballer@gmail.com" data-cerrar-menu><span class="menu-icon">✉️</span> Contacto</a></li>
+    <li><a href="#sugerencia" data-cerrar-menu><span class="menu-icon">💡</span> Sugerir camiseta</a></li>
+    <li><button type="button" id="btnAbrirLegal" data-cerrar-menu><span class="menu-icon">📄</span> Aviso legal y política</button></li>
+
+    <li class="menu-proximamente" title="Muy pronto disponibles">
+      <span class="menu-icon">👟</span> Botas de fútbol
+      <span class="etiqueta-proximamente">Próximamente</span>
+    </li>
+  </ul>
+</nav>
+
+<section class="hero" id="inicio">
+  <div class="hero__field" aria-hidden="true"></div>
+  <img src="img/jugadores/haaland.jpg" alt="" aria-hidden="true" class="hero__crack hero__crack--izq-arriba">
+  <img src="img/jugadores/pedri.jpg" alt="" aria-hidden="true" class="hero__crack hero__crack--izq-abajo">
+  <img src="img/jugadores/oblak.jpg" alt="" aria-hidden="true" class="hero__crack hero__crack--der-arriba">
+  <img src="img/jugadores/aubameyang.jpg" alt="" aria-hidden="true" class="hero__crack hero__crack--der-abajo">
+  <div class="hero__content">
+    <p class="hero__kicker">Personalízala en 30 segundos</p>
+    <h1 class="hero__title">Tu nombre.<br>Tu dorsal.<br>Tu leyenda.</h1>
+    <p class="hero__sub">Camisetas oficiales de selecciones y clubes, actuales y retro, con nombre y dorsal a tu gusto. Envío a domicilio.</p>
+    <p class="hero__sub">Pedido minimo 2 camisetas.</p>
+    <div class="hero__ctas">
+      <a href="#selecciones" class="btn btn--primary">Ver selecciones</a>
+      <a href="#equipos" class="btn btn--ghost">Ver equipos</a>
+      <a href="#sugerencia" class="btn btn--ghost">💡 Sugerir camiseta</a>
+      <a href="#ofertas" class="btn btn--ghost">Amigo invisible</a>
+    </div>
+  </div>
+</section>
+
+<section class="seccion como-funciona" id="como-funciona">
+  <div class="seccion__head">
+    <h2>¿Cómo funciona?</h2>
+    <p>De elegir tu camiseta a tenerla en casa, en 5 pasos.</p>
+  </div>
+  <div class="pasos">
+    <div class="paso">
+      <span class="paso__num">1</span>
+      <h4>Elige tu equipo</h4>
+      <p>Busca tu selección o tu club favorito entre selecciones, ligas y equipos.</p>
+    </div>
+    <div class="paso">
+      <span class="paso__num">2</span>
+      <h4>Personalízala</h4>
+      <p>Elige versión actual o retro, talla, nombre, dorsal y parches, sin coste extra.</p>
+    </div>
+    <div class="paso">
+      <span class="paso__num">3</span>
+      <h4>Añádela al carrito</h4>
+      <p>Puedes repetir el proceso con más camisetas y aprovechar los descuentos por cantidad.</p>
+    </div>
+    <div class="paso">
+      <span class="paso__num">4</span>
+      <h4>Confirma el pedido</h4>
+      <p>Rellena tus datos de envío y contacto y envía el pedido.</p>
+    </div>
+    <div class="paso">
+      <span class="paso__num">5</span>
+      <h4>Paga por PayPal y recíbela</h4>
+      <p>Envía el pago por PayPal, mándanos el comprobante y preparamos tu pedido para enviarlo a casa.</p>
+    </div>
+  </div>
+</section>
+
+<section class="seccion" id="selecciones">
+  <img src="img/jugadores/haaland.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--izq">
+  <img src="img/jugadores/pedri.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--der">
+  <div class="seccion__head">
+    <h2>Selecciones · Mundial 2026</h2>
+    <p>Las camisetas oficiales de las selecciones del Mundial 2026, versión local o visitante.</p>
+  </div>
+  <div class="grid" id="gridSelecciones"></div>
+</section>
+
+<section class="seccion seccion--alt" id="equipos">
+  <img src="img/jugadores/oblak.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--izq">
+  <img src="img/jugadores/aubameyang.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--der">
+  <div class="seccion__head">
+    <h2>Equipos</h2>
+    <p>Elige una liga y personaliza la camiseta de tu equipo favorito.</p>
+  </div>
+  <div class="ligas-tabs" id="ligasTabs"></div>
+  <div class="grid" id="gridEquipos"></div>
+</section>
+
+<section class="seccion" id="ofertas">
+  <img src="img/jugadores/pedri.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--izq seccion__crack--baja">
+  <img src="img/jugadores/aubameyang.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--der seccion__crack--baja">
+  <div class="seccion__head">
+  <h2>Ofertas especiales</h2>
+  <p>Envío gratis a partir de 6 camisetas.</p>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>CANTIDAD</th>
+      <th>NORMALES</th>
+      <th>RETRO</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>6</td>
+      <td>135,00 €</td>
+      <td>150,00 €</td>
+    </tr>
+    <tr>
+      <td>10</td>
+      <td>200,00 €</td>
+      <td>225,00 €</td>
+    </tr>
+    <tr>
+      <td>15</td>
+      <td>250,00 €</td>
+      <td>275,00 €</td>
+    </tr>
+  </tbody>
+</table>
+  <div class="ofertas">
+    <div class="oferta-card">
+      <span class="oferta-card__tag">Evento de grupo</span>
+      <h3 id="amigo-invisible">Amigo invisible futbolero</h3>
+      <p>Organiza el amigo invisible de camisetas con tu de amigos.</p>
+      <button class="btn btn--primary" id="btnAbrirAmigoInvisible">Organizar sorteo</button>
+    </div>
+  </div>
+</section>
+
+<section class="sugerencia" id="sugerencia">
+  <div class="sugerencia__card">
+    <h3>¿Nos falta alguna camiseta que quieras tener o ver mas fotos de alguna camiseta?</h3>
+    <p>Cuéntanoslo y le echamos un ojo. Nos llega directo a nosotros.</p>
+    <form id="formSugerencia" class="sugerencia__form">
+      <label class="campo">
+        <span>Tu nombre</span>
+        <input type="text" id="sugerenciaNombre" maxlength="80" placeholder="Cómo te llamas">
+      </label>
+      <label class="campo">
+        <span>Tu email</span>
+        <input type="email" id="sugerenciaEmail" maxlength="120" placeholder="tucorreo@ejemplo.com">
+      </label>
+      <label class="campo">
+        <span>¿Qué camiseta quieres que añadamos o quieres ver?</span>
+        <textarea id="sugerenciaMensaje" rows="4" maxlength="600" placeholder="Equipo, temporada, versión local/visitante/tercera..." required></textarea>
+      </label>
+      <button type="submit" class="btn btn--primary" id="btnSugerencia">Enviar sugerencia</button>
+      <p class="form-envio__estado" id="estadoSugerencia"></p>
+    </form>
+  </div>
+</section>
+
+<section class="seccion resenas" id="resenas">
+  <div class="seccion__head">
+    <h2>Reseñas de clientes</h2>
+    <p>Lo que opinan quienes ya han comprado su camiseta en Trakeballer.</p>
+  </div>
+
+  <div class="resenas__contenido">
+    <div class="resenas__lista" id="listaResenas">
+      <p class="resenas__cargando" id="resenasCargando">Cargando reseñas...</p>
+    </div>
+
+    <div class="resenas__form-card">
+      <h3>Deja tu reseña</h3>
+      <form id="formResena" class="resena-form">
+        <label class="campo">
+          <span>Tu nombre</span>
+          <input type="text" id="resenaNombre" maxlength="80" required placeholder="Cómo te llamas">
+        </label>
+        <label class="campo">
+          <span>Tu valoración</span>
+          <div class="resena-estrellas" id="resenaEstrellas" role="radiogroup" aria-label="Valoración de 1 a 5 estrellas">
+            <button type="button" class="resena-estrella" data-valor="1" aria-label="1 estrella">★</button>
+            <button type="button" class="resena-estrella" data-valor="2" aria-label="2 estrellas">★</button>
+            <button type="button" class="resena-estrella" data-valor="3" aria-label="3 estrellas">★</button>
+            <button type="button" class="resena-estrella" data-valor="4" aria-label="4 estrellas">★</button>
+            <button type="button" class="resena-estrella" data-valor="5" aria-label="5 estrellas">★</button>
+          </div>
+          <input type="hidden" id="resenaValoracion" value="0">
+        </label>
+        <label class="campo">
+          <span>Tu opinión</span>
+          <textarea id="resenaMensaje" rows="4" maxlength="600" required placeholder="Cuéntanos qué tal tu experiencia..."></textarea>
+        </label>
+        <button type="submit" class="btn btn--primary btn--full" id="btnResena">Enviar reseña</button>
+        <p class="form-envio__estado" id="estadoResena"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <img src="img/jugadores/haaland.jpg" alt="" aria-hidden="true" class="footer__crack">
+  <p> · ⚽Trakeballer · Tienda de camisetas de fútbol personalizadas · ⚽ </p>
+  <p class="footer__contacto">
+    ¿Dudas con tu pedido? Escríbenos a
+    <a href="mailto:trakeballer@gmail.com">trakeballer@gmail.com</a>
+  </p>
+  <p class="footer__legal">
+    <button type="button" id="btnAbrirLegalFooter" class="footer__legal-link">Aviso legal, privacidad y cookies</button>
+  </p>
+</footer>
+
+<!-- Botón flotante de contacto -->
+<a href="mailto:trakeballer@gmail.com" class="contacto-flotante" aria-label="Escríbenos por email" title="Escríbenos por email">✉️</a>
+
+<!-- MODAL: legal -->
+<div class="overlay" id="overlayLegal">
+  <div class="modal modal--legal" role="dialog" aria-modal="true">
+    <button class="modal__cerrar" data-cerrar="overlayLegal">✕</button>
+    <h3>Información legal</h3>
+    <div class="legal-tabs" id="legalTabs">
+      <button type="button" class="legal-tab activo" data-legal="aviso">Aviso legal</button>
+      <button type="button" class="legal-tab" data-legal="privacidad">Privacidad</button>
+      <button type="button" class="legal-tab" data-legal="cookies">Cookies</button>
+      <button type="button" class="legal-tab" data-legal="condiciones">Condiciones de venta</button>
+    </div>
+
+    <div class="legal-panel activo" id="legal-aviso">
+      <h4>Aviso legal</h4>
+      <p>Trakeballer es una tienda online de camisetas de fútbol personalizadas gestionada como proyecto particular. Para cualquier consulta relacionada con la titularidad de la web o con un pedido, puedes escribir a <a href="mailto:trakeballer@gmail.com">trakeballer@gmail.com</a>.</p>
+      <p>El acceso y uso de este sitio web atribuye la condición de usuario e implica la aceptación de las condiciones aquí descritas. Trakeballer se reserva el derecho de modificar en cualquier momento el contenido de la web, así como estas condiciones.</p>
+      <p>Todos los nombres de clubes, selecciones, competiciones y marcas mostrados en esta web se citan únicamente con fines descriptivos e ilustrativos para identificar el diseño solicitado por el cliente; sus derechos pertenecen a sus respectivos titulares.</p>
+    </div>
+
+    <div class="legal-panel" id="legal-privacidad">
+      <h4>Política de privacidad</h4>
+      <p>En Trakeballer solo recogemos los datos estrictamente necesarios para tramitar tu pedido: nombre, dirección de envío, teléfono y, si lo indicas, tu email. Si nos dejas una reseña o una sugerencia, guardamos también el nombre y el mensaje que nos envíes.</p>
+      <p>Estos datos se usan únicamente para gestionar el pedido, contactar contigo y enviarte el justificante de compra. No se ceden a terceros salvo obligación legal, y no se usan con fines publicitarios ni se comparten con otras empresas.</p>
+      <p>Puedes solicitar en cualquier momento el acceso, la rectificación o la eliminación de tus datos escribiendo a <a href="mailto:trakeballer@gmail.com">trakeballer@gmail.com</a>.</p>
+    </div>
+
+    <div class="legal-panel" id="legal-cookies">
+      <h4>Política de cookies</h4>
+      <p>Esta web utiliza únicamente almacenamiento técnico local en tu navegador (localStorage) para recordar el contenido de tu carrito de la compra mientras navegas. No se trata de cookies de publicidad ni de seguimiento, y esa información no sale de tu propio dispositivo.</p>
+      <p>No se utilizan cookies de análisis ni de terceros. Puedes borrar el contenido del carrito en cualquier momento vaciando los datos de navegación de tu navegador para este sitio.</p>
+    </div>
+
+    <div class="legal-panel" id="legal-condiciones">
+      <h4>Condiciones de venta</h4>
+      <p>Los pedidos se confirman una vez recibido el pago por PayPal y el comprobante correspondiente. El pedido mínimo es de 2 camisetas. Los precios y las ofertas por cantidad mostradas en la web incluyen la personalización con nombre y dorsal.</p>
+      <p>El envío tiene un coste de 5€ en pedidos de menos de 6 camisetas; a partir de 6 camisetas el envío es gratuito. Los plazos de entrega pueden variar según la disponibilidad del pedido.</p>
+      <p>Por tratarse de productos personalizados (con nombre y dorsal a elección del cliente), no se admiten devoluciones salvo defecto de fabricación. Cualquier incidencia con el pedido puede comunicarse a <a href="mailto:trakeballer@gmail.com">trakeballer@gmail.com</a>.</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: personalizar camiseta -->
+<div class="overlay" id="overlayProducto">
+  <div class="modal" role="dialog" aria-modal="true">
+    <button class="modal__cerrar" data-cerrar="overlayProducto">✕</button>
+    <div class="modal__grid">
+      <div class="modal__visual">
+        <div class="camiseta-preview" id="previewCamiseta"></div>
+      </div>
+      <div class="modal__form">
+        <p class="modal__categoria" id="prodCategoria"></p>
+        <h3 id="prodNombre"></h3>
+
+        <label class="campo">
+          <span>Versión</span>
+          <div class="segmentado" id="prodTipo">
+            <button type="button" data-tipo="actual" class="activo">Actual · 25€</button>
+            <button type="button" data-tipo="retro">Retro · 30€</button>
+          </div>
+        </label>
+
+        <label class="campo" id="prodVersionMundialWrap" style="display:none">
+          <span>Camiseta</span>
+          <div class="segmentado" id="prodVersionMundial">
+            <button type="button" data-version="local" class="activo">Local</button>
+            <button type="button" data-version="visitante">Visitante</button>
+          </div>
+        </label>
+
+        <label class="campo" id="prodRetroWrap" style="display:none">
+          <span>Modelo retro</span>
+          <select id="prodRetroSelect"></select>
+        </label>
+
+        <label class="campo">
+          <span>Nombre para la espalda (incluido)</span>
+          <input type="text" id="prodNombreTexto" maxlength="14" placeholder="Ej: RODRI">
+        </label>
+
+        <div class="campo-fila">
+          <label class="campo">
+            <span>Dorsal (incluido)</span>
+            <input type="number" id="prodDorsal" min="0" max="99" placeholder="Ej: 9">
+          </label>
+          <label class="campo">
+            <span>Talla</span>
+            <select id="prodTalla">
+              <option>XS</option><option>S</option><option selected>M</option>
+              <option>L</option><option>XL</option><option>XXL</option>
+              <option>Niño 8</option><option>Niño 10</option><option>Niño 12</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="campo campo-parches" id="prodParchesWrap">
+          <span id="prodParchesTitulo">Parches</span>
+          <p class="parches-ayuda">¿Quieres añadir algún parche a la camiseta? Es opcional y sin coste adicional.</p>
+          <div class="parches-lista" id="prodParchesLista"></div>
+        </div>
+
+        <label class="campo campo--cantidad">
+          <span>Cantidad</span>
+          <div class="stepper">
+            <button type="button" id="prodMenos">−</button>
+            <input type="number" id="prodCantidad" min="1" value="1">
+            <button type="button" id="prodMas">+</button>
+          </div>
+        </label>
+
+        <div class="modal__precio">
+          <span>Precio <small id="prodPrecioUnidad"></small></span>
+          <strong id="prodPrecioTotal">25 €</strong>
+        </div>
+
+        <button class="btn btn--primary btn--full" id="btnAnadirCarrito">Añadir al carrito</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: carrito -->
+<div class="overlay" id="overlayCarrito">
+  <aside class="panel-carrito" role="dialog" aria-modal="true">
+    <div class="panel-carrito__head">
+      <h3>Tu carrito</h3>
+      <button class="modal__cerrar" data-cerrar="overlayCarrito">✕</button>
+    </div>
+
+    <div class="panel-carrito__items" id="listaCarrito">
+      <p class="carrito-vacio" id="carritoVacioMsg">Tu carrito está vacío. Elige tu camiseta y personalízala.</p>
+    </div>
+
+    <div class="panel-carrito__resumen">
+      <div class="resumen-linea"><span>Subtotal</span><strong id="resSubtotal">0,00 €</strong></div>
+      <div class="resumen-linea" id="resDescuentoWrap" style="display:none"><span>Descuento por cantidad</span><strong id="resDescuento">-0,00 €</strong></div>
+      <div class="resumen-linea"><span>Envío</span><strong id="resEnvio">0,00 €</strong></div>
+      <div class="resumen-linea resumen-linea--total"><span>Total</span><strong id="resTotal">0,00 €</strong></div>
+      <p class="resumen-nota" id="resEnvioNota">Envío: 5 € en pedidos de menos de 6 camisetas. A partir de 6, envío gratis. Ofertas por cantidad: 6 camisetas 135€ (150€ retro), 10 camisetas 200€ (225€ retro), 15 camisetas 250€ (275€ retro).</p>
+
+      <button class="btn btn--primary btn--full" id="btnIrEnvio">Continuar con el envío</button>
+    </div>
+
+    <!-- Formulario de envío -->
+    <form class="form-envio" id="formEnvio">
+      <h4>Datos de envío y contacto</h4>
+      <label class="campo">
+        <span>Nombre completo</span>
+        <input type="text" id="clienteNombre" required>
+      </label>
+      <label class="campo">
+        <span>Dirección de envío</span>
+        <textarea id="clienteDireccion" rows="2" required placeholder="Calle, número, piso, ciudad, CP"></textarea>
+      </label>
+      <label class="campo">
+        <span>Teléfono de contacto</span>
+        <div class="campo-telefono">
+          <select id="clienteTelefonoPrefijo" class="campo-telefono__prefijo"></select>
+          <input type="tel" id="clienteTelefono" required inputmode="numeric" pattern="[0-9]{9}" maxlength="9" placeholder="600000000">
+        </div>
+      </label>
+      <label class="campo">
+        <span>Email (te enviaremos el ticket de compra)</span>
+        <input type="email" id="clienteEmail" placeholder="para el justificante del pedido">
+      </label>
+      <div class="pago-paypal">
+        <h5>Método de pago: solo PayPal</h5>
+        <p>Envía el importe total por PayPal a <strong><a href="mailto:trakeballer@gmail.com">trakeballer@gmail.com</a></strong>.</p>
+        <p><strong>Importante:</strong> al enviar el dinero no pongas ningún concepto ni mensaje.</p>
+        <p>Después, manda el <strong>comprobante de pago</strong> y la <strong>captura o el número de pedido</strong> a ese mismo correo: <strong><a href="mailto:trakeballer@gmail.com">trakeballer@gmail.com</a></strong>.</p>
+      </div>
+
+      <button type="submit" class="btn btn--primary btn--full" id="btnEnviarPedido">Enviar pedido</button>
+      <p class="form-envio__estado" id="estadoPedido"></p>
+    </form>
+  </aside>
+</div>
+
+<!-- MODAL: amigo invisible -->
+<div class="overlay" id="overlayAmigo">
+  <div class="modal modal--estrecho" role="dialog" aria-modal="true">
+    <button class="modal__cerrar" data-cerrar="overlayAmigo">✕</button>
+    <h3>Amigo invisible futbolero</h3>
+    <p class="modal__ayuda">Dinos cuántos sois y cuántas camisetas necesitáis de cada talla. Nosotros nos encargamos de sortear y preparar las camisetas.</p>
+
+    <label class="campo">
+      <span>¿Cuántas personas sois?</span>
+      <input type="number" id="amigoNumPersonas" min="1" value="1">
+    </label>
+
+    <hr class="separador">
+    <h4>Pedido del amigo invisible</h4>
+    <p class="modal__ayuda">
+      Indica cuántas camisetas quieres de cada talla. Las camisetas serán elegidas
+      aleatoriamente por nosotros.
+    </p>
+
+    <div class="campo">
+      <span>Cantidad por talla</span>
+
+      <div class="tallas-cantidades">
+        <label class="talla-cantidad">
+          <span>XS</span>
+          <input type="number" id="amigoCantidadXS" min="0" value="0">
+        </label>
+
+        <label class="talla-cantidad">
+          <span>S</span>
+          <input type="number" id="amigoCantidadS" min="0" value="0">
+        </label>
+
+        <label class="talla-cantidad">
+          <span>M</span>
+          <input type="number" id="amigoCantidadM" min="0" value="0">
+        </label>
+
+        <label class="talla-cantidad">
+          <span>L</span>
+          <input type="number" id="amigoCantidadL" min="0" value="0">
+        </label>
+
+        <label class="talla-cantidad">
+          <span>XL</span>
+          <input type="number" id="amigoCantidadXL" min="0" value="0">
+        </label>
+
+        <label class="talla-cantidad">
+          <span>XXL</span>
+          <input type="number" id="amigoCantidadXXL" min="0" value="0">
+        </label>
+
+        <label class="talla-cantidad">
+          <span>Niño 8</span>
+          <input type="number" id="amigoCantidadNino8" min="0" value="0">
+        </label>
+
+        <label class="talla-cantidad">
+          <span>Niño 10</span>
+          <input type="number" id="amigoCantidadNino10" min="0" value="0">
+        </label>
+
+        <label class="talla-cantidad">
+          <span>Niño 12</span>
+          <input type="number" id="amigoCantidadNino12" min="0" value="0">
+        </label>
+      </div>
+    </div>
+
+    <div class="campo">
+      <span>Indicaciones del pedido</span>
+      <div class="pedido-indicaciones">
+        <p>
+          Las camisetas serán elegidas aleatoriamente por nosotros.
+          No es necesario indicar equipo, nombre ni dorsal.
+        </p>
+        <p>
+          Selecciona únicamente las tallas y cantidades que quieras recibir.
+          Nosotros nos encargaremos de preparar las camisetas al azar.
+        </p>
+      </div>
+    </div>
+
+    <label class="campo">
+      <span>Observaciones o preferencias (opcional)</span>
+      <textarea id="amigoObservaciones" rows="3" placeholder="Ej: no queremos camisetas de grandes ligas, o preferimos evitar el Real Madrid..."></textarea>
+    </label>
+
+    <hr class="separador">
+
+    <label class="campo">
+      <span>Tu nombre</span>
+      <input
+        type="text"
+        id="amigoCompradorNombre"
+        placeholder="Nombre de quien hace el pedido"
+      >
+    </label>
+
+    <label class="campo">
+      <span>Teléfono o email de contacto</span>
+      <input
+        type="text"
+        id="amigoCompradorContacto"
+        placeholder="+34 600 000 000 o tú@email.com"
+      >
+    </label>
+
+    <div class="pago-paypal">
+      <h5>Método de pago: solo PayPal</h5>
+      <p>Envía el importe total por PayPal a <strong><a href="mailto:trakeballer@gmail.com">trakeballer@gmail.com</a></strong>.</p>
+      <p><strong>Importante:</strong> al enviar el dinero no pongas ningún concepto ni mensaje.</p>
+      <p>Después, manda el <strong>comprobante de pago</strong> y la <strong>captura o el número de pedido</strong> a ese mismo correo: <strong><a href="mailto:trakeballer@gmail.com">trakeballer@gmail.com</a></strong>.</p>
+    </div>
+
+    <button type="button" class="btn btn--primary btn--full" id="btnAmigoEnviarPedido">
+      Enviar pedido
+    </button>
+
+    <p class="form-envio__estado" id="amigoEstadoPedido"></p>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  /* Menú lateral (hamburguesa). Independiente de app.js: solo abre/cierra
+     el drawer de navegación, no interviene en carrito ni en pedidos. */
+  (function () {
+    var overlayMenu = document.getElementById('overlayMenu');
+    var drawerMenu = document.getElementById('drawerMenu');
+
+    function abrirMenu() {
+      drawerMenu.classList.add('abierto');
+      overlayMenu.classList.add('activo');
+    }
+    function cerrarMenu() {
+      drawerMenu.classList.remove('abierto');
+      overlayMenu.classList.remove('activo');
+    }
+
+    document.getElementById('btnAbrirMenu').addEventListener('click', abrirMenu);
+    document.getElementById('btnCerrarMenu').addEventListener('click', cerrarMenu);
+    overlayMenu.addEventListener('click', cerrarMenu);
+    document.querySelectorAll('[data-cerrar-menu]').forEach(function (el) {
+      el.addEventListener('click', cerrarMenu);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') cerrarMenu();
+    });
+
+    /* Submenú "Ligas y equipos": al elegir un equipo, se activa su liga
+       (reutilizando LIGAS/ligaActiva/renderLigasTabs/renderEquiposGrid de
+       app.js, ya cargado antes de este script) y se abre directamente su
+       modal de personalización con abrirModalProducto. No se toca app.js. */
+    document.querySelectorAll('.btn-equipo-menu').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var ligaId = btn.dataset.liga;
+        var equipoId = btn.dataset.equipo;
+        var liga = LIGAS.find(function (l) { return l.id === ligaId; });
+        if (!liga) return;
+        var equipo = liga.equipos.find(function (e) { return e.id === equipoId; });
+        if (!equipo) return;
+
+        ligaActiva = liga.id;
+        renderLigasTabs();
+        renderEquiposGrid();
+
+        cerrarMenu();
+        abrirModalProducto(equipo, liga.nombre);
+      });
+    });
+  })();
+
+  /* Modal de información legal (aviso legal, privacidad, cookies,
+     condiciones de venta). Se abre desde el menú lateral o desde el
+     enlace del footer, con pestañas internas. */
+  (function () {
+    var overlayLegal = document.getElementById('overlayLegal');
+    function abrirLegal() { overlayLegal.classList.add('abierto'); }
+
+    var btnMenu = document.getElementById('btnAbrirLegal');
+    var btnFooter = document.getElementById('btnAbrirLegalFooter');
+    if (btnMenu) btnMenu.addEventListener('click', abrirLegal);
+    if (btnFooter) btnFooter.addEventListener('click', abrirLegal);
+
+    document.querySelectorAll('.legal-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        document.querySelectorAll('.legal-tab').forEach(function (t) { t.classList.toggle('activo', t === tab); });
+        document.querySelectorAll('.legal-panel').forEach(function (p) {
+          p.classList.toggle('activo', p.id === 'legal-' + tab.dataset.legal);
+        });
+      });
+    });
+  })();
+</script>
+</body>
+</html>
