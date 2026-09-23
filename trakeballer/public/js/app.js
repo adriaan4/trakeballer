@@ -280,11 +280,10 @@ const LIGAS = [
     id: 'mas',
     nombre: 'Más',
     equipos: [
-      { id: 'mas-olympiacos', nombre: 'Olympiacos', c1: '#D2001C', c2: '#FFFFFF', imgLocal: 'img/equipos/mas/mas-olympiacos.jpg' },
-      { id: 'mas-fenerbahce', nombre: 'Fenerbahçe', c1: '#FFE100', c2: '#0A2240', imgLocal: 'img/equipos/mas/mas-fenerbahce.jpg' },
-      { id: 'mas-besiktas', nombre: 'Beşiktaş', c1: '#1A1A1A', c2: '#FFFFFF', imgLocal: 'img/equipos/mas/mas-besiktas.jpg' },
-      { id: 'mas-alahly', nombre: 'Al Ahly', c1: '#D2001C', c2: '#FFFFFF' },
-      { id: 'mas-galatasaray', nombre: 'Galatasaray', c1: '#E8792D', c2: '#A6192E', imgLocal: 'img/equipos/mas/mas-galatasaray.jpg' },
+      { id: 'mas-olympiacos', nombre: 'Olympiacos', c1: '#D2001C', c2: '#FFFFFF', imgLocal: 'img/equipos/mas/olympiacos.jpg' },
+      { id: 'mas-fenerbahce', nombre: 'Fenerbahçe', c1: '#FFE100', c2: '#0A2240', imgLocal: 'img/equipos/mas/fenerbahce.jpg' },
+      { id: 'mas-besiktas', nombre: 'Beşiktaş', c1: '#1A1A1A', c2: '#FFFFFF', imgLocal: 'img/equipos/mas/besiktas.jpg' },
+      { id: 'mas-galatasaray', nombre: 'Galatasaray', c1: '#E8792D', c2: '#A6192E', imgLocal: 'img/equipos/mas/galatasaray.jpg' },
     ],
   },
 ];
