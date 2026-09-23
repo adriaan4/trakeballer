@@ -281,7 +281,7 @@ const LIGAS = [
     nombre: 'Más',
     equipos: [
       { id: 'mas-olympiacos', nombre: 'Olympiacos', c1: '#D2001C', c2: '#FFFFFF', imgLocal: 'img/equipos/mas/olympiacos.jpg' },
-      { id: 'mas-fenerbahce', nombre: 'Fenerbahçe', c1: '#FFE100', c2: '#0A2240', imgLocal: 'img/equipos/mas/fenerbahce.jpg'},
+      { id: 'mas-fenerbahce', nombre: 'Fenerbahçe', c1: '#FFE100', c2: '#0A2240', imgLocal: 'img/equipos/mas/mas-fenerbahce.jpg'},
       { id: 'mas-besiktas', nombre: 'Beşiktaş', c1: '#1A1A1A', c2: '#FFFFFF', imgLocal: 'img/equipos/mas/besiktas.jpeg'},
       { id: 'mas-galatasaray', nombre: 'Galatasaray', c1: '#E8792D', c2: '#A6192E', imgLocal: 'img/equipos/mas/mas-galatasaray.jpg' },
     ],
