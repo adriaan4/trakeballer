@@ -455,25 +455,25 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
 </section>
 
 <section class="seccion" id="selecciones">
-  <img src="img/jugadores/haaland.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--izq">
-  <img src="img/jugadores/pedri.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--der">
   <div class="seccion__head">
-    <h2>🌍 Mundial 2026</h2>
-    <p>Escudos de las selecciones que tenemos disponibles. Dentro de cada equipo encontrarás sus camisetas local, visitante y retro cuando estén disponibles.</p>
+    <h2>Elige por dónde empezar</h2>
+    <p>Entra en Mundiales o en Ligas, elige un escudo y verás todas sus camisetas.</p>
   </div>
-  <div class="grid" id="gridSelecciones"></div>
+  <div class="hub">
+    <button type="button" class="hub__card" id="hubMundiales"><span class="hub__logos" id="hubLogosMundial"></span><strong>🌍 Mundiales</strong><small id="hubNumMundial"></small></button>
+    <button type="button" class="hub__card" id="hubLigas"><span class="hub__logos" id="hubLogosLigas"></span><strong>🏆 Ligas</strong><small id="hubNumLigas"></small></button>
+  </div>
+  <span id="equipos"></span>
 </section>
 
-<section class="seccion seccion--alt" id="equipos">
-  <img src="img/jugadores/oblak.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--izq">
-  <img src="img/jugadores/aubameyang.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--der">
-  <div class="seccion__head">
-    <h2>🏆 Ligas</h2>
-    <p>Elige una liga por su logo para ver todos los equipos disponibles y sus camisetas.</p>
+<div class="vista" id="vistaCat" aria-modal="true" role="dialog">
+  <div class="vista__bar">
+    <button type="button" class="vista__btn" id="vistaVolver">← Volver</button>
+    <h2 id="vistaTitulo"></h2>
+    <button type="button" class="vista__btn" id="vistaCerrar" aria-label="Cerrar">✕</button>
   </div>
-  <div class="ligas-tabs" id="ligasTabs"></div>
-  <div class="grid" id="gridEquipos"></div>
-</section>
+  <div class="vista__body" id="vistaBody"></div>
+</div>
 
 <section class="seccion" id="ofertas">
   <img src="img/jugadores/pedri.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--izq seccion__crack--baja">
@@ -940,12 +940,8 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
         var equipo = liga.equipos.find(function (e) { return e.id === equipoId; });
         if (!equipo) return;
 
-        ligaActiva = liga.id;
-        renderLigasTabs();
-        renderEquiposGrid();
-
         cerrarMenu();
-        abrirModalProducto(equipo, liga.nombre);
+        abrirCamisetasEquipo(equipo, liga.nombre);
       });
     });
   })();

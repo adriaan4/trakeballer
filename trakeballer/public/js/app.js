@@ -283,6 +283,7 @@ const LIGAS = [
       { id: 'mas-olympiacos', nombre: 'Olympiacos', c1: '#D2001C', c2: '#FFFFFF', imgLocal: 'img/equipos/mas/mas-olympiacos.jpg' },
       { id: 'mas-fenerbahce', nombre: 'Fenerbahçe', c1: '#FFE100', c2: '#0A2240', imgLocal: 'img/equipos/mas/mas-fenerbahce.jpg' },
       { id: 'mas-besiktas', nombre: 'Beşiktaş', c1: '#1A1A1A', c2: '#FFFFFF', imgLocal: 'img/equipos/mas/mas-besiktas.jpg' },
+      { id: 'mas-alahly', nombre: 'Al Ahly', c1: '#D2001C', c2: '#FFFFFF' },
       { id: 'mas-galatasaray', nombre: 'Galatasaray', c1: '#E8792D', c2: '#A6192E', imgLocal: 'img/equipos/mas/mas-galatasaray.jpg' },
     ],
   },
@@ -1152,39 +1153,140 @@ function renderGrid(lista, contenedorId, categoria) {
 /* =========================================================
    MUNDIAL · ESCUDOS + CAMISETAS
 ========================================================= */
-const seleccionesConEscudo = SELECCIONES.filter(p => escudoSrc(p));
-renderTeamCards(seleccionesConEscudo, 'gridSelecciones', 'Selección', true);
-
 /* =========================================================
-   LIGAS · LOGO DE LIGA + EQUIPOS
+   NAVEGACIÓN: Inicio → Mundiales / Ligas → Escudos → Camisetas
+   Mundiales: escudos de selecciones → todas sus camisetas.
+   Ligas: logos de liga → escudos de sus equipos → todas sus camisetas.
 ========================================================= */
-function renderLigasTabs() {
-  const cont = document.getElementById('ligasTabs');
-  cont.innerHTML = LIGAS.map(l => `
-    <button type="button" class="liga-card ${l.id === ligaActiva ? 'activo' : ''}" data-id="${l.id}">
-      <img src="img/escudos/ligas-${l.id}.svg" alt="Logo de ${l.nombre}" loading="lazy">
-      <span>${l.nombre}</span>
-      <small>${l.equipos.length} equipos en catálogo</small>
-    </button>
-  `).join('');
+const R = 'img/escudos/rest/';
+Object.assign(ESCUDOS, {
+  'sco-aberdeen': R+'aberdeen.png', 'nl-ajax': R+'ajax.png', 'l2-albacete': R+'albacete.png',
+  'mas-alahly': R+'al_ahly.png', 'sau-alshabab': R+'al_shabab.webp', 'mx-america': R+'america.png',
+  'sco-celtic': R+'celtic.png', 'sb-cremonese': R+'cremonese.png', 'nl-feyenoord': R+'feyenoord.png',
+  'b2-dusseldorf': R+'dusseldorf.png', 'sco-hearts': R+'heart_of_midlothian.png', 'b2-hertha': R+'hertha.png',
+  'py-olimpia': R+'olimpia.png', 'sb-palermo': R+'palermo.png', 'uy-penarol': R+'penarol.png',
+  'ch-portsmouth': R+'portsmouth.png', 'nl-psv': R+'psv.png', 'sco-rangers': R+'rangers.png',
+  'sb-sampdoria': R+'sampdoria.png', 'pe-sportingcristal': R+'sportingcristal.png',
+  'b2-stpauli': R+'stpauli.png', 'mx-tijuana': R+'tijuana.png'
+});
+const LOGOS_LIGA = {
+  'bundesliga': 'alemania', 'argentina-lpf': 'argentina', 'brasileirao': 'brasil', 'scottish-premiership': 'escocia',
+  'laliga': 'espana', 'ligue-1': 'francia', 'premier-league': 'inglaterra', 'serie-a': 'italia',
+  'mas': 'mas_equipos', 'liga-mx': 'mexico', 'eredivisie': 'paisesbajos', 'liga-portugal': 'portugal'
+};
+function logoLiga(l) {
+  return LOGOS_LIGA[l.id] ? `img/escudos/ligas/${LOGOS_LIGA[l.id]}.png` : `img/escudos/ligas-${l.id}.svg`;
+}
+// Retro suelto que estaba en la carpeta pero no en el catálogo
+(RETRO_PRODUCTOS['nl-psv'] = RETRO_PRODUCTOS['nl-psv'] || []);
+if (!RETRO_PRODUCTOS['nl-psv'].some(r => r.img.includes('psv-eindhoven-retro-home'))) {
+  RETRO_PRODUCTOS['nl-psv'].push({ nombre: 'PSV Eindhoven retro local', img: 'img/retro/nl-psv/psv-eindhoven-retro-home-jersey-s-xxl.jpg' });
+}
+// Se mantienen por compatibilidad con el buscador (ya no hay pestañas de liga)
+function renderLigasTabs() {}
+function renderEquiposGrid() {}
 
-  cont.querySelectorAll('.liga-card').forEach(btn => {
-    btn.addEventListener('click', () => {
-      ligaActiva = btn.dataset.id;
-      renderLigasTabs();
-      renderEquiposGrid();
-      document.getElementById('gridEquipos').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+const vista = document.getElementById('vistaCat');
+const pilaVistas = [];
+
+function pintarVista() {
+  const v = pilaVistas[pilaVistas.length - 1];
+  document.getElementById('vistaTitulo').textContent = v.titulo;
+  document.getElementById('vistaVolver').style.visibility = pilaVistas.length > 1 ? 'visible' : 'hidden';
+  const body = document.getElementById('vistaBody');
+  v.render(body);
+  body.scrollTop = 0;
+}
+function abrirVista(titulo, render) {
+  pilaVistas.push({ titulo, render });
+  pintarVista();
+  vista.classList.add('abierto');
+  document.body.style.overflow = 'hidden';
+}
+function cerrarVista() {
+  pilaVistas.length = 0;
+  vista.classList.remove('abierto');
+  document.body.style.overflow = '';
+}
+function volverVista() {
+  pilaVistas.pop();
+  if (pilaVistas.length) pintarVista(); else cerrarVista();
+}
+document.getElementById('vistaVolver').addEventListener('click', volverVista);
+document.getElementById('vistaCerrar').addEventListener('click', cerrarVista);
+
+// Todas las camisetas de un equipo: local, visitante y todas las retro.
+function camisetasDe(t) {
+  const lista = [];
+  if (t.imgLocal) lista.push({ nombre: t.nombre + ' · Local', img: t.imgLocal, retro: false });
+  if (t.imgVisitante) lista.push({ nombre: t.nombre + ' · Visitante', img: t.imgVisitante, retro: false });
+  (RETRO_PRODUCTOS[t.id] || []).forEach(r => lista.push({
+    nombre: r.nombre.charAt(0).toUpperCase() + r.nombre.slice(1), img: r.img, retro: true
+  }));
+  return lista;
+}
+
+function itemEscudo(img, nombre, sub, alt) {
+  return `<button type="button" class="escudo-item"><span class="escudo-item__img">${img}</span><strong>${nombre}</strong><small>${sub}</small></button>`;
+}
+
+function gridEscudos(body, equipos, categoria) {
+  body.innerHTML = '<div class="vista__grid">' + equipos.map(t => {
+    const s = escudoSrc(t), f = t.imgLocal || t.imgVisitante, n = camisetasDe(t).length;
+    const img = s ? `<img src="${s}" alt="Escudo de ${t.nombre}" loading="lazy">`
+      : (f ? `<img class="es-camiseta" src="${f}" alt="${t.nombre}" loading="lazy">` : svgCamiseta(t.c1 || '#1f5c3a', t.c2 || '#fff', 'mini-camiseta'));
+    return itemEscudo(img, t.nombre, n ? `${n} camiseta${n > 1 ? 's' : ''}` : 'Próximamente');
+  }).join('') + '</div>';
+  body.querySelectorAll('.escudo-item').forEach((b, i) => b.addEventListener('click', () => abrirCamisetasEquipo(equipos[i], categoria)));
+}
+
+function abrirCamisetasEquipo(t, categoria) {
+  abrirVista(t.nombre, body => {
+    const lista = camisetasDe(t);
+    if (!lista.length) { body.innerHTML = '<p class="catalogo-vacio">Las camisetas de este equipo llegarán pronto.</p>'; return; }
+    body.innerHTML = '<div class="vista__grid vista__grid--camis">' + lista.map(c => `
+      <button type="button" class="camiseta-item">
+        <span class="camiseta-item__img"><img src="${c.img}" alt="${c.nombre}" loading="lazy"></span>
+        <strong>${c.nombre}</strong><small>${c.retro ? PRECIO_RETRO : PRECIO_ACTUAL} €</small>
+      </button>`).join('') + '</div>';
+    body.querySelectorAll('.camiseta-item').forEach((b, i) => b.addEventListener('click', () => comprarCamiseta(t, categoria, lista[i], i)));
   });
 }
 
-function renderEquiposGrid() {
-  const liga = LIGAS.find(l => l.id === ligaActiva);
-  renderTeamCards(liga.equipos, 'gridEquipos', liga.nombre, false);
+// Abre la ficha de compra de UNA camiseta concreta, sin selector Actual/Retro:
+// el tipo (y el precio) lo marca la propia camiseta elegida.
+function comprarCamiseta(t, categoria, c, i) {
+  abrirModalProducto({ id: t.id + '__' + i, nombre: c.nombre, c1: t.c1 || '#1f5c3a', c2: t.c2 || '#ffffff', imgLocal: c.img, imgVisitante: null }, categoria);
+  tipoActivo = c.retro ? 'retro' : 'actual';
+  document.querySelectorAll('#prodTipo button').forEach(b => b.classList.toggle('activo', b.dataset.tipo === tipoActivo));
+  document.getElementById('prodTipo').parentElement.style.display = 'none';
+  actualizarPrecioModal();
 }
 
-renderLigasTabs();
-renderEquiposGrid();
+function abrirMundiales() {
+  abrirVista('🌍 Mundiales', body => gridEscudos(body, SELECCIONES, 'Selección'));
+}
+function abrirLigas() {
+  abrirVista('🏆 Ligas', body => {
+    body.innerHTML = '<div class="vista__grid">' + LIGAS.map(l =>
+      itemEscudo(`<img src="${logoLiga(l)}" alt="Logo de ${l.nombre}" loading="lazy">`, l.nombre, `${l.equipos.length} equipos`)
+    ).join('') + '</div>';
+    body.querySelectorAll('.escudo-item').forEach((b, i) => b.addEventListener('click', () => {
+      const liga = LIGAS[i];
+      abrirVista(liga.nombre, cuerpo => gridEscudos(cuerpo, liga.equipos, liga.nombre));
+    }));
+  });
+}
+
+document.getElementById('hubMundiales').addEventListener('click', abrirMundiales);
+document.getElementById('hubLigas').addEventListener('click', abrirLigas);
+document.getElementById('hubNumMundial').textContent = SELECCIONES.length + ' selecciones';
+document.getElementById('hubNumLigas').textContent = LIGAS.length + ' ligas · ' + LIGAS.reduce((n, l) => n + l.equipos.length, 0) + ' equipos';
+document.getElementById('hubLogosMundial').innerHTML = ['espana', 'argentina', 'francia', 'brasil'].map(n => `<img src="img/escudos/mundial/${n}.jpg" alt="">`).join('');
+document.getElementById('hubLogosLigas').innerHTML = ['inglaterra', 'espana', 'italia', 'alemania'].map(n => `<img src="img/escudos/ligas/${n}.png" alt="">`).join('');
+// Los enlaces antiguos "Ver selecciones" / "Ver equipos" abren directamente estas pantallas
+document.querySelectorAll('a[href="#selecciones"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); abrirMundiales(); }));
+document.querySelectorAll('a[href="#equipos"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); abrirLigas(); }));
 
 // Selector de prefijo + restricción numérica en el teléfono del checkout
 poblarSelectorPrefijos('clienteTelefonoPrefijo', '+34');
@@ -1306,6 +1408,7 @@ function actualizarSelectorRetro() {
 }
 
 function abrirModalProducto(producto, categoria) {
+  document.getElementById('prodTipo').parentElement.style.display = '';
   productoActivo = producto;
   tipoActivo = 'actual';
   retroIndiceActivo = 0;
