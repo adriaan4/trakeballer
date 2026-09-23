@@ -1159,6 +1159,7 @@ function renderGrid(lista, contenedorId, categoria) {
    Ligas: logos de liga → escudos de sus equipos → todas sus camisetas.
 ========================================================= */
 const R = 'img/escudos/rest/';
+const N = ''; // escudos nuevos: están en la raíz de /public (chile.png, botafogo.png...)
 Object.assign(ESCUDOS, {
   'sco-aberdeen': R+'aberdeen.png', 'nl-ajax': R+'ajax.png', 'l2-albacete': R+'albacete.png',
   'mas-alahly': R+'al_ahly.png', 'sau-alshabab': R+'al_shabab.webp', 'mx-america': R+'america.png',
@@ -1167,15 +1168,26 @@ Object.assign(ESCUDOS, {
   'py-olimpia': R+'olimpia.png', 'sb-palermo': R+'palermo.png', 'uy-penarol': R+'penarol.png',
   'ch-portsmouth': R+'portsmouth.png', 'nl-psv': R+'psv.png', 'sco-rangers': R+'rangers.png',
   'sb-sampdoria': R+'sampdoria.png', 'pe-sportingcristal': R+'sportingcristal.png',
-  'b2-stpauli': R+'stpauli.png', 'mx-tijuana': R+'tijuana.png'
+  'b2-stpauli': R+'stpauli.png', 'mx-tijuana': R+'tijuana.png',
+  'br-botafogo': N+'botafogo.png', 'br-corinthians': N+'corinthians.png', 'br-palmeiras': N+'palmeiras.png',
+  'br-gremio': N+'gremio.png', 'br-flamengo': N+'flamengo.png', 'br-internacional': N+'internacional.png',
+  'br-fluminense': N+'fluminense.png', 'br-santos': N+'santos.png', 'br-saopaulo': N+'saopaulo.png',
+  'b2-nuremberg': N+'nurnberg.png', 'sau-alittihad': N+'al_ittihad.jpg',
+  'mundial-islandia': N+'islandia.png', 'mundial-venezuela': N+'venezuela.png', 'mundial-ucrania': N+'ucrania.png',
+  'mundial-costa-rica': N+'costa_rica.png', 'mundial-gales': N+'gales.png', 'mundial-jamaica': N+'jamaica.svg',
+  'mundial-italia': N+'italia.png', 'mundial-peru': N+'peru.png', 'mundial-hungria': N+'hungria.png',
+  'mundial-chile': N+'chile.png', 'mundial-mali': N+'mali.png'
 });
+// Logos de liga: todos en la raíz de /public
 const LOGOS_LIGA = {
-  'bundesliga': 'alemania', 'argentina-lpf': 'argentina', 'brasileirao': 'brasil', 'scottish-premiership': 'escocia',
-  'laliga': 'espana', 'ligue-1': 'francia', 'premier-league': 'inglaterra', 'serie-a': 'italia',
-  'mas': 'mas_equipos', 'liga-mx': 'mexico', 'eredivisie': 'paisesbajos', 'liga-portugal': 'portugal'
+  'bundesliga': 'alemania.png', 'argentina-lpf': 'argentina.png', 'brasileirao': 'brasil.png', 'scottish-premiership': 'escocia.png',
+  'laliga': 'espana.png', 'ligue-1': 'francia.png', 'premier-league': 'inglaterra.png', 'serie-a': 'italia%20(1).png',
+  'mas': 'mas_equipos.png', 'liga-mx': 'mexico.png', 'eredivisie': 'paisesbajos.png', 'liga-portugal': 'portugal.png',
+  'otras-sudamerica': 'sudamerica.jpg', 'serie-b': 'serieb.png', 'efl-championship': 'efl.png', 'mls': 'mls.png',
+  'laliga2': 'liga2.png', '2-bundesliga': 'bundes2.png', 'saudi-league': 'arabia.png'
 };
 function logoLiga(l) {
-  return LOGOS_LIGA[l.id] ? `img/escudos/ligas/${LOGOS_LIGA[l.id]}.png` : `img/escudos/ligas-${l.id}.svg`;
+  return LOGOS_LIGA[l.id] || `img/escudos/ligas-${l.id}.svg`;
 }
 // Retro suelto que estaba en la carpeta pero no en el catálogo
 (RETRO_PRODUCTOS['nl-psv'] = RETRO_PRODUCTOS['nl-psv'] || []);
