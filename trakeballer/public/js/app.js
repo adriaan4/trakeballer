@@ -1741,6 +1741,7 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
   const observaciones = document.getElementById('amigoObservaciones').value.trim();
   const nombreComprador = document.getElementById('amigoCompradorNombre').value.trim();
   const contacto = document.getElementById('amigoCompradorContacto').value.trim();
+  const direccion = document.getElementById('amigoDireccion').value.trim();
 
   const precioUnidad = 25;
   const items = TALLAS_AMIGO
@@ -1770,6 +1771,11 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
     estado.textContent = 'Indica tu nombre y un teléfono o email de contacto.';
     return;
   }
+  if (!direccion) {
+    estado.className = 'form-envio__estado error';
+    estado.textContent = 'Indica la dirección de envío.';
+    return;
+  }
 
   const total = calcularSubtotalConOfertas(items);
   const esEmail = contacto.includes('@');
@@ -1781,7 +1787,7 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
     total,
     cliente: {
       nombre: nombreComprador,
-      direccion: 'Pedido de amigo invisible (sin envío individual, coordinar entrega en grupo)',
+      direccion,
       telefono: esEmail ? '' : contacto,
       email: esEmail ? contacto : ''
     }
@@ -1807,6 +1813,7 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
       document.getElementById('amigoObservaciones').value = '';
       document.getElementById('amigoCompradorNombre').value = '';
       document.getElementById('amigoCompradorContacto').value = '';
+      document.getElementById('amigoDireccion').value = '';
     } else {
       estado.className = 'form-envio__estado error';
       estado.textContent = data.error || 'No se pudo enviar el pedido.';
