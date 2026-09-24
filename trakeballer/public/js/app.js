@@ -1510,7 +1510,15 @@ function actualizarPrecioModal() {
   }
 }
 
+function limitarDorsal(e) {
+  // Solo dígitos, máximo 2 cifras (dorsal entre 0 y 99)
+  let v = e.target.value.replace(/\D/g, '').slice(0, 2);
+  if (v !== '' && parseInt(v, 10) > 99) v = '99';
+  e.target.value = v;
+}
+
 document.getElementById('prodNombreTexto').addEventListener('input', actualizarPrecioModal);
+document.getElementById('prodDorsal').addEventListener('input', limitarDorsal);
 document.getElementById('prodDorsal').addEventListener('input', actualizarPrecioModal);
 
 document.getElementById('btnAnadirCarrito').addEventListener('click', () => {
@@ -1541,7 +1549,7 @@ document.getElementById('btnAnadirCarrito').addEventListener('click', () => {
     imgSrc,
     tipo: tipoActivo,
     nombreCamiseta: document.getElementById('prodNombreTexto').value.trim().toUpperCase(),
-    dorsal: document.getElementById('prodDorsal').value,
+    dorsal: document.getElementById('prodDorsal').value.replace(/\D/g, '').slice(0, 2),
     talla: document.getElementById('prodTalla').value,
     parches: obtenerParchesSeleccionados(),
     cantidad,
