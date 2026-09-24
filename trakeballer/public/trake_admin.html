@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pedidos - Trakeballer</title>
+<style>
+  body { font-family: system-ui, sans-serif; background:#111; color:#eee; margin:0; padding:20px; }
+  h1 { font-size:1.4rem; margin-bottom:16px; }
+  .pedido { background:#1c1c1c; border:1px solid #333; border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .pedido.listo { opacity:0.5; border-color:#2d5c3f; }
+  .cabecera { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .pedido h2 { margin:0 0 6px; font-size:1.05rem; color:#4ade80; }
+  .pedido.listo h2 { color:#8ab89a; text-decoration:line-through; }
+  .pedido p { margin:2px 0; font-size:0.92rem; color:#ccc; }
+  .pedido ul { margin:8px 0 0; padding-left:18px; font-size:0.9rem; }
+  .total { font-weight:bold; color:#fff; margin-top:8px; }
+  #login { max-width:320px; margin:60px auto; text-align:center; }
+  input { padding:8px; width:100%; box-sizing:border-box; border-radius:6px; border:1px solid #444; background:#222; color:#eee; margin-bottom:10px; }
+  button { padding:8px 14px; border-radius:6px; border:none; font-weight:bold; cursor:pointer; }
+  #estado { font-size:0.85rem; color:#f87171; margin-top:8px; }
+  #vacio { color:#888; }
+  .btn-login { background:#4ade80; color:#111; width:100%; }
+  .btn-listo { background:#4ade80; color:#111; white-space:nowrap; }
+  .btn-pendiente { background:#333; color:#eee; border:1px solid #555; white-space:nowrap; }
+  .filtros { margin-bottom:16px; }
+  .filtros button { background:#222; color:#ccc; border:1px solid #444; margin-right:8px; padding:6px 12px; }
+  .filtros button.activo { background:#4ade80; color:#111; border-color:#4ade80; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <h1>Acceso pedidos</h1>
+  <input id="clave" type="password" placeholder="Contraseña de administrador">
+  <button class="btn-login" onclick="entrar()">Entrar</button>
+  <div id="estado"></div>
+</div>
+
+<div id="panel" style="display:none;">
+  <h1>Pedidos recibidos</h1>
+  <div class="filtros">
+    <button id="fPendientes" class="activo" onclick="setFiltro('pendientes')">Pendientes</button>
+    <button id="fTodos" onclick="setFiltro('todos')">Todos</button>
+  </div>
+  <div id="lista"></div>
+</div>
+
+<script>
+let CLAVE = '';
+let PEDIDOS = [];
+let FILTRO = 'pendientes';
+
+async function entrar() {
+  const clave = document.getElementById('clave').value.trim();
+  if (!clave) return;
+  const estado = document.getElementById('estado');
+  estado.textContent = 'Cargando...';
+  try {
+    const resp = await fetch('/api/pedidos?clave=' + encodeURIComponent(clave));
+    const data = await resp.json();
+    if (!data.ok) {
+      estado.textContent = 'Contraseña incorrecta.';
+      return;
+    }
+    CLAVE = clave;
+    sessionStorage.setItem('adminClave', clave);
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('panel').style.display = 'block';
+    PEDIDOS = data.pedidos;
+    pintarPedidos();
+  } catch (e) {
+    estado.textContent = 'Error de conexión.';
+  }
+}
+
+function setFiltro(f) {
+  FILTRO = f;
+  document.getElementById('fPendientes').classList.toggle('activo', f === 'pendientes');
+  document.getElementById('fTodos').classList.toggle('activo', f === 'todos');
+  pintarPedidos();
+}
+
+async function marcarListo(id, listo) {
+  await fetch(`/api/pedidos/${id}/listo?clave=${encodeURIComponent(CLAVE)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ listo })
+  });
+  const p = PEDIDOS.find(p => p.id === id);
+  if (p) p.listo = listo;
+  pintarPedidos();
+}
+
+function pintarPedidos() {
+  const lista = document.getElementById('lista');
+  const pedidos = FILTRO === 'pendientes' ? PEDIDOS.filter(p => !p.listo) : PEDIDOS;
+
+  if (!pedidos.length) {
+    lista.innerHTML = '<p id="vacio">' + (FILTRO === 'pendientes' ? 'No hay pedidos pendientes. ¡Todo al día!' : 'Todavía no hay pedidos.') + '</p>';
+    return;
+  }
+
+  lista.innerHTML = pedidos.map(p => `
+    <div class="pedido ${p.listo ? 'listo' : ''}">
+      <div class="cabecera">
+        <h2>Pedido #${p.id}${p.tipo === 'amigo-invisible' ? ' (Amigo invisible)' : ''}</h2>
+        ${p.listo
+          ? `<button class="btn-pendiente" onclick="marcarListo(${p.id}, false)">Volver a pendiente</button>`
+          : `<button class="btn-listo" onclick="marcarListo(${p.id}, true)">✔ Marcar como listo</button>`
+        }
+      </div>
+      <p>${p.fecha}</p>
+      <p><strong>${p.cliente.nombre}</strong>${p.cliente.telefono ? ' · ' + p.cliente.telefono : ''}${p.cliente.email ? ' · ' + p.cliente.email : ''}</p>
+      ${p.cliente.direccion ? `<p>${p.cliente.direccion}</p>` : ''}
+      <ul>
+        ${p.items.map(it => `<li>${it.equipo} (${it.tipo === 'retro' ? 'Retro' : 'Actual'}) - Talla ${it.talla} - Cant: ${it.cantidad} - ${it.precioUnidad}€/u</li>`).join('')}
+      </ul>
+      <p class="total">TOTAL: ${p.total.toFixed(2)}€</p>
+    </div>
+  `).join('');
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const guardada = sessionStorage.getItem('adminClave');
+  if (guardada) {
+    document.getElementById('clave').value = guardada;
+    entrar();
+  }
+});
+</script>
+
+</body>
+</html>
