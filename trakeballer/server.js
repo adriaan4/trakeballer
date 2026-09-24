@@ -846,6 +846,41 @@ app.get('/api/salud', (req, res) => {
 });
 
 // ============================================================
+// SEO: ROBOTS.TXT Y SITEMAP.XML (para Google)
+// ============================================================
+
+function urlBase(req) {
+  if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, '');
+  const host = req.get('host');
+  const proto = /^localhost|^127\./.test(host)
+    ? 'http'
+    : (req.get('x-forwarded-proto') || 'https').split(',')[0];
+  return `${proto}://${host}`;
+}
+
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(
+`User-agent: *
+Allow: /
+
+Sitemap: ${urlBase(req)}/sitemap.xml
+`);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml').send(
+`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${urlBase(req)}/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
+`);
+});
+
+// ============================================================
 // RUTA PRINCIPAL
 // ============================================================
 
@@ -869,7 +904,7 @@ app.listen(PORT, () => {
 
   // ----------------------------------------------------------
   // MANTENER DESPIERTA LA WEB EN RENDER
-  // Render pone RENDER_EXTERNAL_URL solo. Cada 10 minutos la web
+  // Render pone RENDER_EXTERNAL_URL solo. Cada minuto la web
   // se llama a sí misma para que no se duerma por inactividad.
   // ----------------------------------------------------------
   const URL_PUBLICA = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL;
