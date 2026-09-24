@@ -838,6 +838,69 @@ ${resena.mensaje}`;
 });
 
 // ============================================================
+// ADMIN: VER Y GESTIONAR PEDIDOS
+// ============================================================
+
+function comprobarAdmin(req, res) {
+  const clave = req.query.clave || req.headers['x-admin-key'];
+
+  if (!process.env.ADMIN_PASSWORD || clave !== process.env.ADMIN_PASSWORD) {
+    res.status(401).json({ ok: false, error: 'No autorizado.' });
+    return false;
+  }
+
+  return true;
+}
+
+app.get('/api/pedidos', (req, res) => {
+  try {
+    if (!comprobarAdmin(req, res)) return;
+
+    const pedidos = leerJSON(ORDERS_FILE).sort((a, b) => b.id - a.id);
+
+    res.json({ ok: true, pedidos });
+
+  } catch (error) {
+    console.error('[pedidos] Error:', error);
+
+    res.status(500).json({
+      ok: false,
+      error: 'Error interno al leer los pedidos.'
+    });
+  }
+});
+
+app.post('/api/pedidos/:id/listo', (req, res) => {
+  try {
+    if (!comprobarAdmin(req, res)) return;
+
+    const id = Number(req.params.id);
+    const listo = !!(req.body && req.body.listo);
+
+    const pedidos = leerJSON(ORDERS_FILE);
+    const pedido = pedidos.find(p => p.id === id);
+
+    if (!pedido) {
+      return res.status(404).json({ ok: false, error: 'Pedido no encontrado.' });
+    }
+
+    pedido.listo = listo;
+
+    fs.writeFileSync(ORDERS_FILE, JSON.stringify(pedidos, null, 2), 'utf8');
+
+    res.json({ ok: true, pedido });
+
+  } catch (error) {
+    console.error('[pedidos/listo] Error:', error);
+
+    res.status(500).json({
+      ok: false,
+      error: 'Error interno al actualizar el pedido.'
+    });
+  }
+});
+
+// ============================================================
 // SALUD
 // ============================================================
 
