@@ -944,6 +944,35 @@ app.get('/sitemap.xml', (req, res) => {
 });
 
 // ============================================================
+// CATÁLOGO PARA LA IA
+// ============================================================
+
+const CATALOGO_IA_FILE = path.join(__dirname, 'catalogo_trakeballers_ia.json');
+
+let CATALOGO_IA_TEXTO = '';
+try {
+  const catalogoIA = JSON.parse(fs.readFileSync(CATALOGO_IA_FILE, 'utf8'));
+
+  CATALOGO_IA_TEXTO = `
+CATÁLOGO OFICIAL DE TRAKEBALLER:
+${JSON.stringify(catalogoIA, null, 2)}
+
+IMPORTANTE:
+- Usa este catálogo como fuente para comprobar si existe un club, selección o camiseta.
+- Respeta las instrucciones incluidas en "instrucciones_ia".
+- Ignora mayúsculas, minúsculas y acentos al buscar coincidencias.
+- No inventes camisetas, temporadas, tallas ni stock.
+- Si "tallas_disponibles" está vacío, no confirmes ninguna talla concreta.
+`;
+} catch (error) {
+  console.error('[chat] No se pudo cargar catalogo_trakeballers_ia.json:', error.message);
+  CATALOGO_IA_TEXTO = `
+CATÁLOGO OFICIAL DE TRAKEBALLER:
+No se pudo cargar el archivo de catálogo. No inventes información del catálogo.
+`;
+}
+
+// ============================================================
 // CHAT CON IA (widget de la web)
 // ============================================================
 
