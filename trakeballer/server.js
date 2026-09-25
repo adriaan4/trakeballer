@@ -948,7 +948,7 @@ app.get('/sitemap.xml', (req, res) => {
 // ============================================================
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const CHAT_MODEL = 'llama-3.3-70b-versatile';
+const CHAT_MODEL = 'openai/gpt-oss-120b';
 
 // Edita este texto cuando cambien precios, plazos o condiciones.
 // El bot responde SOLO con esta información + sentido común.
