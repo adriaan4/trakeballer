@@ -1057,41 +1057,108 @@ app.post('/api/chat', async (req, res) => {
     const { messages } = req.body || {};
 
     if (!GROQ_API_KEY) {
-      return res.status(500).json({ error: 'Falta configurar GROQ_API_KEY en Render.' });
+      console.error('[chat] ERROR: GROQ_API_KEY no está configurada en Render.');
+
+      return res.status(500).json({
+        error: 'Falta configurar GROQ_API_KEY en Render.'
+      });
     }
+
     if (!Array.isArray(messages)) {
-      return res.status(400).json({ error: "Formato inválido: se esperaba 'messages'." });
+      return res.status(400).json({
+        error: "Formato inválido: se esperaba 'messages'."
+      });
     }
 
-    const respuesta = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: CHAT_MODEL,
-        messages: [
-          { role: 'system', content: KNOWLEDGE_BASE + CATALOGO_IA_TEXTO },
-          ...messages,
-        ],
-        max_tokens: 500,
-      }),
-    });
+    console.log('[chat] Enviando petición a Groq...');
+    console.log('[chat] Modelo:', CHAT_MODEL);
+    console.log('[chat] Catálogo encontrado:', fs.existsSync(CATALOGO_IA_FILE));
 
+    const respuesta = await fetch(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        method: 'POST',
+
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${GROQ_API_KEY}`
+        },
+
+        body: JSON.stringify({
+          model: CHAT_MODEL,
+
+          messages: [
+            {
+              role: 'system',
+              content: KNOWLEDGE_BASE + CATALOGO_IA_TEXTO
+            },
+            ...messages
+          ],
+
+          max_tokens: 500
+        })
+      }
+    );
+
+    // Si Groq devuelve un error
     if (!respuesta.ok) {
       const errText = await respuesta.text();
-      console.error('[chat] Error de Groq:', errText);
-      return res.status(502).json({ error: 'Error al contactar con la IA.' });
+
+      console.error('[chat] ERROR DE GROQ');
+      console.error('[chat] Status:', respuesta.status);
+      console.error('[chat] Respuesta:', errText);
+
+      let detalle = 'Error desconocido de Groq.';
+
+      try {
+        const errorGroq = JSON.parse(errText);
+
+        detalle =
+          errorGroq?.error?.message ||
+          errorGroq?.message ||
+          detalle;
+
+      } catch (e) {
+        if (errText) {
+          detalle = errText.substring(0, 500);
+        }
+      }
+
+      return res.status(502).json({
+        error: 'Error al contactar con la IA.',
+        detalle: detalle
+      });
     }
 
     const data = await respuesta.json();
-    const reply = data.choices?.[0]?.message?.content ?? 'Lo siento, no pude generar una respuesta.';
-    res.json({ reply });
+
+    console.log('[chat] Respuesta recibida correctamente de Groq.');
+
+    if (!data?.choices?.[0]?.message?.content) {
+      console.error(
+        '[chat] Respuesta inesperada de Groq:',
+        JSON.stringify(data)
+      );
+
+      return res.status(502).json({
+        error: 'La IA devolvió una respuesta inesperada.'
+      });
+    }
+
+    const reply = data.choices[0].message.content;
+
+    return res.json({
+      reply: reply
+    });
 
   } catch (error) {
-    console.error('[chat] Error:', error);
-    res.status(500).json({ error: 'Error interno del servidor.' });
+
+    console.error('[chat] ERROR INTERNO:', error);
+
+    return res.status(500).json({
+      error: 'Error interno del servidor.',
+      detalle: error.message
+    });
   }
 });
 
