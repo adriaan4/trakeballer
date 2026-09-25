@@ -1000,5 +1000,175 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
     });
   })();
 </script>
+
+<!-- ============================================================
+     CHAT CON IA (asistente virtual de Trakeballer)
+     ============================================================ -->
+<style>
+  #tk-chat-bubble {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: #0d2618;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+    z-index: 99999;
+  }
+  #tk-chat-window {
+    position: fixed;
+    bottom: 88px;
+    right: 20px;
+    width: 340px;
+    max-width: 92vw;
+    height: 460px;
+    max-height: 75vh;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 99999;
+    font-family: system-ui, sans-serif;
+  }
+  #tk-chat-header {
+    background: #0d2618;
+    color: #fff;
+    padding: 12px 16px;
+    font-weight: 600;
+  }
+  #tk-chat-messages {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #f7f7f7;
+  }
+  .tk-chat-msg {
+    padding: 8px 12px;
+    border-radius: 12px;
+    max-width: 82%;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+  }
+  .tk-chat-msg.user {
+    align-self: flex-end;
+    background: #0d2618;
+    color: #fff;
+  }
+  .tk-chat-msg.bot {
+    align-self: flex-start;
+    background: #e9e9e9;
+    color: #222;
+  }
+  #tk-chat-input-area {
+    display: flex;
+    border-top: 1px solid #eee;
+    background: #fff;
+  }
+  #tk-chat-input {
+    flex: 1;
+    border: none;
+    padding: 12px;
+    font-size: 14px;
+    outline: none;
+  }
+  #tk-chat-send {
+    background: #0d2618;
+    color: #fff;
+    border: none;
+    padding: 0 16px;
+    cursor: pointer;
+  }
+</style>
+
+<div id="tk-chat-bubble">💬</div>
+
+<div id="tk-chat-window">
+  <div id="tk-chat-header">Asistente Trakeballer</div>
+  <div id="tk-chat-messages"></div>
+  <div id="tk-chat-input-area">
+    <input id="tk-chat-input" type="text" placeholder="Escribe tu pregunta..." />
+    <button id="tk-chat-send">Enviar</button>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var bubble = document.getElementById('tk-chat-bubble');
+    var win = document.getElementById('tk-chat-window');
+    var messagesEl = document.getElementById('tk-chat-messages');
+    var input = document.getElementById('tk-chat-input');
+    var sendBtn = document.getElementById('tk-chat-send');
+    var history = [];
+
+    bubble.addEventListener('click', function () {
+      win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
+      if (messagesEl.children.length === 0) {
+        addMessage('bot', '¡Hola! ⚽ Soy el asistente de Trakeballer. Pregúntame sobre equipos, tallas, precios, envíos o cómo hacer tu pedido.');
+      }
+    });
+
+    function addMessage(role, text) {
+      var div = document.createElement('div');
+      div.className = 'tk-chat-msg ' + (role === 'user' ? 'user' : 'bot');
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function sendMessage() {
+      var text = input.value.trim();
+      if (!text) return;
+      addMessage('user', text);
+      history.push({ role: 'user', content: text });
+      input.value = '';
+      sendBtn.disabled = true;
+
+      var thinkingDiv = document.createElement('div');
+      thinkingDiv.className = 'tk-chat-msg bot';
+      thinkingDiv.textContent = 'Escribiendo...';
+      messagesEl.appendChild(thinkingDiv);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          thinkingDiv.remove();
+          var reply = data.reply || data.error || 'Ocurrió un error.';
+          addMessage('bot', reply);
+          history.push({ role: 'assistant', content: reply });
+        })
+        .catch(function () {
+          thinkingDiv.remove();
+          addMessage('bot', 'Error de conexión, inténtalo de nuevo.');
+        })
+        .finally(function () {
+          sendBtn.disabled = false;
+        });
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') sendMessage();
+    });
+  })();
+</script>
+
 </body>
 </html>
