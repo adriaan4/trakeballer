@@ -1043,7 +1043,7 @@ app.post('/api/chat', async (req, res) => {
       body: JSON.stringify({
         model: CHAT_MODEL,
         messages: [
-          { role: 'system', content: KNOWLEDGE_BASE },
+          { role: 'system', content: KNOWLEDGE_BASE + CATALOGO_IA_TEXTO },
           ...messages,
         ],
         max_tokens: 500,
