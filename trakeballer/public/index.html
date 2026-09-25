@@ -1008,7 +1008,7 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
   #tk-chat-bubble {
     position: fixed;
     bottom: 20px;
-    right: 20px;
+    left: 20px;
     width: 58px;
     height: 58px;
     border-radius: 50%;
@@ -1025,7 +1025,7 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
   #tk-chat-window {
     position: fixed;
     bottom: 88px;
-    right: 20px;
+    left: 20px;
     width: 340px;
     max-width: 92vw;
     height: 460px;
@@ -1038,6 +1038,10 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
     overflow: hidden;
     z-index: 99999;
     font-family: system-ui, sans-serif;
+  }
+  @media (max-width: 480px) {
+    #tk-chat-bubble { left: 14px; bottom: 14px; width: 48px; height: 48px; font-size: 22px; }
+    #tk-chat-window { left: 14px; bottom: 72px; }
   }
   #tk-chat-header {
     background: #0d2618;
