@@ -344,7 +344,7 @@ function crearHTMLPedido(pedido, esCliente = false) {
     esCliente
       ? `<p>Hemos recibido tu pedido <strong>#${pedido.id}</strong> en Trakeballer. Este es tu justificante.</p>
          <p style="color:#666;font-size:14px;">Fecha: ${escapeHTML(pedido.fecha || '')}</p>`
-      : `<p style="color:#666;font-size:14px;">Fecha: ${escapeHTML(pedido.fecha \vert{}\vert{} '')}</p>${bloqueCliente}`
+      : `<p style="color:#666;font-size:14px;">Fecha: ${escapeHTML(pedido.fecha || '')}</p>${bloqueCliente}`
   }
   <h3 style="margin-top:30px;">${esCliente ? 'TU PEDIDO' : 'PEDIDO'}</h3>
   ${productosHTML}
