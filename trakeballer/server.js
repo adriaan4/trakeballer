@@ -725,8 +725,65 @@ app.get('/sitemap.xml', (req, res) => {
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const CHAT_MODEL = 'openai/gpt-oss-120b';
 
-// Variable requerida para evitar ReferenceError
-const CATALOGO_IA_TEXTO = "";
+// ------------------------------------------------------------
+// Carga del catálogo real (catalogo_trakeballers_ia.json) y lo
+// convierte en texto para dárselo a la IA como contexto.
+// El archivo DEBE estar en la misma carpeta que este server.js
+// (si lo mueves a otra carpeta, cambia la ruta de abajo).
+// ------------------------------------------------------------
+
+function cargarCatalogoIA() {
+  try {
+    const ruta = path.join(__dirname, 'catalogo_trakeballers_ia.json');
+    const catalogo = JSON.parse(fs.readFileSync(ruta, 'utf8'));
+    const lineas = [];
+
+    lineas.push('');
+    lineas.push('CATÁLOGO REAL DE TRAKEBALLER');
+    lineas.push(
+      'Usa ÚNICAMENTE esta lista para saber qué equipos y camisetas hay disponibles. ' +
+      'Ignora mayúsculas/minúsculas y acentos al comparar. Si el cliente pregunta por un ' +
+      'equipo que SÍ aparece aquí, confírmalo y, si quieres, menciona algún modelo concreto ' +
+      '(actual y/o retro si tiene). Si el equipo NO aparece en esta lista, di claramente que ' +
+      'no está en el catálogo y ofrécele dejar una sugerencia en la web. No inventes equipos, ' +
+      'modelos, temporadas ni tallas que no estén aquí. Si preguntan por una talla concreta, ' +
+      'indica que el catálogo no especifica stock por talla, salvo que aquí se indique lo contrario.'
+    );
+    lineas.push('');
+
+    if (Array.isArray(catalogo.selecciones) && catalogo.selecciones.length) {
+      lineas.push('SELECCIONES NACIONALES:');
+      catalogo.selecciones.forEach(sel => {
+        lineas.push(`- ${sel.nombre}`);
+      });
+      lineas.push('');
+    }
+
+    if (Array.isArray(catalogo.clubes) && catalogo.clubes.length) {
+      lineas.push('CLUBES (versión actual):');
+      catalogo.clubes.forEach(club => {
+        lineas.push(`- ${club.nombre}${club.liga ? ` (${club.liga})` : ''}`);
+      });
+      lineas.push('');
+    }
+
+    if (Array.isArray(catalogo.retro) && catalogo.retro.length) {
+      lineas.push('CAMISETAS RETRO:');
+      catalogo.retro.forEach(r => {
+        lineas.push(`- ${r.nombre}${r.equipo ? ` — ${r.equipo}` : ''}`);
+      });
+    }
+
+    console.log(`[catalogo-ia] Catálogo cargado: ${catalogo.selecciones?.length || 0} selecciones, ${catalogo.clubes?.length || 0} clubes, ${catalogo.retro?.length || 0} retro.`);
+
+    return lineas.join('\n');
+  } catch (error) {
+    console.error('[catalogo-ia] No se pudo cargar catalogo_trakeballers_ia.json:', error.message);
+    return '';
+  }
+}
+
+const CATALOGO_IA_TEXTO = cargarCatalogoIA();
 
 const KNOWLEDGE_BASE = `
 Eres el asistente virtual de Trakeballer, una tienda online de camisetas de
@@ -789,11 +846,14 @@ PRIVACIDAD
 
 INSTRUCCIONES PARA TI (el asistente)
 - Responde siempre en español, de forma breve, cercana y clara.
-- Si te preguntan por un equipo o camiseta concreta que no aparece aquí,
-  dile al usuario que lo consulte en el catálogo de la web o que deje una
-  sugerencia, y ofrécete a ayudarle con cualquier otra duda (precio, tallas,
-  envío, personalización, pago...).
-- No inventes plazos, precios ni políticas que no estén en esta información.
+- Usa el CATÁLOGO REAL que se te proporciona a continuación para saber qué
+  equipos y camisetas existen realmente. No lo inventes.
+- Si te preguntan por un equipo o camiseta concreta que NO aparece en el
+  catálogo, dile al usuario que no está disponible ahora mismo, sugiérele
+  dejar una sugerencia en la web, y ofrécete a ayudarle con cualquier otra
+  duda (precio, tallas, envío, personalización, pago...).
+- No inventes plazos, precios, equipos ni políticas que no estén en esta
+  información.
 - Si preguntan algo que no tiene que ver con la tienda, responde con
   amabilidad y redirige la conversación hacia cómo puedes ayudarles con su
   pedido.
