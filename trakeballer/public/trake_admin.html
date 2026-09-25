@@ -14,6 +14,7 @@
   .pedido.listo h2 { color:#8ab89a; text-decoration:line-through; }
   .pedido p { margin:2px 0; font-size:0.92rem; color:#ccc; }
   .pedido ul { margin:8px 0 0; padding-left:18px; font-size:0.9rem; }
+  .pedido ul strong { color:#facc15; }
   .total { font-weight:bold; color:#fff; margin-top:8px; }
   #login { max-width:320px; margin:60px auto; text-align:center; }
   input { padding:8px; width:100%; box-sizing:border-box; border-radius:6px; border:1px solid #444; background:#222; color:#eee; margin-bottom:10px; }
@@ -29,6 +30,12 @@
 </style>
 </head>
 <body>
+
+<header style="display:flex;align-items:center;justify-content:center;gap:16px;padding:16px 0;">
+  <img src="/leon.png" alt="" style="height:56px;">
+  <img src="/logo.png" alt="Trakeballer" style="height:56px;">
+  <img src="/leon.png" alt="" style="height:56px;transform:scaleX(-1);">
+</header>
 
 <div id="login">
   <h1>Acceso pedidos</h1>
@@ -114,7 +121,14 @@ function pintarPedidos() {
       <p><strong>${p.cliente.nombre}</strong>${p.cliente.telefono ? ' · ' + p.cliente.telefono : ''}${p.cliente.email ? ' · ' + p.cliente.email : ''}</p>
       ${p.cliente.direccion ? `<p>${p.cliente.direccion}</p>` : ''}
       <ul>
-        ${p.items.map(it => `<li>${it.equipo} (${it.tipo === 'retro' ? 'Retro' : 'Actual'}) - Talla ${it.talla} - Cant: ${it.cantidad} - ${it.precioUnidad}€/u</li>`).join('')}
+        ${p.items.map(it => {
+          const dorsal = it.dorsal || it.numero || it.number || '';
+          const nombreCamiseta = it.nombreCamiseta || it.nombreJugador || it.nombrePersonalizado || it.nombre_personalizado || '';
+          let extra = '';
+          if (nombreCamiseta) extra += ` · Nombre: <strong>${nombreCamiseta}</strong>`;
+          if (dorsal) extra += ` · Dorsal: <strong>${dorsal}</strong>`;
+          return `<li>${it.equipo} (${it.tipo === 'retro' ? 'Retro' : 'Actual'}) - Talla ${it.talla} - Cant: ${it.cantidad} - ${it.precioUnidad}€/u${extra}</li>`;
+        }).join('')}
       </ul>
       <p class="total">TOTAL: ${p.total.toFixed(2)}€</p>
     </div>
