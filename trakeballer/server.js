@@ -1,28 +1,3 @@
-El código tiene **un error grave** que hará que la aplicación se caiga (lance un error `ReferenceError: CATALOGO_IA_TEXTO is not defined`) cuando alguien intente usar el chat con la IA.
-
-### ¿Por qué se produce el error?
-
-En la línea donde haces la llamada a la API de Groq en la ruta `/api/chat`:
-
-```javascript
-messages: [
-  { role: 'system', content: KNOWLEDGE_BASE + CATALOGO_IA_TEXTO },
-  ...messages,
-]
-
-```
-
-Estás intentando concatenar la variable `CATALOGO_IA_TEXTO`, pero **esta variable no está definida ni importada** en ningún punto de tu archivo.
-
----
-
-### Código corregido
-
-Para solucionarlo, se añade una variable `CATALOGO_IA_TEXTO` vacía (o con el texto que corresponda si la cargas desde un archivo JSON/texto) para evitar que falle.
-
-Aquí tienes el código completo corregido y listo para funcionar:
-
-```javascript
 require('dotenv').config();
 
 const express = require('express');
@@ -44,19 +19,22 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ============================================================
 
 const ORDERS_FILE = path.join(__dirname, 'orders.json');
-if (!fs.existsSync(ORDERS_FILE)) {
-  fs.writeFileSync(ORDERS_FILE, '[]');
-}
-
 const SUGERENCIAS_FILE = path.join(__dirname, 'sugerencias.json');
-if (!fs.existsSync(SUGERENCIAS_FILE)) {
-  fs.writeFileSync(SUGERENCIAS_FILE, '[]');
+const RESENAS_FILE = path.join(__dirname, 'resenas.json');
+
+function inicializarArchivo(ruta) {
+  try {
+    if (!fs.existsSync(ruta)) {
+      fs.writeFileSync(ruta, '[]', 'utf8');
+    }
+  } catch (err) {
+    console.error(`[FS] No se pudo inicializar ${ruta}:`, err.message);
+  }
 }
 
-const RESENAS_FILE = path.join(__dirname, 'resenas.json');
-if (!fs.existsSync(RESENAS_FILE)) {
-  fs.writeFileSync(RESENAS_FILE, '[]');
-}
+inicializarArchivo(ORDERS_FILE);
+inicializarArchivo(SUGERENCIAS_FILE);
+inicializarArchivo(RESENAS_FILE);
 
 // ============================================================
 // FUNCIONES ARCHIVOS
@@ -64,6 +42,7 @@ if (!fs.existsSync(RESENAS_FILE)) {
 
 function leerJSON(archivo) {
   try {
+    if (!fs.existsSync(archivo)) return [];
     return JSON.parse(fs.readFileSync(archivo, 'utf8'));
   } catch (error) {
     console.error(`Error leyendo ${archivo}:`, error);
@@ -71,22 +50,30 @@ function leerJSON(archivo) {
   }
 }
 
+function guardarJSON(archivo, datos) {
+  try {
+    fs.writeFileSync(archivo, JSON.stringify(datos, null, 2), 'utf8');
+  } catch (error) {
+    console.error(`Error escribiendo en ${archivo}:`, error);
+  }
+}
+
 function guardarPedido(pedido) {
   const pedidos = leerJSON(ORDERS_FILE);
   pedidos.push(pedido);
-  fs.writeFileSync(ORDERS_FILE, JSON.stringify(pedidos, null, 2), 'utf8');
+  guardarJSON(ORDERS_FILE, pedidos);
 }
 
 function guardarSugerencia(sugerencia) {
   const sugerencias = leerJSON(SUGERENCIAS_FILE);
   sugerencias.push(sugerencia);
-  fs.writeFileSync(SUGERENCIAS_FILE, JSON.stringify(sugerencias, null, 2), 'utf8');
+  guardarJSON(SUGERENCIAS_FILE, sugerencias);
 }
 
 function guardarResena(resena) {
   const resenas = leerJSON(RESENAS_FILE);
   resenas.push(resena);
-  fs.writeFileSync(RESENAS_FILE, JSON.stringify(resenas, null, 2), 'utf8');
+  guardarJSON(RESENAS_FILE, resenas);
 }
 
 // ============================================================
@@ -109,9 +96,7 @@ function normalizarProducto(item) {
     item.equipo || item.nombre || item.name || item.producto || item.titulo || 'Camiseta';
 
   const tipo = item.tipo || item.category || '';
-
   const talla = item.talla || item.size || '';
-
   const dorsal = item.dorsal || item.numero || item.number || '';
 
   const nombreCamiseta =
@@ -122,12 +107,10 @@ function normalizarProducto(item) {
     '';
 
   const cantidad = Number(item.cantidad ?? item.quantity ?? 1) || 1;
-
   const precioUnidad =
     Number(item.precioUnidad ?? item.precio ?? item.price ?? 0) || 0;
 
   let parches = [];
-
   if (Array.isArray(item.parches)) {
     parches = item.parches;
   } else if (item.parches) {
@@ -151,7 +134,6 @@ function formatearProductosTexto(pedido) {
   return items
     .map((item, index) => {
       const p = normalizarProducto(item);
-
       const tipoTexto = p.tipo.toLowerCase().includes('retro') ? 'Retro' : 'Actual';
 
       let linea = `${index + 1}. ${p.nombre} (${tipoTexto})`;
@@ -177,10 +159,8 @@ function formatearProductosTexto(pedido) {
 
 function lineasTotalesTexto(pedido) {
   const total = Number(pedido.total || 0).toFixed(2);
-
   const subtotal =
     typeof pedido.subtotal === 'number' ? pedido.subtotal.toFixed(2) : null;
-
   const envio = typeof pedido.envio === 'number' ? pedido.envio : null;
 
   return (
@@ -193,7 +173,7 @@ function lineasTotalesTexto(pedido) {
 }
 
 // ============================================================
-// CORREO PARA TRAKEBALLER (SOLO LO QUE HA PEDIDO EL CLIENTE)
+// CORREO PARA TRAKEBALLER
 // ============================================================
 
 function formatearPedidoTexto(pedido) {
@@ -221,7 +201,7 @@ ${lineasTotalesTexto(pedido)}`;
 }
 
 // ============================================================
-// CORREO PARA EL CLIENTE (DETALLES + COMO PAGAR)
+// CORREO PARA EL CLIENTE
 // ============================================================
 
 function formatearJustificanteCliente(pedido) {
@@ -291,7 +271,6 @@ function crearHTMLProductos(pedido) {
   return items
     .map((item, index) => {
       const p = normalizarProducto(item);
-
       const tipoTexto = p.tipo.toLowerCase().includes('retro') ? 'Retro' : 'Actual';
 
       return `
@@ -318,15 +297,11 @@ function crearHTMLProductos(pedido) {
 
 // ============================================================
 // HTML COMPLETO DEL EMAIL
-//   esCliente = false -> correo para Trakeballer (solo el pedido)
-//   esCliente = true  -> correo para el cliente (pedido + pago PayPal)
 // ============================================================
 
 function crearHTMLPedido(pedido, esCliente = false) {
   const productosHTML = crearHTMLProductos(pedido);
-
   const total = Number(pedido.total || 0).toFixed(2);
-
   const nombre = pedido.cliente?.nombre || 'cliente';
 
   const bloqueCliente = `
@@ -341,86 +316,43 @@ function crearHTMLPedido(pedido, esCliente = false) {
 
   const bloquePaypal = `
     <div style="margin-top:25px;border:2px solid #0070ba;border-radius:12px;padding:20px;background:#f0f7fd;">
-      <h3 style="margin-top:0;color:#0070ba;">
-        Cómo pagar (únicamente por PayPal)
-      </h3>
-
+      <h3 style="margin-top:0;color:#0070ba;">Cómo pagar (únicamente por PayPal)</h3>
       <ol style="padding-left:20px;line-height:1.7;">
         <li>Envía <strong>${total}€</strong> por PayPal a:<br>
           <strong style="font-size:17px;">${EMAIL_TIENDA}</strong>
         </li>
         <li>Envíalo como <strong>AMIGOS Y FAMILIARES</strong>.</li>
         <li><strong>NO pongas ningún concepto ni mensaje</strong> en el pago.</li>
-        <li>Después, manda el <strong>comprobante de pago</strong> y la captura
-          o el número de pedido (<strong>#${pedido.id}</strong>) a este mismo
-          correo: <strong>${EMAIL_TIENDA}</strong>
-        </li>
+        <li>Después, manda el <strong>comprobante de pago</strong> y la captura o el número de pedido (<strong>#${pedido.id}</strong>) a este mismo correo: <strong>${EMAIL_TIENDA}</strong></li>
       </ol>
-
       <p style="margin-bottom:0;">
         <strong>El pedido no se tramita hasta que recibamos el pago y el comprobante.</strong>
       </p>
     </div>
-
-    <p style="margin-top:25px;">
-      Nos pondremos en contacto contigo para confirmar el pedido. ¡Gracias por tu compra!
-    </p>
-
-    <p style="color:#666;font-size:14px;">
-      Para cualquier duda sobre tu pedido, escríbenos a
-      <strong>${EMAIL_TIENDA}</strong><br>
-      - Trakeballer
-    </p>
+    <p style="margin-top:25px;">Nos pondremos en contacto contigo para confirmar el pedido. ¡Gracias por tu compra!</p>
+    <p style="color:#666;font-size:14px;">Para cualquier duda sobre tu pedido, escríbenos a <strong>${EMAIL_TIENDA}</strong><br>- Trakeballer</p>
   `;
 
   return `
 <!DOCTYPE html>
 <html lang="es">
-<head>
-<meta charset="UTF-8">
-</head>
-
+<head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:20px;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif;color:#222;">
-
 <div style="max-width:650px;margin:auto;background:#ffffff;padding:25px;border-radius:12px;">
-
-  <h2>
-    ${esCliente
-      ? `¡Hola ${escapeHTML(nombre)}!`
-      : `NUEVO PEDIDO #${pedido.id}`}
-  </h2>
-
+  <h2>${esCliente ? `¡Hola ${escapeHTML(nombre)}!` : `NUEVO PEDIDO #${pedido.id}`}</h2>
   ${
     esCliente
       ? `<p>Hemos recibido tu pedido <strong>#${pedido.id}</strong> en Trakeballer. Este es tu justificante.</p>
          <p style="color:#666;font-size:14px;">Fecha: ${escapeHTML(pedido.fecha || '')}</p>`
       : `<p style="color:#666;font-size:14px;">Fecha: ${escapeHTML(pedido.fecha \vert{}\vert{} '')}</p>${bloqueCliente}`
   }
-
-  <h3 style="margin-top:30px;">
-    ${esCliente ? 'TU PEDIDO' : 'PEDIDO'}
-  </h3>
-
+  <h3 style="margin-top:30px;">${esCliente ? 'TU PEDIDO' : 'PEDIDO'}</h3>
   ${productosHTML}
-
-  ${
-    typeof pedido.subtotal === 'number'
-      ? `<p><strong>Subtotal:</strong> ${pedido.subtotal.toFixed(2)}€</p>`
-      : ''
-  }
-
-  ${
-    typeof pedido.envio === 'number'
-      ? `<p><strong>Envío:</strong> ${pedido.envio > 0 ? pedido.envio.toFixed(2) + '€' : 'Gratis'}</p>`
-      : ''
-  }
-
+  ${typeof pedido.subtotal === 'number' ? `<p><strong>Subtotal:</strong> ${pedido.subtotal.toFixed(2)}€</p>` : ''}
+  ${typeof pedido.envio === 'number' ? `<p><strong>Envío:</strong> ${pedido.envio > 0 ? pedido.envio.toFixed(2) + '€' : 'Gratis'}</p>` : ''}
   <h2>TOTAL: ${total}€</h2>
-
   ${esCliente ? bloquePaypal : ''}
-
 </div>
-
 </body>
 </html>
 `;
@@ -433,43 +365,27 @@ function crearHTMLPedido(pedido, esCliente = false) {
 async function enviarEmail(destino, asunto, texto, nombreDestino = '', html = '') {
   if (!process.env.BREVO_API_KEY) {
     console.warn('[email] Falta BREVO_API_KEY');
-
     return { ok: false, motivo: 'BREVO_API_KEY no configurada' };
   }
 
   if (!process.env.EMAIL_FROM) {
     console.warn('[email] Falta EMAIL_FROM');
-
     return { ok: false, motivo: 'EMAIL_FROM no configurada' };
   }
 
   try {
     const respuesta = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
-
       headers: {
         accept: 'application/json',
         'api-key': process.env.BREVO_API_KEY,
         'content-type': 'application/json'
       },
-
       body: JSON.stringify({
-        sender: {
-          name: 'Trakeballer',
-          email: process.env.EMAIL_FROM
-        },
-
-        to: [
-          {
-            email: destino,
-            ...(nombreDestino ? { name: nombreDestino } : {})
-          }
-        ],
-
+        sender: { name: 'Trakeballer', email: process.env.EMAIL_FROM },
+        to: [{ email: destino, ...(nombreDestino ? { name: nombreDestino } : {}) }],
         subject: asunto,
-
         textContent: texto,
-
         ...(html ? { htmlContent: html } : {})
       })
     });
@@ -478,7 +394,6 @@ async function enviarEmail(destino, asunto, texto, nombreDestino = '', html = ''
 
     if (!respuesta.ok) {
       console.error('[email] Error Brevo:', datos);
-
       return {
         ok: false,
         motivo: datos.message || 'Error enviando email con Brevo',
@@ -487,22 +402,18 @@ async function enviarEmail(destino, asunto, texto, nombreDestino = '', html = ''
     }
 
     console.log(`[email] Enviado a ${destino} - ID: ${datos.messageId}`);
-
     return { ok: true, id: datos.messageId };
-
   } catch (error) {
     console.error(`[email] Error enviando email a ${destino}:`, error.message);
-
     return { ok: false, motivo: error.message };
   }
 }
 
 // ============================================================
-// TWILIO
+// TWILIO (Manejo de error por si no está instalado)
 // ============================================================
 
 async function avisarPorTwilio(texto, { from, to }) {
-
   if (
     !process.env.TWILIO_ACCOUNT_SID ||
     !process.env.TWILIO_AUTH_TOKEN ||
@@ -514,19 +425,14 @@ async function avisarPorTwilio(texto, { from, to }) {
 
   try {
     const twilio = require('twilio');
-
     const client = twilio(
       process.env.TWILIO_ACCOUNT_SID,
       process.env.TWILIO_AUTH_TOKEN
     );
-
     const resultado = await client.messages.create({ body: texto, from, to });
-
     return { ok: true, sid: resultado.sid };
-
   } catch (error) {
-    console.error('Error enviando por Twilio:', error.message);
-
+    console.warn('[Twilio] No se envió mensaje:', error.message);
     return { ok: false, motivo: error.message };
   }
 }
@@ -536,86 +442,43 @@ async function avisarPorTwilio(texto, { from, to }) {
 // ============================================================
 
 app.post('/api/pedido', async (req, res) => {
-
   try {
-
     const pedido = req.body;
-
     const items = obtenerItems(pedido);
 
     console.log('[pedido] Artículos recibidos:', items.length);
 
-    if (items.length > 0) {
-      console.log('[pedido] Primer artículo:', JSON.stringify(items[0]));
-    }
-
-    // VALIDACIÓN
-
     if (!pedido || items.length === 0) {
-      return res.status(400).json({
-        ok: false,
-        error: 'El pedido no tiene artículos.'
-      });
+      return res.status(400).json({ ok: false, error: 'El pedido no tiene artículos.' });
     }
 
     const esAmigoInvisible = pedido.tipo === 'amigo-invisible';
 
     if (esAmigoInvisible) {
-
-      if (
-        !pedido.cliente ||
-        !pedido.cliente.nombre ||
-        (!pedido.cliente.telefono && !pedido.cliente.email)
-      ) {
-        return res.status(400).json({
-          ok: false,
-          error: 'Faltan datos de contacto.'
-        });
+      if (!pedido.cliente || !pedido.cliente.nombre || (!pedido.cliente.telefono && !pedido.cliente.email)) {
+        return res.status(400).json({ ok: false, error: 'Faltan datos de contacto.' });
       }
-
     } else {
-
-      if (
-        !pedido.cliente ||
-        !pedido.cliente.nombre ||
-        !pedido.cliente.direccion ||
-        !pedido.cliente.telefono
-      ) {
-        return res.status(400).json({
-          ok: false,
-          error: 'Faltan datos de contacto.'
-        });
+      if (!pedido.cliente || !pedido.cliente.nombre || !pedido.cliente.direccion || !pedido.cliente.telefono) {
+        return res.status(400).json({ ok: false, error: 'Faltan datos de contacto.' });
       }
     }
 
-    // ID Y FECHA
-
     pedido.id = Date.now();
-
     pedido.fecha = new Date().toLocaleString('es-ES');
-
-    // GUARDAR
 
     guardarPedido(pedido);
 
-    // EMAIL PARA TRAKEBALLER (solo el pedido)
-
     const textoAdmin = formatearPedidoTexto(pedido);
-
     const htmlAdmin = crearHTMLPedido(pedido, false);
-
     const asuntoAdmin = esAmigoInvisible
       ? `Nuevo pedido de amigo invisible #${pedido.id} - ${Number(pedido.total || 0).toFixed(2)}€`
       : `Nuevo pedido #${pedido.id} - ${Number(pedido.total || 0).toFixed(2)}€`;
 
-    // EMAIL PARA EL CLIENTE (detalles + cómo pagar)
-
     let emailCliente = { ok: false, motivo: 'No enviado' };
 
     if (pedido.cliente && pedido.cliente.email) {
-
       const textoCliente = formatearJustificanteCliente(pedido);
-
       const htmlCliente = crearHTMLPedido(pedido, true);
 
       emailCliente = await enviarEmail(
@@ -627,8 +490,6 @@ app.post('/api/pedido', async (req, res) => {
       );
     }
 
-    // ENVIAR EL DE TRAKEBALLER
-
     const emailAdmin = await enviarEmail(
       process.env.EMAIL_TO || EMAIL_TIENDA,
       asuntoAdmin,
@@ -637,21 +498,15 @@ app.post('/api/pedido', async (req, res) => {
       htmlAdmin
     );
 
-    // SMS
-
     const sms = await avisarPorTwilio(textoAdmin, {
       from: process.env.TWILIO_SMS_FROM,
       to: process.env.TWILIO_SMS_TO
     });
 
-    // WHATSAPP
-
     const whatsapp = await avisarPorTwilio(textoAdmin, {
       from: process.env.TWILIO_WHATSAPP_FROM,
       to: process.env.TWILIO_WHATSAPP_TO
     });
-
-    // RESPUESTA
 
     return res.json({
       ok: true,
@@ -663,15 +518,9 @@ app.post('/api/pedido', async (req, res) => {
         whatsapp
       }
     });
-
   } catch (error) {
-
     console.error('[pedido] Error:', error);
-
-    return res.status(500).json({
-      ok: false,
-      error: 'Error interno al procesar el pedido.'
-    });
+    return res.status(500).json({ ok: false, error: 'Error interno al procesar el pedido.' });
   }
 });
 
@@ -680,16 +529,11 @@ app.post('/api/pedido', async (req, res) => {
 // ============================================================
 
 app.post('/api/sugerencia', async (req, res) => {
-
   try {
-
     const { mensaje, nombre, email } = req.body || {};
 
     if (!mensaje || !mensaje.trim()) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Cuéntanos qué camiseta te falta.'
-      });
+      return res.status(400).json({ ok: false, error: 'Cuéntanos qué camiseta te falta.' });
     }
 
     const sugerencia = {
@@ -702,20 +546,7 @@ app.post('/api/sugerencia', async (req, res) => {
 
     guardarSugerencia(sugerencia);
 
-    const texto =
-`NUEVA SUGERENCIA DE CAMISETA
-
-Fecha:
-${sugerencia.fecha}
-
-Nombre:
-${sugerencia.nombre || 'No indicado'}
-
-Email:
-${sugerencia.email || 'No indicado'}
-
-Mensaje:
-${sugerencia.mensaje}`;
+    const texto = `NUEVA SUGERENCIA DE CAMISETA\n\nFecha:\n${sugerencia.fecha}\n\nNombre:\n${sugerencia.nombre || 'No indicado'}\n\nEmail:\n${sugerencia.email || 'No indicado'}\n\nMensaje:\n${sugerencia.mensaje}`;
 
     const html = `
       <h2>Nueva sugerencia de camiseta</h2>
@@ -735,15 +566,9 @@ ${sugerencia.mensaje}`;
     );
 
     res.json({ ok: true, aviso: resultado });
-
   } catch (error) {
-
     console.error('[sugerencia] Error:', error);
-
-    res.status(500).json({
-      ok: false,
-      error: 'Error interno al enviar la sugerencia.'
-    });
+    res.status(500).json({ ok: false, error: 'Error interno al enviar la sugerencia.' });
   }
 });
 
@@ -752,57 +577,33 @@ ${sugerencia.mensaje}`;
 // ============================================================
 
 app.get('/api/resenas', (req, res) => {
-
   try {
-
     const resenas = leerJSON(RESENAS_FILE)
       .filter(r => r.aprobada !== false)
       .sort((a, b) => b.id - a.id);
 
     res.json({ ok: true, resenas });
-
   } catch (error) {
-
     console.error('[resenas] Error:', error);
-
-    res.status(500).json({
-      ok: false,
-      error: 'Error interno al leer las reseñas.'
-    });
+    res.status(500).json({ ok: false, error: 'Error interno al leer las reseñas.' });
   }
 });
 
-// ============================================================
-// CREAR RESEÑA
-// ============================================================
-
 app.post('/api/resena', async (req, res) => {
-
   try {
-
     const { nombre, valoracion, mensaje } = req.body || {};
-
     const estrellas = Math.round(Number(valoracion));
 
     if (!nombre || !nombre.trim()) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Cuéntanos tu nombre.'
-      });
+      return res.status(400).json({ ok: false, error: 'Cuéntanos tu nombre.' });
     }
 
     if (!estrellas || estrellas < 1 || estrellas > 5) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Elige una valoración de 1 a 5 estrellas.'
-      });
+      return res.status(400).json({ ok: false, error: 'Elige una valoración de 1 a 5 estrellas.' });
     }
 
     if (!mensaje || !mensaje.trim()) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Cuéntanos tu opinión.'
-      });
+      return res.status(400).json({ ok: false, error: 'Cuéntanos tu opinión.' });
     }
 
     const resena = {
@@ -816,20 +617,7 @@ app.post('/api/resena', async (req, res) => {
 
     guardarResena(resena);
 
-    const texto =
-`NUEVA RESEÑA EN TRAKEBALLER
-
-Fecha:
-${resena.fecha}
-
-Nombre:
-${resena.nombre}
-
-Valoración:
-${resena.valoracion} / 5 estrellas
-
-Opinión:
-${resena.mensaje}`;
+    const texto = `NUEVA RESEÑA EN TRAKEBALLER\n\nFecha:\n${resena.fecha}\n\nNombre:\n${resena.nombre}\n\nValoración:\n${resena.valoracion} / 5 estrellas\n\nOpinión:\n${resena.mensaje}`;
 
     const html = `
       <h2>Nueva reseña en Trakeballer</h2>
@@ -849,15 +637,9 @@ ${resena.mensaje}`;
     );
 
     res.json({ ok: true, resena, aviso: resultado });
-
   } catch (error) {
-
     console.error('[resena] Error:', error);
-
-    res.status(500).json({
-      ok: false,
-      error: 'Error interno al enviar la reseña.'
-    });
+    res.status(500).json({ ok: false, error: 'Error interno al enviar la reseña.' });
   }
 });
 
@@ -879,18 +661,11 @@ function comprobarAdmin(req, res) {
 app.get('/api/pedidos', (req, res) => {
   try {
     if (!comprobarAdmin(req, res)) return;
-
     const pedidos = leerJSON(ORDERS_FILE).sort((a, b) => b.id - a.id);
-
     res.json({ ok: true, pedidos });
-
   } catch (error) {
     console.error('[pedidos] Error:', error);
-
-    res.status(500).json({
-      ok: false,
-      error: 'Error interno al leer los pedidos.'
-    });
+    res.status(500).json({ ok: false, error: 'Error interno al leer los pedidos.' });
   }
 });
 
@@ -909,32 +684,22 @@ app.post('/api/pedidos/:id/listo', (req, res) => {
     }
 
     pedido.listo = listo;
-
-    fs.writeFileSync(ORDERS_FILE, JSON.stringify(pedidos, null, 2), 'utf8');
+    guardarJSON(ORDERS_FILE, pedidos);
 
     res.json({ ok: true, pedido });
-
   } catch (error) {
     console.error('[pedidos/listo] Error:', error);
-
-    res.status(500).json({
-      ok: false,
-      error: 'Error interno al actualizar el pedido.'
-    });
+    res.status(500).json({ ok: false, error: 'Error interno al actualizar el pedido.' });
   }
 });
 
 // ============================================================
-// SALUD
+// SALUD Y SEO
 // ============================================================
 
 app.get('/api/salud', (req, res) => {
   res.json({ ok: true, servicio: 'Trakeballer' });
 });
-
-// ============================================================
-// SEO: ROBOTS.TXT Y SITEMAP.XML (para Google)
-// ============================================================
 
 function urlBase(req) {
   if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, '');
@@ -946,25 +711,11 @@ function urlBase(req) {
 }
 
 app.get('/robots.txt', (req, res) => {
-  res.type('text/plain').send(
-`User-agent: *
-Allow: /
-
-Sitemap: ${urlBase(req)}/sitemap.xml
-`);
+  res.type('text/plain').send(`User-agent: *\nAllow: /\n\nSitemap: ${urlBase(req)}/sitemap.xml\n`);
 });
 
 app.get('/sitemap.xml', (req, res) => {
-  res.type('application/xml').send(
-`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${urlBase(req)}/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
-</urlset>
-`);
+  res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>${urlBase(req)}/</loc>\n    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>\n  </url>\n</urlset>\n`);
 });
 
 // ============================================================
@@ -974,11 +725,9 @@ app.get('/sitemap.xml', (req, res) => {
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const CHAT_MODEL = 'openai/gpt-oss-120b';
 
-// Si tienes información específica de tu catálogo en texto, puedes colocarla en esta variable.
+// Variable requerida para evitar ReferenceError
 const CATALOGO_IA_TEXTO = "";
 
-// Edita este texto cuando cambien precios, plazos o condiciones.
-// El bot responde SOLO con esta información + sentido común.
 const KNOWLEDGE_BASE = `
 Eres el asistente virtual de Trakeballer, una tienda online de camisetas de
 fútbol personalizadas (actuales y retro), de clubes y selecciones de todo
@@ -1106,20 +855,11 @@ app.get('*', (req, res) => {
 // ============================================================
 
 app.listen(PORT, () => {
-
   console.log(`🚀 Trakeballer funcionando en puerto ${PORT}`);
-
   console.log(`[email] EMAIL_TO: ${process.env.EMAIL_TO || EMAIL_TIENDA}`);
-
   console.log(`[email] EMAIL_FROM: ${process.env.EMAIL_FROM || 'NO CONFIGURADO'}`);
-
   console.log(`[email] Brevo: ${process.env.BREVO_API_KEY ? 'CONFIGURADO' : 'NO CONFIGURADO'}`);
 
-  // ----------------------------------------------------------
-  // MANTENER DESPIERTA LA WEB EN RENDER
-  // Render pone RENDER_EXTERNAL_URL solo. Cada minuto la web
-  // se llama a sí misma para que no se duerma por inactividad.
-  // ----------------------------------------------------------
   const URL_PUBLICA = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL;
  
   if (URL_PUBLICA) {
@@ -1137,5 +877,3 @@ app.listen(PORT, () => {
     console.log('[keep-alive] Desactivado (no hay RENDER_EXTERNAL_URL)');
   }
 });
-
-```
