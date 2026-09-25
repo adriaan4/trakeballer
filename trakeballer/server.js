@@ -848,10 +848,21 @@ INSTRUCCIONES PARA TI (el asistente)
 - Responde siempre en español, de forma breve, cercana y clara.
 - Usa el CATÁLOGO REAL que se te proporciona a continuación para saber qué
   equipos y camisetas existen realmente. No lo inventes.
-- Si te preguntan por un equipo o camiseta concreta que NO aparece en el
-  catálogo, dile al usuario que no está disponible ahora mismo, sugiérele
-  dejar una sugerencia en la web, y ofrécete a ayudarle con cualquier otra
-  duda (precio, tallas, envío, personalización, pago...).
+- CUANDO TE PREGUNTEN POR UN EQUIPO O SELECCIÓN CONCRETO (p.ej. "¿tenéis del
+  Real Madrid?", "camisetas de Argentina"): responde ÚNICAMENTE con la lista
+  de camisetas de ese equipo que aparecen en el catálogo, una por línea, sin
+  saludos, sin explicaciones, sin mencionar precios/envío/tallas ni añadir
+  nada más, salvo que el cliente lo pida expresamente. Ejemplo de formato:
+  "Sí, tenemos estas camisetas del Real Madrid:
+  - Real Madrid (actual)
+  - Real Madrid 06-07 (retro)
+  - Real Madrid 16-17 (retro)"
+- Si el equipo NO aparece en el catálogo, responde solo con una frase corta
+  diciendo que no está disponible ahora mismo y que puede dejar una
+  sugerencia en la web. No añadas más información en ese mensaje.
+- Para cualquier otra pregunta (precio, tallas, envío, personalización,
+  pago, proceso de compra, amigo invisible...) sí puedes responder con más
+  detalle usando el resto de esta información.
 - No inventes plazos, precios, equipos ni políticas que no estén en esta
   información.
 - Si preguntan algo que no tiene que ver con la tienda, responde con
@@ -864,32 +875,68 @@ app.post('/api/chat', async (req, res) => {
     const { messages } = req.body || {};
 
     if (!GROQ_API_KEY) {
+      console.error('[chat] Falta GROQ_API_KEY');
       return res.status(500).json({ error: 'Falta configurar GROQ_API_KEY en Render.' });
     }
-    if (!Array.isArray(messages)) {
-      return res.status(400).json({ error: "Formato inválido: se esperaba 'messages'." });
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: "Formato inválido: se esperaba 'messages' (array no vacío)." });
     }
 
-    const respuesta = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: CHAT_MODEL,
-        messages: [
-          { role: 'system', content: KNOWLEDGE_BASE + CATALOGO_IA_TEXTO },
-          ...messages,
-        ],
-        max_tokens: 500,
-      }),
-    });
+    // Solo mandamos roles válidos ('user'/'assistant') y limitamos el
+    // historial a los últimos 20 mensajes para no disparar el tamaño del
+    // payload turno a turno (el system prompt con el catálogo ya es grande).
+    const historial = messages
+      .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+      .slice(-20);
+
+    if (historial.length === 0) {
+      return res.status(400).json({ error: "El historial de mensajes no tiene contenido válido." });
+    }
+
+    const payload = {
+      model: CHAT_MODEL,
+      messages: [
+        { role: 'system', content: KNOWLEDGE_BASE + CATALOGO_IA_TEXTO },
+        ...historial,
+      ],
+      max_tokens: 500,
+    };
+
+    let respuesta;
+    try {
+      respuesta = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (fetchError) {
+      // Fallo de red al llamar a Groq (no llegó a responder)
+      console.error('[chat] Fallo de red al llamar a Groq:', fetchError.message);
+      return res.status(502).json({ error: 'No se pudo conectar con la IA. Inténtalo de nuevo.' });
+    }
 
     if (!respuesta.ok) {
       const errText = await respuesta.text();
-      console.error('[chat] Error de Groq:', errText);
-      return res.status(502).json({ error: 'Error al contactar con la IA.' });
+      console.error(`[chat] Groq respondió ${respuesta.status}:`, errText);
+
+      // Devolvemos el motivo real para poder depurarlo (lo verás en la
+      // pestaña Network del navegador). Quítalo si no quieres exponerlo.
+      let detalle = errText;
+      try {
+        const errJson = JSON.parse(errText);
+        detalle = errJson.error?.message || errText;
+      } catch (_) {
+        // errText no era JSON, lo dejamos tal cual
+      }
+
+      return res.status(502).json({
+        error: 'Error al contactar con la IA.',
+        detalle,
+        status: respuesta.status,
+      });
     }
 
     const data = await respuesta.json();
@@ -897,8 +944,8 @@ app.post('/api/chat', async (req, res) => {
     res.json({ reply });
 
   } catch (error) {
-    console.error('[chat] Error:', error);
-    res.status(500).json({ error: 'Error interno del servidor.' });
+    console.error('[chat] Error interno:', error);
+    res.status(500).json({ error: 'Error interno del servidor.', detalle: error.message });
   }
 });
 
