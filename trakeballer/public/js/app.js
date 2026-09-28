@@ -1670,9 +1670,11 @@ function calcularEnvio(items) {
   return unidades < ENVIO_UNIDADES_GRATIS ? ENVIO_COSTE : 0;
 }
 
+const NODO_CARRITO_VACIO = document.getElementById('carritoVacioMsg');
+
 function renderCarrito() {
   const lista = document.getElementById('listaCarrito');
-  const vacio = document.getElementById('carritoVacioMsg');
+  const vacio = NODO_CARRITO_VACIO;
 
   if (carrito.length === 0) {
     lista.innerHTML = '';
@@ -1782,7 +1784,7 @@ document.getElementById('formEnvio').addEventListener('submit', async (e) => {
       estado.textContent = `¡Pedido #${data.pedidoId} enviado! Recuerda enviar el pago por PayPal a trakeballer@gmail.com (sin poner concepto) y mandarnos el comprobante y el número de pedido a ese mismo correo.`;
       carrito = [];
       guardarCarrito();
-      if (cuponCarrito) cuponCarrito.reset();
+      try { if (cuponCarrito) cuponCarrito.reset(); } catch (e) { console.error(e); }
       document.getElementById('formEnvio').reset();
       setTimeout(() => {
         document.getElementById('formEnvio').classList.remove('mostrar');
@@ -1955,8 +1957,7 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
       document.getElementById('amigoCompradorNombre').value = '';
       document.getElementById('amigoCompradorContacto').value = '';
       document.getElementById('amigoDireccion').value = '';
-      if (cuponAmigo) cuponAmigo.reset();
-      actualizarResumenAmigo();
+      try { if (cuponAmigo) cuponAmigo.reset(); actualizarResumenAmigo(); } catch (e) { console.error(e); }
     } else {
       estado.className = 'form-envio__estado error';
       estado.textContent = data.error || 'No se pudo enviar el pedido.';
