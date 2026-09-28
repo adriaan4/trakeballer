@@ -130,6 +130,7 @@ function pintarPedidos() {
           return `<li>${it.equipo} (${it.tipo === 'retro' ? 'Retro' : 'Actual'}) - Talla ${it.talla} - Cant: ${it.cantidad} - ${it.precioUnidad}€/u${extra}</li>`;
         }).join('')}
       </ul>
+      ${p.descuentoCodigo ? `<p>Descuento (<strong>${p.descuentoCodigo.codigo}</strong> ${p.descuentoCodigo.tipo === 'porcentaje' ? '-' + p.descuentoCodigo.valor + '%' : '-' + Number(p.descuentoCodigo.valor).toFixed(2) + '€'}): -${Number(p.descuentoCodigo.importe).toFixed(2)}€</p>` : ''}
       <p class="total">TOTAL: ${p.total.toFixed(2)}€</p>
     </div>
   `).join('');

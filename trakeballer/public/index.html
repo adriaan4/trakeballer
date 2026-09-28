@@ -606,6 +606,9 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
   <p class="footer__legal">
     <button type="button" id="btnAbrirLegalFooter" class="footer__legal-link">Aviso legal, privacidad y cookies</button>
   </p>
+  <p class="footer__legal">
+    <a href="admin-descuentos.html" class="footer__legal-link" rel="nofollow">Acceso admin</a>
+  </p>
 </footer>
 
 <!-- Botón flotante de contacto -->
@@ -755,8 +758,16 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
     </div>
 
     <div class="panel-carrito__resumen">
+      <div class="cupon">
+        <div class="cupon__fila">
+          <input type="text" id="cuponCarritoInput" placeholder="Código de descuento" maxlength="30" autocomplete="off" autocapitalize="characters" aria-label="Código de descuento">
+          <button type="button" class="btn btn--ghost" id="cuponCarritoBtn">Aplicar</button>
+        </div>
+        <p class="form-envio__estado" id="cuponCarritoEstado"></p>
+      </div>
       <div class="resumen-linea"><span>Subtotal</span><strong id="resSubtotal">0,00 €</strong></div>
       <div class="resumen-linea" id="resDescuentoWrap" style="display:none"><span>Descuento por cantidad</span><strong id="resDescuento">-0,00 €</strong></div>
+      <div class="resumen-linea" id="resCuponWrap" style="display:none"><span id="resCuponLabel">Código</span><strong id="resCupon">-0,00 €</strong></div>
       <div class="resumen-linea"><span>Envío</span><strong id="resEnvio">0,00 €</strong></div>
       <div class="resumen-linea resumen-linea--total"><span>Total</span><strong id="resTotal">0,00 €</strong></div>
       <p class="resumen-nota" id="resEnvioNota">Envío: 5 € en pedidos de menos de 6 camisetas. A partir de 6, envío gratis. Ofertas por cantidad: 6 camisetas 135€ (150€ retro), 10 camisetas 200€ (225€ retro), 15 camisetas 250€ (275€ retro).</p>
@@ -916,6 +927,20 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
         placeholder="Calle, número, piso, código postal, ciudad"
       >
     </label>
+
+    <div class="cupon">
+      <div class="cupon__fila">
+        <input type="text" id="cuponAmigoInput" placeholder="Código de descuento" maxlength="30" autocomplete="off" autocapitalize="characters" aria-label="Código de descuento">
+        <button type="button" class="btn btn--ghost" id="cuponAmigoBtn">Aplicar</button>
+      </div>
+      <p class="form-envio__estado" id="cuponAmigoEstado"></p>
+    </div>
+
+    <div class="panel-carrito__resumen amigo-resumen">
+      <div class="resumen-linea"><span>Subtotal</span><strong id="amigoResSubtotal">0,00 €</strong></div>
+      <div class="resumen-linea" id="amigoResCuponWrap" style="display:none"><span id="amigoResCuponLabel">Código</span><strong id="amigoResCupon">-0,00 €</strong></div>
+      <div class="resumen-linea resumen-linea--total"><span>Total</span><strong id="amigoResTotal">0,00 €</strong></div>
+    </div>
 
     <div class="pago-paypal">
       <h5>Método de pago: solo PayPal</h5>
