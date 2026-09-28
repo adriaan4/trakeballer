@@ -4,12 +4,14 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const EMAIL_TIENDA = 'trakeballer@gmail.com';
 
+app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -21,6 +23,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 const ORDERS_FILE = path.join(__dirname, 'orders.json');
 const SUGERENCIAS_FILE = path.join(__dirname, 'sugerencias.json');
 const RESENAS_FILE = path.join(__dirname, 'resenas.json');
+// Si tienes un disco persistente (p. ej. en Render), pon DATA_DIR con su ruta
+// para que los códigos de descuento no se pierdan al redesplegar.
+const DESCUENTOS_FILE = path.join(process.env.DATA_DIR || __dirname, 'descuentos.json');
 
 function inicializarArchivo(ruta) {
   try {
@@ -35,6 +40,7 @@ function inicializarArchivo(ruta) {
 inicializarArchivo(ORDERS_FILE);
 inicializarArchivo(SUGERENCIAS_FILE);
 inicializarArchivo(RESENAS_FILE);
+inicializarArchivo(DESCUENTOS_FILE);
 
 // ============================================================
 // FUNCIONES ARCHIVOS
@@ -165,12 +171,227 @@ function lineasTotalesTexto(pedido) {
 
   return (
     (subtotal !== null ? `Subtotal: ${subtotal}€\n` : '') +
+    (pedido.descuentoCodigo
+      ? `Descuento (${descripcionDescuento(pedido.descuentoCodigo)}): -${Number(pedido.descuentoCodigo.importe).toFixed(2)}€\n`
+      : '') +
     (envio !== null
       ? `Envío: ${envio > 0 ? envio.toFixed(2) + '€' : 'Gratis'}\n`
       : '') +
     `TOTAL: ${total}€`
   );
 }
+
+// ============================================================
+// CÓDIGOS DE DESCUENTO
+// ============================================================
+
+function normalizarCodigo(codigo) {
+  return String(codigo || '').trim().toUpperCase().replace(/\s+/g, '');
+}
+
+function redondear2(n) {
+  return Math.round((Number(n) || 0) * 100) / 100;
+}
+
+function leerDescuentos() {
+  const lista = leerJSON(DESCUENTOS_FILE);
+  return Array.isArray(lista) ? lista : [];
+}
+
+function buscarDescuentoActivo(codigo) {
+  const cod = normalizarCodigo(codigo);
+  if (!cod) return null;
+  return leerDescuentos().find(d => d.codigo === cod && d.activo !== false) || null;
+}
+
+// Importe (en €) que descuenta un código sobre un subtotal. Nunca supera el subtotal.
+function calcularImporteDescuento(descuento, subtotal) {
+  const base = Math.max(0, Number(subtotal) || 0);
+  const bruto = descuento.tipo === 'porcentaje'
+    ? base * Number(descuento.valor) / 100
+    : Number(descuento.valor);
+  return redondear2(Math.min(Math.max(0, bruto), base));
+}
+
+function textoValorDescuento(tipo, valor) {
+  return tipo === 'porcentaje' ? `-${Number(valor)}%` : `-${Number(valor).toFixed(2)}€`;
+}
+
+function descripcionDescuento(dc) {
+  return `${dc.codigo} ${textoValorDescuento(dc.tipo, dc.valor)}`;
+}
+
+// --- Limitador simple por IP (frena adivinar códigos / contraseñas) ---
+const intentos = new Map();
+
+function superaLimite(clave, max, ventanaMs) {
+  const ahora = Date.now();
+  const reg = intentos.get(clave);
+  if (!reg || reg.reinicio < ahora) {
+    intentos.set(clave, { n: 1, reinicio: ahora + ventanaMs });
+    return false;
+  }
+  reg.n += 1;
+  return reg.n > max;
+}
+
+setInterval(() => {
+  const ahora = Date.now();
+  for (const [k, v] of intentos) if (v.reinicio < ahora) intentos.delete(k);
+}, 10 * 60 * 1000).unref();
+
+// --- Acceso de administrador (usuario + contraseña) ---
+// Por defecto: usuario "trakeballer". La contraseña NO está en claro en el código,
+// solo su hash. Puedes cambiarla poniendo ADMIN_USER y ADMIN_PASS en Render.
+const sha256 = txt => crypto.createHash('sha256').update(String(txt)).digest();
+const ADMIN_USER = process.env.ADMIN_USER || 'trakeballer';
+const ADMIN_PASS_HASH = process.env.ADMIN_PASS
+  ? sha256(process.env.ADMIN_PASS)
+  : Buffer.from('99a849ebcf21976ff3d62d1af64f08666b92005a3e0ff7d7f0e6924dbb10f415', 'hex');
+
+function iguales(a, b) {
+  return crypto.timingSafeEqual(sha256(a), sha256(b));
+}
+
+const SESIONES_ADMIN = new Map(); // token -> caducidad
+const DURACION_SESION_MS = 8 * 60 * 60 * 1000;
+
+function comprobarSesionAdmin(req, res) {
+  const cabecera = req.get('authorization') || '';
+  const token = cabecera.startsWith('Bearer ') ? cabecera.slice(7) : '';
+  const caduca = SESIONES_ADMIN.get(token);
+
+  if (!token || !caduca || caduca < Date.now()) {
+    SESIONES_ADMIN.delete(token);
+    res.status(401).json({ ok: false, error: 'Sesión no válida. Vuelve a entrar.' });
+    return false;
+  }
+  return true;
+}
+
+app.post('/api/admin/login', (req, res) => {
+  if (superaLimite('login:' + req.ip, 10, 15 * 60 * 1000)) {
+    return res.status(429).json({ ok: false, error: 'Demasiados intentos. Espera unos minutos.' });
+  }
+
+  const { usuario, clave } = req.body || {};
+  const userOk = iguales(usuario ?? '', ADMIN_USER);
+  const passOk = crypto.timingSafeEqual(sha256(clave ?? ''), ADMIN_PASS_HASH);
+
+  if (!userOk || !passOk) {
+    return res.status(401).json({ ok: false, error: 'Usuario o contraseña incorrectos.' });
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  SESIONES_ADMIN.set(token, Date.now() + DURACION_SESION_MS);
+  res.json({ ok: true, token });
+});
+
+app.get('/api/admin/descuentos', (req, res) => {
+  if (!comprobarSesionAdmin(req, res)) return;
+  res.json({ ok: true, descuentos: leerDescuentos() });
+});
+
+app.post('/api/admin/descuentos', (req, res) => {
+  try {
+    if (!comprobarSesionAdmin(req, res)) return;
+
+    const codigo = normalizarCodigo(req.body?.codigo);
+    const tipo = req.body?.tipo;
+    const valor = Number(req.body?.valor);
+
+    if (!/^[A-Z0-9_-]{3,30}$/.test(codigo)) {
+      return res.status(400).json({ ok: false, error: 'El código debe tener 3-30 caracteres (letras, números, - o _).' });
+    }
+    if (tipo !== 'porcentaje' && tipo !== 'euros') {
+      return res.status(400).json({ ok: false, error: 'Elige si el descuento es en % o en €.' });
+    }
+    if (!Number.isFinite(valor) || valor <= 0) {
+      return res.status(400).json({ ok: false, error: 'El valor del descuento debe ser mayor que 0.' });
+    }
+    if (tipo === 'porcentaje' && valor > 100) {
+      return res.status(400).json({ ok: false, error: 'El porcentaje no puede superar el 100%.' });
+    }
+    if (tipo === 'euros' && valor > 10000) {
+      return res.status(400).json({ ok: false, error: 'El descuento en euros es demasiado alto.' });
+    }
+
+    const lista = leerDescuentos();
+    if (lista.some(d => d.codigo === codigo)) {
+      return res.status(409).json({ ok: false, error: 'Ese código ya existe. Elimínalo antes si quieres cambiarlo.' });
+    }
+
+    const nuevo = {
+      codigo,
+      tipo,
+      valor: redondear2(valor),
+      activo: true,
+      usos: 0,
+      creado: new Date().toLocaleString('es-ES')
+    };
+    lista.push(nuevo);
+    guardarJSON(DESCUENTOS_FILE, lista);
+    res.json({ ok: true, descuento: nuevo });
+  } catch (error) {
+    console.error('[descuentos] Error creando:', error);
+    res.status(500).json({ ok: false, error: 'Error interno al crear el código.' });
+  }
+});
+
+app.patch('/api/admin/descuentos/:codigo', (req, res) => {
+  try {
+    if (!comprobarSesionAdmin(req, res)) return;
+
+    const lista = leerDescuentos();
+    const d = lista.find(x => x.codigo === normalizarCodigo(req.params.codigo));
+    if (!d) return res.status(404).json({ ok: false, error: 'Código no encontrado.' });
+
+    d.activo = !!req.body?.activo;
+    guardarJSON(DESCUENTOS_FILE, lista);
+    res.json({ ok: true, descuento: d });
+  } catch (error) {
+    console.error('[descuentos] Error actualizando:', error);
+    res.status(500).json({ ok: false, error: 'Error interno al actualizar el código.' });
+  }
+});
+
+app.delete('/api/admin/descuentos/:codigo', (req, res) => {
+  try {
+    if (!comprobarSesionAdmin(req, res)) return;
+
+    const codigo = normalizarCodigo(req.params.codigo);
+    const lista = leerDescuentos();
+    const resto = lista.filter(d => d.codigo !== codigo);
+    if (resto.length === lista.length) {
+      return res.status(404).json({ ok: false, error: 'Código no encontrado.' });
+    }
+    guardarJSON(DESCUENTOS_FILE, resto);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('[descuentos] Error eliminando:', error);
+    res.status(500).json({ ok: false, error: 'Error interno al eliminar el código.' });
+  }
+});
+
+// Público: la web comprueba un código antes de enviar el pedido.
+app.post('/api/descuento/validar', (req, res) => {
+  if (superaLimite('validar:' + req.ip, 40, 10 * 60 * 1000)) {
+    return res.status(429).json({ ok: false, error: 'Demasiados intentos. Espera unos minutos.' });
+  }
+
+  const d = buscarDescuentoActivo(req.body?.codigo);
+  if (!d) {
+    return res.status(404).json({ ok: false, error: 'Ese código de descuento no es válido.' });
+  }
+
+  res.json({
+    ok: true,
+    codigo: d.codigo,
+    tipo: d.tipo,
+    valor: d.valor,
+    importe: calcularImporteDescuento(d, req.body?.subtotal)
+  });
+});
 
 // ============================================================
 // CORREO PARA TRAKEBALLER
@@ -349,6 +570,7 @@ function crearHTMLPedido(pedido, esCliente = false) {
   <h3 style="margin-top:30px;">${esCliente ? 'TU PEDIDO' : 'PEDIDO'}</h3>
   ${productosHTML}
   ${typeof pedido.subtotal === 'number' ? `<p><strong>Subtotal:</strong> ${pedido.subtotal.toFixed(2)}€</p>` : ''}
+  ${pedido.descuentoCodigo ? `<p style="color:#1a7f37;"><strong>Descuento (${escapeHTML(descripcionDescuento(pedido.descuentoCodigo))}):</strong> -${Number(pedido.descuentoCodigo.importe).toFixed(2)}€</p>` : ''}
   ${typeof pedido.envio === 'number' ? `<p><strong>Envío:</strong> ${pedido.envio > 0 ? pedido.envio.toFixed(2) + '€' : 'Gratis'}</p>` : ''}
   <h2>TOTAL: ${total}€</h2>
   ${esCliente ? bloquePaypal : ''}
@@ -464,10 +686,47 @@ app.post('/api/pedido', async (req, res) => {
       }
     }
 
+    // Código de descuento: se valida SIEMPRE en el servidor y se recalcula el total.
+    delete pedido.descuentoCodigo;
+    const codigoRecibido = normalizarCodigo(pedido.codigoDescuento);
+    let descuentoUsado = null;
+
+    if (codigoRecibido) {
+      descuentoUsado = buscarDescuentoActivo(codigoRecibido);
+      if (!descuentoUsado) {
+        return res.status(400).json({ ok: false, error: 'El código de descuento no es válido. Quítalo o revísalo e inténtalo de nuevo.' });
+      }
+
+      const base = typeof pedido.subtotal === 'number' ? pedido.subtotal : Number(pedido.total) || 0;
+      const importe = calcularImporteDescuento(descuentoUsado, base);
+      const envio = typeof pedido.envio === 'number' ? pedido.envio : 0;
+
+      pedido.codigoDescuento = descuentoUsado.codigo;
+      pedido.subtotal = base;
+      pedido.descuentoCodigo = {
+        codigo: descuentoUsado.codigo,
+        tipo: descuentoUsado.tipo,
+        valor: descuentoUsado.valor,
+        importe
+      };
+      pedido.total = redondear2(Math.max(0, base - importe) + envio);
+    } else {
+      delete pedido.codigoDescuento;
+    }
+
     pedido.id = Date.now();
     pedido.fecha = new Date().toLocaleString('es-ES');
 
     guardarPedido(pedido);
+
+    if (descuentoUsado) {
+      const lista = leerDescuentos();
+      const d = lista.find(x => x.codigo === descuentoUsado.codigo);
+      if (d) {
+        d.usos = (d.usos || 0) + 1;
+        guardarJSON(DESCUENTOS_FILE, lista);
+      }
+    }
 
     const textoAdmin = formatearPedidoTexto(pedido);
     const htmlAdmin = crearHTMLPedido(pedido, false);
