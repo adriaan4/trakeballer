@@ -1581,6 +1581,86 @@ function actualizarContadorCarrito() {
 /* Gastos de envío: 5 € para pedidos de menos de 6 camisetas.
    A partir de 6 camisetas (inclusive), el envío es gratis.
    (No se aplica al amigo invisible.) */
+/* =========================================================
+   CÓDIGOS DE DESCUENTO
+   El servidor valida el código (al aplicarlo y otra vez al enviar el
+   pedido). Aquí solo se guarda el código aplicado y se calcula el importe.
+========================================================= */
+var cuponCarrito = null;
+var cuponAmigo = null;
+
+function crearGestorCupon({ inputId, btnId, estadoId, getSubtotal, onChange }) {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  const estado = document.getElementById(estadoId);
+  let aplicado = null;
+
+  function mensaje(texto, tipo) {
+    estado.className = 'form-envio__estado' + (tipo ? ' ' + tipo : '');
+    estado.textContent = texto;
+  }
+
+  function quitar() {
+    aplicado = null;
+    input.disabled = false;
+    input.value = '';
+    btn.textContent = 'Aplicar';
+    mensaje('');
+    onChange();
+  }
+
+  async function aplicar() {
+    if (aplicado) return quitar();
+
+    const codigo = input.value.trim();
+    if (!codigo) return mensaje('Escribe un código de descuento.', 'error');
+
+    const subtotal = getSubtotal();
+    if (subtotal <= 0) return mensaje('Añade camisetas antes de aplicar un código.', 'error');
+
+    btn.disabled = true;
+    mensaje('Comprobando código...');
+    try {
+      const resp = await fetch('/api/descuento/validar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo, subtotal })
+      });
+      const data = await resp.json();
+
+      if (data.ok) {
+        aplicado = { codigo: data.codigo, tipo: data.tipo, valor: data.valor };
+        input.value = data.codigo;
+        input.disabled = true;
+        btn.textContent = 'Quitar';
+        mensaje(`Código ${data.codigo} aplicado (${data.tipo === 'porcentaje' ? data.valor + '%' : Number(data.valor).toFixed(2) + ' €'} de descuento).`, 'ok');
+      } else {
+        mensaje(data.error || 'No se pudo comprobar el código.', 'error');
+      }
+    } catch (err) {
+      mensaje('Error de conexión. Inténtalo de nuevo.', 'error');
+    } finally {
+      btn.disabled = false;
+      onChange();
+    }
+  }
+
+  btn.addEventListener('click', aplicar);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); aplicar(); }
+  });
+
+  return {
+    get: () => aplicado,
+    reset: quitar,
+    importe(subtotal) {
+      if (!aplicado) return 0;
+      const bruto = aplicado.tipo === 'porcentaje' ? subtotal * aplicado.valor / 100 : aplicado.valor;
+      return Math.round(Math.min(Math.max(0, bruto), subtotal) * 100) / 100;
+    }
+  };
+}
+
 const ENVIO_COSTE = 5;
 const ENVIO_UNIDADES_GRATIS = 6;
 
@@ -1633,9 +1713,19 @@ function renderCarrito() {
     filaDescuento.style.display = 'none';
   }
 
+  const importeCupon = cuponCarrito ? cuponCarrito.importe(subtotal) : 0;
+  const filaCupon = document.getElementById('resCuponWrap');
+  if (importeCupon > 0) {
+    filaCupon.style.display = '';
+    document.getElementById('resCuponLabel').textContent = 'Código ' + cuponCarrito.get().codigo;
+    document.getElementById('resCupon').textContent = '-' + importeCupon.toFixed(2) + ' €';
+  } else {
+    filaCupon.style.display = 'none';
+  }
+
   document.getElementById('resSubtotal').textContent = subtotal.toFixed(2) + ' €';
   document.getElementById('resEnvio').textContent = envio > 0 ? envio.toFixed(2) + ' €' : 'Gratis';
-  document.getElementById('resTotal').textContent = (subtotal + envio).toFixed(2) + ' €';
+  document.getElementById('resTotal').textContent = (subtotal - importeCupon + envio).toFixed(2) + ' €';
 
   actualizarContadorCarrito();
 }
@@ -1655,7 +1745,8 @@ document.getElementById('formEnvio').addEventListener('submit', async (e) => {
 
   const subtotal = calcularSubtotalConOfertas(carrito);
   const envio = calcularEnvio(carrito);
-  const total = subtotal + envio;
+  const importeCupon = cuponCarrito ? cuponCarrito.importe(subtotal) : 0;
+  const total = subtotal - importeCupon + envio;
 
   const prefijoTelefono = document.getElementById('clienteTelefonoPrefijo').value;
   const numeroTelefono = document.getElementById('clienteTelefono').value.trim();
@@ -1665,6 +1756,7 @@ document.getElementById('formEnvio').addEventListener('submit', async (e) => {
     subtotal,
     envio,
     total,
+    codigoDescuento: cuponCarrito && cuponCarrito.get() ? cuponCarrito.get().codigo : '',
     cliente: {
       nombre: document.getElementById('clienteNombre').value.trim(),
       direccion: document.getElementById('clienteDireccion').value.trim(),
@@ -1690,6 +1782,7 @@ document.getElementById('formEnvio').addEventListener('submit', async (e) => {
       estado.textContent = `¡Pedido #${data.pedidoId} enviado! Recuerda enviar el pago por PayPal a trakeballer@gmail.com (sin poner concepto) y mandarnos el comprobante y el número de pedido a ese mismo correo.`;
       carrito = [];
       guardarCarrito();
+      if (cuponCarrito) cuponCarrito.reset();
       document.getElementById('formEnvio').reset();
       setTimeout(() => {
         document.getElementById('formEnvio').classList.remove('mostrar');
@@ -1731,6 +1824,50 @@ const TALLAS_AMIGO = [
   { input: 'amigoCantidadNino10', talla: 'Niño 10' },
   { input: 'amigoCantidadNino12', talla: 'Niño 12' }
 ];
+
+/* Resumen (subtotal / código / total) del amigo invisible */
+function itemsAmigoActuales() {
+  return TALLAS_AMIGO
+    .map(t => ({ tipo: 'actual', cantidad: Math.max(0, parseInt(document.getElementById(t.input).value, 10) || 0) }))
+    .filter(t => t.cantidad > 0);
+}
+
+function actualizarResumenAmigo() {
+  const subtotal = calcularSubtotalConOfertas(itemsAmigoActuales());
+  const importe = cuponAmigo ? cuponAmigo.importe(subtotal) : 0;
+  const fila = document.getElementById('amigoResCuponWrap');
+
+  if (importe > 0) {
+    fila.style.display = '';
+    document.getElementById('amigoResCuponLabel').textContent = 'Código ' + cuponAmigo.get().codigo;
+    document.getElementById('amigoResCupon').textContent = '-' + importe.toFixed(2) + ' €';
+  } else {
+    fila.style.display = 'none';
+  }
+  document.getElementById('amigoResSubtotal').textContent = subtotal.toFixed(2) + ' €';
+  document.getElementById('amigoResTotal').textContent = (subtotal - importe).toFixed(2) + ' €';
+}
+
+cuponCarrito = crearGestorCupon({
+  inputId: 'cuponCarritoInput',
+  btnId: 'cuponCarritoBtn',
+  estadoId: 'cuponCarritoEstado',
+  getSubtotal: () => calcularSubtotalConOfertas(carrito),
+  onChange: renderCarrito
+});
+
+cuponAmigo = crearGestorCupon({
+  inputId: 'cuponAmigoInput',
+  btnId: 'cuponAmigoBtn',
+  estadoId: 'cuponAmigoEstado',
+  getSubtotal: () => calcularSubtotalConOfertas(itemsAmigoActuales()),
+  onChange: actualizarResumenAmigo
+});
+
+TALLAS_AMIGO.forEach(t => {
+  document.getElementById(t.input).addEventListener('input', actualizarResumenAmigo);
+});
+actualizarResumenAmigo();
 
 /* Enviar el pedido del amigo invisible (dispara el email al correo general) */
 document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async () => {
@@ -1777,14 +1914,18 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
     return;
   }
 
-  const total = calcularSubtotalConOfertas(items);
+  const subtotal = calcularSubtotalConOfertas(items);
+  const importeCupon = cuponAmigo ? cuponAmigo.importe(subtotal) : 0;
+  const total = subtotal - importeCupon;
   const esEmail = contacto.includes('@');
 
   const pedido = {
     tipo: 'amigo-invisible',
     notas: `Pedido del amigo invisible para ${numPersonas} persona(s). Las camisetas se eligen al azar (sin equipo, nombre ni dorsal).${observaciones ? ` Observaciones del cliente: ${observaciones}` : ''}`,
     items,
+    subtotal,
     total,
+    codigoDescuento: cuponAmigo && cuponAmigo.get() ? cuponAmigo.get().codigo : '',
     cliente: {
       nombre: nombreComprador,
       direccion,
@@ -1814,6 +1955,8 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
       document.getElementById('amigoCompradorNombre').value = '';
       document.getElementById('amigoCompradorContacto').value = '';
       document.getElementById('amigoDireccion').value = '';
+      if (cuponAmigo) cuponAmigo.reset();
+      actualizarResumenAmigo();
     } else {
       estado.className = 'form-envio__estado error';
       estado.textContent = data.error || 'No se pudo enviar el pedido.';
