@@ -58,6 +58,9 @@
 </div>
 
 <div id="panel" style="display:none;">
+  <div id="aviso-disco" style="display:none;background:#3b1d1d;border:1px solid #f87171;color:#fecaca;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:0.88rem;">
+    ⚠️ El servidor no tiene un disco persistente: estos códigos se borrarán la próxima vez que se reinicie o redesplegue la web. Añade un Disk en Render (Mount Path <code>/var/data</code>).
+  </div>
   <div class="top">
     <div>
       <h1>Códigos de descuento</h1>
@@ -146,6 +149,7 @@ async function mostrarPanel() {
   const data = await api('/api/admin/descuentos');
   if (!data.ok) return; // si la sesión caducó, api() ya ha vuelto al login
   DESCUENTOS = data.descuentos;
+  $('aviso-disco').style.display = data.almacenamientoPersistente === false ? 'block' : 'none';
   $('login').style.display = 'none';
   $('panel').style.display = 'block';
   pintar();

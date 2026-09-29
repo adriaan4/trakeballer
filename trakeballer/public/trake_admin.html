@@ -46,6 +46,9 @@
 
 <div id="panel" style="display:none;">
   <h1>Pedidos recibidos</h1>
+  <div id="avisoDisco" style="display:none;background:#3b1d1d;border:1px solid #f87171;color:#fecaca;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:0.88rem;">
+    ⚠️ El servidor no tiene un disco persistente: estos pedidos se borrarán la próxima vez que se reinicie o redesplegue la web. Añade un Disk en Render (Mount Path <code>/var/data</code>).
+  </div>
   <div class="filtros">
     <button id="fPendientes" class="activo" onclick="setFiltro('pendientes')">Pendientes</button>
     <button id="fTodos" onclick="setFiltro('todos')">Todos</button>
@@ -57,6 +60,8 @@
 let CLAVE = '';
 let PEDIDOS = [];
 let FILTRO = 'pendientes';
+
+const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 async function entrar() {
   const clave = document.getElementById('clave').value.trim();
@@ -75,6 +80,7 @@ async function entrar() {
     document.getElementById('login').style.display = 'none';
     document.getElementById('panel').style.display = 'block';
     PEDIDOS = data.pedidos;
+    document.getElementById('avisoDisco').style.display = data.almacenamientoPersistente === false ? 'block' : 'none';
     pintarPedidos();
   } catch (e) {
     estado.textContent = 'Error de conexión.';
@@ -99,6 +105,30 @@ async function marcarListo(id, listo) {
   pintarPedidos();
 }
 
+// Desglose de precios y descuentos de un pedido (también para pedidos antiguos).
+function desgloseHTML(p) {
+  const items = p.items || p.productos || p.carrito || [];
+  const sinDesc = typeof p.subtotalSinDescuentos === 'number'
+    ? p.subtotalSinDescuentos
+    : items.reduce((s, it) => s + (Number(it.precioUnidad) || 0) * (Number(it.cantidad) || 0), 0);
+  const dCantidad = typeof p.descuentoCantidad === 'number'
+    ? p.descuentoCantidad
+    : (typeof p.subtotal === 'number' ? Math.max(0, sinDesc - p.subtotal) : 0);
+  const dc = p.descuentoCodigo;
+  const hay = dCantidad > 0.004 || !!dc;
+
+  let h = '';
+  if (hay) h += `<p>Artículos (sin descuentos): ${sinDesc.toFixed(2)}€</p>`;
+  else if (typeof p.subtotal === 'number') h += `<p>Subtotal: ${p.subtotal.toFixed(2)}€</p>`;
+  if (dCantidad > 0.004) h += `<p style="color:#4ade80;">🏷️ Descuento por oferta de cantidad: -${dCantidad.toFixed(2)}€</p>`;
+  if (dc) {
+    const valor = dc.tipo === 'porcentaje' ? '-' + Number(dc.valor) + '%' : '-' + Number(dc.valor).toFixed(2) + '€';
+    h += `<p style="color:#4ade80;">🏷️ Código <strong>${esc(dc.codigo)}</strong> (${valor}): -${Number(dc.importe).toFixed(2)}€</p>`;
+  }
+  if (typeof p.envio === 'number') h += `<p>Envío: ${p.envio > 0 ? p.envio.toFixed(2) + '€' : 'Gratis'}</p>`;
+  return h;
+}
+
 function pintarPedidos() {
   const lista = document.getElementById('lista');
   const pedidos = FILTRO === 'pendientes' ? PEDIDOS.filter(p => !p.listo) : PEDIDOS;
@@ -117,21 +147,21 @@ function pintarPedidos() {
           : `<button class="btn-listo" onclick="marcarListo(${p.id}, true)">✔ Marcar como listo</button>`
         }
       </div>
-      <p>${p.fecha}</p>
-      <p><strong>${p.cliente.nombre}</strong>${p.cliente.telefono ? ' · ' + p.cliente.telefono : ''}${p.cliente.email ? ' · ' + p.cliente.email : ''}</p>
-      ${p.cliente.direccion ? `<p>${p.cliente.direccion}</p>` : ''}
+      <p>${esc(p.fecha)}</p>
+      <p><strong>${esc(p.cliente.nombre)}</strong>${p.cliente.telefono ? ' · ' + esc(p.cliente.telefono) : ''}${p.cliente.email ? ' · ' + esc(p.cliente.email) : ''}</p>
+      ${p.cliente.direccion ? `<p>${esc(p.cliente.direccion)}</p>` : ''}
       <ul>
-        ${p.items.map(it => {
+        ${(p.items || p.productos || p.carrito || []).map(it => {
           const dorsal = it.dorsal || it.numero || it.number || '';
           const nombreCamiseta = it.nombreCamiseta || it.nombreJugador || it.nombrePersonalizado || it.nombre_personalizado || '';
           let extra = '';
-          if (nombreCamiseta) extra += ` · Nombre: <strong>${nombreCamiseta}</strong>`;
-          if (dorsal) extra += ` · Dorsal: <strong>${dorsal}</strong>`;
-          return `<li>${it.equipo} (${it.tipo === 'retro' ? 'Retro' : 'Actual'}) - Talla ${it.talla} - Cant: ${it.cantidad} - ${it.precioUnidad}€/u${extra}</li>`;
+          if (nombreCamiseta) extra += ` · Nombre: <strong>${esc(nombreCamiseta)}</strong>`;
+          if (dorsal) extra += ` · Dorsal: <strong>${esc(dorsal)}</strong>`;
+          return `<li>${esc(it.equipo || it.nombre || 'Camiseta')} (${it.tipo === 'retro' ? 'Retro' : 'Actual'}) - Talla ${esc(it.talla)} - Cant: ${esc(it.cantidad)} - ${esc(it.precioUnidad)}€/u${extra}</li>`;
         }).join('')}
       </ul>
-      ${p.descuentoCodigo ? `<p>Descuento (<strong>${p.descuentoCodigo.codigo}</strong> ${p.descuentoCodigo.tipo === 'porcentaje' ? '-' + p.descuentoCodigo.valor + '%' : '-' + Number(p.descuentoCodigo.valor).toFixed(2) + '€'}): -${Number(p.descuentoCodigo.importe).toFixed(2)}€</p>` : ''}
-      <p class="total">TOTAL: ${p.total.toFixed(2)}€</p>
+      ${desgloseHTML(p)}
+      <p class="total">TOTAL: ${Number(p.total || 0).toFixed(2)}€</p>
     </div>
   `).join('');
 }
