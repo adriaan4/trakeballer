@@ -20,12 +20,33 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ARCHIVOS
 // ============================================================
 
-const ORDERS_FILE = path.join(__dirname, 'orders.json');
+// Carpeta donde se guardan los PEDIDOS (trake_admin) y los CÓDIGOS DE DESCUENTO
+// (admin-descuentos). Para que no se pierdan al redesplegar hace falta un disco
+// persistente: en Render, crea un "Disk" con Mount Path /var/data (se detecta solo)
+// o pon la variable DATA_DIR con la ruta del disco.
+function elegirCarpetaDatos() {
+  if (process.env.DATA_DIR) return { dir: process.env.DATA_DIR, persistente: true };
+  try {
+    if (fs.existsSync('/var/data') && fs.statSync('/var/data').isDirectory()) {
+      fs.accessSync('/var/data', fs.constants.W_OK);
+      return { dir: '/var/data', persistente: true };
+    }
+  } catch (_) { /* seguimos con la carpeta del código */ }
+  return { dir: __dirname, persistente: false };
+}
+
+const { dir: DATA_DIR, persistente: ALMACENAMIENTO_PERSISTENTE } = elegirCarpetaDatos();
+
+try {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+} catch (err) {
+  console.error(`[FS] No se pudo crear la carpeta de datos ${DATA_DIR}:`, err.message);
+}
+
+const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
+const DESCUENTOS_FILE = path.join(DATA_DIR, 'descuentos.json');
 const SUGERENCIAS_FILE = path.join(__dirname, 'sugerencias.json');
 const RESENAS_FILE = path.join(__dirname, 'resenas.json');
-// Si tienes un disco persistente (p. ej. en Render), pon DATA_DIR con su ruta
-// para que los códigos de descuento no se pierdan al redesplegar.
-const DESCUENTOS_FILE = path.join(process.env.DATA_DIR || __dirname, 'descuentos.json');
 
 function inicializarArchivo(ruta) {
   try {
@@ -37,10 +58,30 @@ function inicializarArchivo(ruta) {
   }
 }
 
+// Si antes los archivos estaban en la carpeta del código, se copian a la carpeta de datos.
+function migrarArchivoAntiguo(nombre) {
+  if (DATA_DIR === __dirname) return;
+  try {
+    const viejo = path.join(__dirname, nombre);
+    const nuevo = path.join(DATA_DIR, nombre);
+    if (fs.existsSync(viejo) && !fs.existsSync(nuevo)) {
+      fs.copyFileSync(viejo, nuevo);
+      console.log(`[FS] Migrado ${nombre} a ${DATA_DIR}`);
+    }
+  } catch (err) {
+    console.error(`[FS] No se pudo migrar ${nombre}:`, err.message);
+  }
+}
+
+migrarArchivoAntiguo('orders.json');
+migrarArchivoAntiguo('descuentos.json');
+
 inicializarArchivo(ORDERS_FILE);
 inicializarArchivo(SUGERENCIAS_FILE);
 inicializarArchivo(RESENAS_FILE);
 inicializarArchivo(DESCUENTOS_FILE);
+
+console.log(`[datos] Carpeta de datos: ${DATA_DIR} (${ALMACENAMIENTO_PERSISTENTE ? 'persistente' : 'NO persistente: se borra al redesplegar'})`);
 
 // ============================================================
 // FUNCIONES ARCHIVOS
@@ -64,10 +105,61 @@ function guardarJSON(archivo, datos) {
   }
 }
 
+// Lectura estricta: nunca devuelve [] por un error de lectura (así no se pisan
+// pedidos/códigos buenos con una lista vacía). Si el archivo está corrupto usa la copia .bak.
+function leerJSONSeguro(archivo) {
+  if (!fs.existsSync(archivo)) return [];
+
+  const leer = ruta => {
+    const texto = fs.readFileSync(ruta, 'utf8');
+    if (!texto.trim()) return [];
+    const datos = JSON.parse(texto);
+    if (!Array.isArray(datos)) throw new Error('El archivo no contiene una lista');
+    return datos;
+  };
+
+  try {
+    return leer(archivo);
+  } catch (error) {
+    console.error(`[FS] ${archivo} ilegible:`, error.message);
+    const copia = archivo + '.bak';
+    if (!fs.existsSync(copia)) throw error;
+    const datos = leer(copia);
+    try { fs.copyFileSync(archivo, `${archivo}.corrupto-${Date.now()}`); } catch (_) {}
+    console.warn(`[FS] Recuperado desde ${copia}`);
+    return datos;
+  }
+}
+
+// Escritura atómica (archivo temporal + rename) con copia .bak; lanza error si falla.
+function guardarJSONSeguro(archivo, datos) {
+  const tmp = archivo + '.tmp';
+
+  try {
+    if (fs.existsSync(archivo)) {
+      JSON.parse(fs.readFileSync(archivo, 'utf8') || '[]'); // solo copiamos si el actual es válido
+      fs.copyFileSync(archivo, archivo + '.bak');
+    }
+  } catch (_) { /* si el actual está corrupto no pisamos la copia buena */ }
+
+  fs.writeFileSync(tmp, JSON.stringify(datos, null, 2), 'utf8');
+  fs.renameSync(tmp, archivo);
+}
+
+// Guarda el pedido y comprueba que quedó escrito. Lanza error si no se pudo guardar.
 function guardarPedido(pedido) {
-  const pedidos = leerJSON(ORDERS_FILE);
+  const pedidos = leerJSONSeguro(ORDERS_FILE);
+
+  let id = Date.now();
+  while (pedidos.some(p => p.id === id)) id += 1;
+  pedido.id = id;
+
   pedidos.push(pedido);
-  guardarJSON(ORDERS_FILE, pedidos);
+  guardarJSONSeguro(ORDERS_FILE, pedidos);
+
+  if (!leerJSONSeguro(ORDERS_FILE).some(p => p.id === id)) {
+    throw new Error('El pedido no quedó guardado en disco');
+  }
 }
 
 function guardarSugerencia(sugerencia) {
@@ -193,9 +285,16 @@ function redondear2(n) {
   return Math.round((Number(n) || 0) * 100) / 100;
 }
 
-function leerDescuentos() {
-  const lista = leerJSON(DESCUENTOS_FILE);
-  return Array.isArray(lista) ? lista : [];
+// Para consultar (validar código) es tolerante; para modificar (estricto=true) lanza
+// error si el archivo no se puede leer, para no borrar los códigos existentes.
+function leerDescuentos(estricto = false) {
+  if (estricto) return leerJSONSeguro(DESCUENTOS_FILE);
+  try {
+    return leerJSONSeguro(DESCUENTOS_FILE);
+  } catch (error) {
+    console.error('[descuentos] No se pudo leer:', error.message);
+    return [];
+  }
 }
 
 function buscarDescuentoActivo(codigo) {
@@ -289,7 +388,7 @@ app.post('/api/admin/login', (req, res) => {
 
 app.get('/api/admin/descuentos', (req, res) => {
   if (!comprobarSesionAdmin(req, res)) return;
-  res.json({ ok: true, descuentos: leerDescuentos() });
+  res.json({ ok: true, descuentos: leerDescuentos(), almacenamientoPersistente: ALMACENAMIENTO_PERSISTENTE });
 });
 
 app.post('/api/admin/descuentos', (req, res) => {
@@ -316,7 +415,7 @@ app.post('/api/admin/descuentos', (req, res) => {
       return res.status(400).json({ ok: false, error: 'El descuento en euros es demasiado alto.' });
     }
 
-    const lista = leerDescuentos();
+    const lista = leerDescuentos(true);
     if (lista.some(d => d.codigo === codigo)) {
       return res.status(409).json({ ok: false, error: 'Ese código ya existe. Elimínalo antes si quieres cambiarlo.' });
     }
@@ -330,7 +429,7 @@ app.post('/api/admin/descuentos', (req, res) => {
       creado: new Date().toLocaleString('es-ES')
     };
     lista.push(nuevo);
-    guardarJSON(DESCUENTOS_FILE, lista);
+    guardarJSONSeguro(DESCUENTOS_FILE, lista);
     res.json({ ok: true, descuento: nuevo });
   } catch (error) {
     console.error('[descuentos] Error creando:', error);
@@ -342,12 +441,12 @@ app.patch('/api/admin/descuentos/:codigo', (req, res) => {
   try {
     if (!comprobarSesionAdmin(req, res)) return;
 
-    const lista = leerDescuentos();
+    const lista = leerDescuentos(true);
     const d = lista.find(x => x.codigo === normalizarCodigo(req.params.codigo));
     if (!d) return res.status(404).json({ ok: false, error: 'Código no encontrado.' });
 
     d.activo = !!req.body?.activo;
-    guardarJSON(DESCUENTOS_FILE, lista);
+    guardarJSONSeguro(DESCUENTOS_FILE, lista);
     res.json({ ok: true, descuento: d });
   } catch (error) {
     console.error('[descuentos] Error actualizando:', error);
@@ -360,12 +459,12 @@ app.delete('/api/admin/descuentos/:codigo', (req, res) => {
     if (!comprobarSesionAdmin(req, res)) return;
 
     const codigo = normalizarCodigo(req.params.codigo);
-    const lista = leerDescuentos();
+    const lista = leerDescuentos(true);
     const resto = lista.filter(d => d.codigo !== codigo);
     if (resto.length === lista.length) {
       return res.status(404).json({ ok: false, error: 'Código no encontrado.' });
     }
-    guardarJSON(DESCUENTOS_FILE, resto);
+    guardarJSONSeguro(DESCUENTOS_FILE, resto);
     res.json({ ok: true });
   } catch (error) {
     console.error('[descuentos] Error eliminando:', error);
@@ -379,18 +478,23 @@ app.post('/api/descuento/validar', (req, res) => {
     return res.status(429).json({ ok: false, error: 'Demasiados intentos. Espera unos minutos.' });
   }
 
-  const d = buscarDescuentoActivo(req.body?.codigo);
-  if (!d) {
-    return res.status(404).json({ ok: false, error: 'Ese código de descuento no es válido.' });
-  }
+  try {
+    const d = buscarDescuentoActivo(req.body?.codigo);
+    if (!d) {
+      return res.status(404).json({ ok: false, error: 'Ese código de descuento no es válido.' });
+    }
 
-  res.json({
-    ok: true,
-    codigo: d.codigo,
-    tipo: d.tipo,
-    valor: d.valor,
-    importe: calcularImporteDescuento(d, req.body?.subtotal)
-  });
+    res.json({
+      ok: true,
+      codigo: d.codigo,
+      tipo: d.tipo,
+      valor: d.valor,
+      importe: calcularImporteDescuento(d, req.body?.subtotal)
+    });
+  } catch (error) {
+    console.error('[descuentos] Error validando:', error);
+    res.status(500).json({ ok: false, error: 'No se pudo comprobar el código. Inténtalo de nuevo.' });
+  }
 });
 
 // ============================================================
@@ -663,9 +767,60 @@ async function avisarPorTwilio(texto, { from, to }) {
 // PEDIDO
 // ============================================================
 
+// Avisos al dueño y al cliente (email, SMS, WhatsApp). Se lanza DESPUÉS de guardar el
+// pedido y de responder a la web: si algo falla aquí, el cliente ya no ve ningún error.
+async function notificarPedido(pedido) {
+  const esAmigoInvisible = pedido.tipo === 'amigo-invisible';
+
+  const intentar = async (nombre, fn) => {
+    try {
+      const resultado = await fn();
+      if (resultado && resultado.ok === false) {
+        console.warn(`[aviso:${nombre}] No enviado:`, resultado.motivo || resultado);
+      }
+    } catch (error) {
+      console.error(`[aviso:${nombre}] Error:`, error);
+    }
+  };
+
+  let textoAdmin = '';
+
+  await intentar('email-tienda', async () => {
+    textoAdmin = formatearPedidoTexto(pedido);
+    const htmlAdmin = crearHTMLPedido(pedido, false);
+    const asuntoAdmin = esAmigoInvisible
+      ? `Nuevo pedido de amigo invisible #${pedido.id} - ${Number(pedido.total || 0).toFixed(2)}€`
+      : `Nuevo pedido #${pedido.id} - ${Number(pedido.total || 0).toFixed(2)}€`;
+
+    return enviarEmail(process.env.EMAIL_TO || EMAIL_TIENDA, asuntoAdmin, textoAdmin, '', htmlAdmin);
+  });
+
+  if (pedido.cliente && pedido.cliente.email) {
+    await intentar('email-cliente', async () => enviarEmail(
+      pedido.cliente.email,
+      `Tu pedido #${pedido.id} en Trakeballer`,
+      formatearJustificanteCliente(pedido),
+      pedido.cliente.nombre,
+      crearHTMLPedido(pedido, true)
+    ));
+  }
+
+  await intentar('sms', () => avisarPorTwilio(textoAdmin, {
+    from: process.env.TWILIO_SMS_FROM,
+    to: process.env.TWILIO_SMS_TO
+  }));
+
+  await intentar('whatsapp', () => avisarPorTwilio(textoAdmin, {
+    from: process.env.TWILIO_WHATSAPP_FROM,
+    to: process.env.TWILIO_WHATSAPP_TO
+  }));
+}
+
 app.post('/api/pedido', async (req, res) => {
+  let pedido;
+
   try {
-    const pedido = req.body;
+    pedido = req.body;
     const items = obtenerItems(pedido);
 
     console.log('[pedido] Artículos recibidos:', items.length);
@@ -684,6 +839,22 @@ app.post('/api/pedido', async (req, res) => {
       if (!pedido.cliente || !pedido.cliente.nombre || !pedido.cliente.direccion || !pedido.cliente.telefono) {
         return res.status(400).json({ ok: false, error: 'Faltan datos de contacto.' });
       }
+    }
+
+    // Identificador que genera la web en cada envío: si la web reintenta por un corte de
+    // conexión, el pedido NO se duplica (se devuelve el que ya estaba guardado).
+    const idCliente = typeof pedido.idCliente === 'string'
+      ? pedido.idCliente.replace(/[^\w-]/g, '').slice(0, 64)
+      : '';
+
+    if (idCliente) {
+      const existente = leerJSONSeguro(ORDERS_FILE).find(p => p.idCliente === idCliente);
+      if (existente) {
+        return res.json({ ok: true, pedidoId: existente.id, repetido: true });
+      }
+      pedido.idCliente = idCliente;
+    } else {
+      delete pedido.idCliente;
     }
 
     // Código de descuento: se valida SIEMPRE en el servidor y se recalcula el total.
@@ -714,73 +885,34 @@ app.post('/api/pedido', async (req, res) => {
       delete pedido.codigoDescuento;
     }
 
-    pedido.id = Date.now();
     pedido.fecha = new Date().toLocaleString('es-ES');
 
+    // 1) GUARDAR (aparece en trake_admin). Si esto falla, es un error real.
     guardarPedido(pedido);
+  } catch (error) {
+    console.error('[pedido] Error guardando el pedido:', error);
+    return res.status(500).json({ ok: false, error: 'No se pudo guardar el pedido. Inténtalo de nuevo en unos segundos.' });
+  }
 
-    if (descuentoUsado) {
-      const lista = leerDescuentos();
-      const d = lista.find(x => x.codigo === descuentoUsado.codigo);
+  // 2) Contar el uso del código (si falla no afecta al pedido, que ya está guardado)
+  try {
+    if (pedido.descuentoCodigo) {
+      const lista = leerDescuentos(true);
+      const d = lista.find(x => x.codigo === pedido.descuentoCodigo.codigo);
       if (d) {
         d.usos = (d.usos || 0) + 1;
-        guardarJSON(DESCUENTOS_FILE, lista);
+        guardarJSONSeguro(DESCUENTOS_FILE, lista);
       }
     }
-
-    const textoAdmin = formatearPedidoTexto(pedido);
-    const htmlAdmin = crearHTMLPedido(pedido, false);
-    const asuntoAdmin = esAmigoInvisible
-      ? `Nuevo pedido de amigo invisible #${pedido.id} - ${Number(pedido.total || 0).toFixed(2)}€`
-      : `Nuevo pedido #${pedido.id} - ${Number(pedido.total || 0).toFixed(2)}€`;
-
-    let emailCliente = { ok: false, motivo: 'No enviado' };
-
-    if (pedido.cliente && pedido.cliente.email) {
-      const textoCliente = formatearJustificanteCliente(pedido);
-      const htmlCliente = crearHTMLPedido(pedido, true);
-
-      emailCliente = await enviarEmail(
-        pedido.cliente.email,
-        `Tu pedido #${pedido.id} en Trakeballer`,
-        textoCliente,
-        pedido.cliente.nombre,
-        htmlCliente
-      );
-    }
-
-    const emailAdmin = await enviarEmail(
-      process.env.EMAIL_TO || EMAIL_TIENDA,
-      asuntoAdmin,
-      textoAdmin,
-      '',
-      htmlAdmin
-    );
-
-    const sms = await avisarPorTwilio(textoAdmin, {
-      from: process.env.TWILIO_SMS_FROM,
-      to: process.env.TWILIO_SMS_TO
-    });
-
-    const whatsapp = await avisarPorTwilio(textoAdmin, {
-      from: process.env.TWILIO_WHATSAPP_FROM,
-      to: process.env.TWILIO_WHATSAPP_TO
-    });
-
-    return res.json({
-      ok: true,
-      pedidoId: pedido.id,
-      avisos: {
-        email: emailAdmin,
-        justificanteCliente: emailCliente,
-        sms,
-        whatsapp
-      }
-    });
   } catch (error) {
-    console.error('[pedido] Error:', error);
-    return res.status(500).json({ ok: false, error: 'Error interno al procesar el pedido.' });
+    console.error('[pedido] No se pudo contar el uso del código:', error);
   }
+
+  // 3) Responder YA a la web: el pedido está guardado.
+  res.json({ ok: true, pedidoId: pedido.id });
+
+  // 4) Avisos en segundo plano (nunca pueden provocar un error al cliente)
+  notificarPedido(pedido).catch(error => console.error('[pedido] Error en avisos:', error));
 });
 
 // ============================================================
@@ -920,8 +1052,8 @@ function comprobarAdmin(req, res) {
 app.get('/api/pedidos', (req, res) => {
   try {
     if (!comprobarAdmin(req, res)) return;
-    const pedidos = leerJSON(ORDERS_FILE).sort((a, b) => b.id - a.id);
-    res.json({ ok: true, pedidos });
+    const pedidos = leerJSONSeguro(ORDERS_FILE).sort((a, b) => b.id - a.id);
+    res.json({ ok: true, pedidos, almacenamientoPersistente: ALMACENAMIENTO_PERSISTENTE });
   } catch (error) {
     console.error('[pedidos] Error:', error);
     res.status(500).json({ ok: false, error: 'Error interno al leer los pedidos.' });
@@ -935,7 +1067,7 @@ app.post('/api/pedidos/:id/listo', (req, res) => {
     const id = Number(req.params.id);
     const listo = !!(req.body && req.body.listo);
 
-    const pedidos = leerJSON(ORDERS_FILE);
+    const pedidos = leerJSONSeguro(ORDERS_FILE);
     const pedido = pedidos.find(p => p.id === id);
 
     if (!pedido) {
@@ -943,7 +1075,7 @@ app.post('/api/pedidos/:id/listo', (req, res) => {
     }
 
     pedido.listo = listo;
-    guardarJSON(ORDERS_FILE, pedidos);
+    guardarJSONSeguro(ORDERS_FILE, pedidos);
 
     res.json({ ok: true, pedido });
   } catch (error) {
