@@ -252,6 +252,47 @@ function formatearProductosTexto(pedido) {
 }
 
 // ============================================================
+// DESGLOSE DE DESCUENTOS
+// ============================================================
+
+const PRECIO_ACTUAL_BASE = 25;
+const PRECIO_RETRO_BASE = 30;
+
+// Precio de los artículos SIN ningún descuento (usa el precio de cada línea; si una línea
+// no lo trae, como en el amigo invisible, usa el precio base según sea actual o retro).
+function calcularSubtotalSinDescuentos(pedido) {
+  return redondear2(
+    obtenerItems(pedido).reduce((suma, item) => {
+      const p = normalizarProducto(item);
+      const base = String(p.tipo).toLowerCase().includes('retro') ? PRECIO_RETRO_BASE : PRECIO_ACTUAL_BASE;
+      const unidad = p.precioUnidad > 0 ? p.precioUnidad : base;
+      return suma + unidad * p.cantidad;
+    }, 0)
+  );
+}
+
+// Guarda en el pedido cuánto se ha descontado y por qué: la oferta por cantidad
+// (6, 10 o 15 camisetas) y/o el código de descuento.
+function aplicarDesglose(pedido) {
+  const sinDescuentos = calcularSubtotalSinDescuentos(pedido);
+  pedido.subtotalSinDescuentos = sinDescuentos;
+
+  const subtotal = typeof pedido.subtotal === 'number' ? pedido.subtotal : null;
+  pedido.descuentoCantidad = subtotal === null ? 0 : Math.max(0, redondear2(sinDescuentos - subtotal));
+}
+
+// Resumen que se devuelve a la web para enseñárselo al cliente.
+function resumenPedido(pedido) {
+  return {
+    subtotalSinDescuentos: typeof pedido.subtotalSinDescuentos === 'number' ? pedido.subtotalSinDescuentos : null,
+    descuentoCantidad: Number(pedido.descuentoCantidad) || 0,
+    descuentoCodigo: pedido.descuentoCodigo || null,
+    envio: typeof pedido.envio === 'number' ? pedido.envio : null,
+    total: Number(pedido.total) || 0
+  };
+}
+
+// ============================================================
 // LINEAS DE SUBTOTAL / ENVIO (texto)
 // ============================================================
 
@@ -260,17 +301,30 @@ function lineasTotalesTexto(pedido) {
   const subtotal =
     typeof pedido.subtotal === 'number' ? pedido.subtotal.toFixed(2) : null;
   const envio = typeof pedido.envio === 'number' ? pedido.envio : null;
+  const dCantidad = Number(pedido.descuentoCantidad) || 0;
+  const hayDescuentos = dCantidad > 0.004 || !!pedido.descuentoCodigo;
 
-  return (
-    (subtotal !== null ? `Subtotal: ${subtotal}€\n` : '') +
-    (pedido.descuentoCodigo
-      ? `Descuento (${descripcionDescuento(pedido.descuentoCodigo)}): -${Number(pedido.descuentoCodigo.importe).toFixed(2)}€\n`
-      : '') +
-    (envio !== null
-      ? `Envío: ${envio > 0 ? envio.toFixed(2) + '€' : 'Gratis'}\n`
-      : '') +
-    `TOTAL: ${total}€`
-  );
+  let texto = '';
+
+  if (hayDescuentos && typeof pedido.subtotalSinDescuentos === 'number') {
+    texto += `Artículos (precio sin descuentos): ${pedido.subtotalSinDescuentos.toFixed(2)}€\n`;
+  } else if (subtotal !== null) {
+    texto += `Subtotal: ${subtotal}€\n`;
+  }
+
+  if (dCantidad > 0.004) {
+    texto += `Descuento por oferta de cantidad: -${dCantidad.toFixed(2)}€\n`;
+  }
+
+  if (pedido.descuentoCodigo) {
+    texto += `Descuento por código ${descripcionDescuento(pedido.descuentoCodigo)}: -${Number(pedido.descuentoCodigo.importe).toFixed(2)}€\n`;
+  }
+
+  if (envio !== null) {
+    texto += `Envío: ${envio > 0 ? envio.toFixed(2) + '€' : 'Gratis'}\n`;
+  }
+
+  return texto + `TOTAL: ${total}€`;
 }
 
 // ============================================================
@@ -507,7 +561,11 @@ function formatearPedidoTexto(pedido) {
       ? `NUEVO PEDIDO DE AMIGO INVISIBLE #${pedido.id}`
       : `NUEVO PEDIDO #${pedido.id}`;
 
-  return `${cabecera}
+  const avisoPanel = pedido.noGuardadoEnPanel
+    ? `⚠️ ATENCIÓN: este pedido NO se pudo guardar en el panel trake_admin. Apúntalo desde este correo.\n\n`
+    : '';
+
+  return `${avisoPanel}${cabecera}
 
 Fecha: ${pedido.fecha}
 
@@ -624,6 +682,33 @@ function crearHTMLProductos(pedido) {
 // HTML COMPLETO DEL EMAIL
 // ============================================================
 
+function bloqueTotalesHTML(pedido) {
+  const dCantidad = Number(pedido.descuentoCantidad) || 0;
+  const hayDescuentos = dCantidad > 0.004 || !!pedido.descuentoCodigo;
+  const verde = 'color:#1a7f37;';
+  let html = '';
+
+  if (hayDescuentos && typeof pedido.subtotalSinDescuentos === 'number') {
+    html += `<p><strong>Artículos (precio sin descuentos):</strong> ${pedido.subtotalSinDescuentos.toFixed(2)}€</p>`;
+  } else if (typeof pedido.subtotal === 'number') {
+    html += `<p><strong>Subtotal:</strong> ${pedido.subtotal.toFixed(2)}€</p>`;
+  }
+
+  if (dCantidad > 0.004) {
+    html += `<p style="${verde}"><strong>Descuento por oferta de cantidad:</strong> -${dCantidad.toFixed(2)}€</p>`;
+  }
+
+  if (pedido.descuentoCodigo) {
+    html += `<p style="${verde}"><strong>Descuento por código ${escapeHTML(descripcionDescuento(pedido.descuentoCodigo))}:</strong> -${Number(pedido.descuentoCodigo.importe).toFixed(2)}€</p>`;
+  }
+
+  if (typeof pedido.envio === 'number') {
+    html += `<p><strong>Envío:</strong> ${pedido.envio > 0 ? pedido.envio.toFixed(2) + '€' : 'Gratis'}</p>`;
+  }
+
+  return html;
+}
+
 function crearHTMLPedido(pedido, esCliente = false) {
   const productosHTML = crearHTMLProductos(pedido);
   const total = Number(pedido.total || 0).toFixed(2);
@@ -664,6 +749,7 @@ function crearHTMLPedido(pedido, esCliente = false) {
 <head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:20px;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif;color:#222;">
 <div style="max-width:650px;margin:auto;background:#ffffff;padding:25px;border-radius:12px;">
+  ${!esCliente && pedido.noGuardadoEnPanel ? `<p style="background:#fdecea;color:#b42318;padding:10px;border-radius:8px;"><strong>⚠️ Este pedido NO se pudo guardar en el panel trake_admin.</strong> Apúntalo desde este correo.</p>` : ''}
   <h2>${esCliente ? `¡Hola ${escapeHTML(nombre)}!` : `NUEVO PEDIDO #${pedido.id}`}</h2>
   ${
     esCliente
@@ -673,9 +759,7 @@ function crearHTMLPedido(pedido, esCliente = false) {
   }
   <h3 style="margin-top:30px;">${esCliente ? 'TU PEDIDO' : 'PEDIDO'}</h3>
   ${productosHTML}
-  ${typeof pedido.subtotal === 'number' ? `<p><strong>Subtotal:</strong> ${pedido.subtotal.toFixed(2)}€</p>` : ''}
-  ${pedido.descuentoCodigo ? `<p style="color:#1a7f37;"><strong>Descuento (${escapeHTML(descripcionDescuento(pedido.descuentoCodigo))}):</strong> -${Number(pedido.descuentoCodigo.importe).toFixed(2)}€</p>` : ''}
-  ${typeof pedido.envio === 'number' ? `<p><strong>Envío:</strong> ${pedido.envio > 0 ? pedido.envio.toFixed(2) + '€' : 'Gratis'}</p>` : ''}
+  ${bloqueTotalesHTML(pedido)}
   <h2>TOTAL: ${total}€</h2>
   ${esCliente ? bloquePaypal : ''}
 </div>
@@ -772,14 +856,20 @@ async function avisarPorTwilio(texto, { from, to }) {
 async function notificarPedido(pedido) {
   const esAmigoInvisible = pedido.tipo === 'amigo-invisible';
 
+  const resultados = {};
+
   const intentar = async (nombre, fn) => {
     try {
       const resultado = await fn();
+      resultados[nombre] = resultado;
       if (resultado && resultado.ok === false) {
         console.warn(`[aviso:${nombre}] No enviado:`, resultado.motivo || resultado);
       }
+      return resultado;
     } catch (error) {
       console.error(`[aviso:${nombre}] Error:`, error);
+      resultados[nombre] = { ok: false, motivo: error.message };
+      return resultados[nombre];
     }
   };
 
@@ -788,9 +878,10 @@ async function notificarPedido(pedido) {
   await intentar('email-tienda', async () => {
     textoAdmin = formatearPedidoTexto(pedido);
     const htmlAdmin = crearHTMLPedido(pedido, false);
+    const prefijo = pedido.noGuardadoEnPanel ? '⚠️ NO GUARDADO EN EL PANEL - ' : '';
     const asuntoAdmin = esAmigoInvisible
-      ? `Nuevo pedido de amigo invisible #${pedido.id} - ${Number(pedido.total || 0).toFixed(2)}€`
-      : `Nuevo pedido #${pedido.id} - ${Number(pedido.total || 0).toFixed(2)}€`;
+      ? `${prefijo}Nuevo pedido de amigo invisible #${pedido.id} - ${Number(pedido.total || 0).toFixed(2)}€`
+      : `${prefijo}Nuevo pedido #${pedido.id} - ${Number(pedido.total || 0).toFixed(2)}€`;
 
     return enviarEmail(process.env.EMAIL_TO || EMAIL_TIENDA, asuntoAdmin, textoAdmin, '', htmlAdmin);
   });
@@ -814,6 +905,8 @@ async function notificarPedido(pedido) {
     from: process.env.TWILIO_WHATSAPP_FROM,
     to: process.env.TWILIO_WHATSAPP_TO
   }));
+
+  return resultados;
 }
 
 app.post('/api/pedido', async (req, res) => {
@@ -850,7 +943,7 @@ app.post('/api/pedido', async (req, res) => {
     if (idCliente) {
       const existente = leerJSONSeguro(ORDERS_FILE).find(p => p.idCliente === idCliente);
       if (existente) {
-        return res.json({ ok: true, pedidoId: existente.id, repetido: true });
+        return res.json({ ok: true, pedidoId: existente.id, repetido: true, resumen: resumenPedido(existente) });
       }
       pedido.idCliente = idCliente;
     } else {
@@ -887,11 +980,34 @@ app.post('/api/pedido', async (req, res) => {
 
     pedido.fecha = new Date().toLocaleString('es-ES');
 
-    // 1) GUARDAR (aparece en trake_admin). Si esto falla, es un error real.
+    // Cuánto se ha descontado y por qué (oferta por cantidad y/o código)
+    aplicarDesglose(pedido);
+  } catch (error) {
+    console.error('[pedido] Error preparando el pedido:', error);
+    return res.status(500).json({ ok: false, error: 'No se pudo procesar el pedido.', detalle: error.message });
+  }
+
+  // 1) GUARDAR (aparece en trake_admin).
+  //    Si el disco falla, el pedido NO se pierde: se manda igualmente por email a la tienda
+  //    (con un aviso) y solo se da error al cliente si tampoco se puede enviar ese email.
+  try {
     guardarPedido(pedido);
   } catch (error) {
-    console.error('[pedido] Error guardando el pedido:', error);
-    return res.status(500).json({ ok: false, error: 'No se pudo guardar el pedido. Inténtalo de nuevo en unos segundos.' });
+    console.error('[pedido] NO SE PUDO GUARDAR EN DISCO:', error);
+    pedido.id = pedido.id || Date.now();
+    pedido.noGuardadoEnPanel = true;
+
+    const avisos = await notificarPedido(pedido).catch(e => ({ 'email-tienda': { ok: false, motivo: e.message } }));
+
+    if (avisos['email-tienda'] && avisos['email-tienda'].ok) {
+      return res.json({ ok: true, pedidoId: pedido.id, resumen: resumenPedido(pedido) });
+    }
+
+    return res.status(500).json({
+      ok: false,
+      error: 'No se pudo registrar el pedido por un fallo del servidor. Escríbenos a trakeballer@gmail.com con tu pedido.',
+      detalle: error.message
+    });
   }
 
   // 2) Contar el uso del código (si falla no afecta al pedido, que ya está guardado)
@@ -909,7 +1025,7 @@ app.post('/api/pedido', async (req, res) => {
   }
 
   // 3) Responder YA a la web: el pedido está guardado.
-  res.json({ ok: true, pedidoId: pedido.id });
+  res.json({ ok: true, pedidoId: pedido.id, resumen: resumenPedido(pedido) });
 
   // 4) Avisos en segundo plano (nunca pueden provocar un error al cliente)
   notificarPedido(pedido).catch(error => console.error('[pedido] Error en avisos:', error));
@@ -1089,7 +1205,18 @@ app.post('/api/pedidos/:id/listo', (req, res) => {
 // ============================================================
 
 app.get('/api/salud', (req, res) => {
-  res.json({ ok: true, servicio: 'Trakeballer' });
+  let escribible = false;
+  try {
+    fs.accessSync(DATA_DIR, fs.constants.W_OK);
+    escribible = true;
+  } catch (_) { /* sin permisos de escritura */ }
+
+  res.json({
+    ok: true,
+    servicio: 'Trakeballer',
+    datos: { persistente: ALMACENAMIENTO_PERSISTENTE, escribible },
+    email: { brevo: !!process.env.BREVO_API_KEY, remitente: !!process.env.EMAIL_FROM }
+  });
 });
 
 function urlBase(req) {
