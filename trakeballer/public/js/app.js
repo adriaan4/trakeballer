@@ -1738,6 +1738,51 @@ document.getElementById('btnIrEnvio').addEventListener('click', () => {
   document.getElementById('btnIrEnvio').style.display = 'none';
 });
 
+/* Envío del pedido al servidor.
+   - Cada envío lleva un idCliente: si hay un corte de conexión se reintenta solo y el
+     servidor NO duplica el pedido.
+   - Solo devuelve un error "incierto" si tras varios intentos no se pudo confirmar. */
+async function enviarPedidoAlServidor(pedido) {
+  pedido.idCliente = (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : 'p' + Date.now() + Math.random().toString(36).slice(2, 10);
+
+  const MAX_INTENTOS = 3;
+
+  for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
+    const control = new AbortController();
+    const temporizador = setTimeout(() => control.abort(), 45000);
+
+    try {
+      const resp = await fetch('/api/pedido', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pedido),
+        signal: control.signal
+      });
+      clearTimeout(temporizador);
+
+      let data = null;
+      try { data = await resp.json(); } catch (_) { /* respuesta que no es JSON (p. ej. 502) */ }
+
+      if (data && data.ok) return data;
+      // Error de validación real (falta un dato, código inválido...): no se reintenta.
+      if (data && resp.status >= 400 && resp.status < 500) return data;
+    } catch (err) {
+      clearTimeout(temporizador);
+    }
+
+    if (intento < MAX_INTENTOS) {
+      await new Promise(r => setTimeout(r, 1500 * intento));
+    }
+  }
+
+  return {
+    ok: false,
+    error: 'No hemos podido confirmar si tu pedido se envió (mala conexión). Antes de repetirlo, revisa tu correo o escríbenos a trakeballer@gmail.com con tu nombre.'
+  };
+}
+
 /* Envío del pedido */
 document.getElementById('formEnvio').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -1771,15 +1816,13 @@ document.getElementById('formEnvio').addEventListener('submit', async (e) => {
   estado.className = 'form-envio__estado';
   estado.textContent = 'Enviando pedido...';
 
+  let enviadoOk = false;
+
   try {
-    const resp = await fetch('/api/pedido', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(pedido)
-    });
-    const data = await resp.json();
+    const data = await enviarPedidoAlServidor(pedido);
 
     if (data.ok) {
+      enviadoOk = true;
       estado.className = 'form-envio__estado ok';
       estado.textContent = `¡Pedido #${data.pedidoId} enviado! Recuerda enviar el pago por PayPal a trakeballer@gmail.com (sin poner concepto) y mandarnos el comprobante y el número de pedido a ese mismo correo.`;
       carrito = [];
@@ -1797,8 +1840,12 @@ document.getElementById('formEnvio').addEventListener('submit', async (e) => {
       estado.textContent = data.error || 'No se pudo enviar el pedido.';
     }
   } catch (err) {
-    estado.className = 'form-envio__estado error';
-    estado.textContent = 'Error de conexión. Inténtalo de nuevo.';
+    console.error('[pedido] Error tras enviar:', err);
+    // Si el pedido ya se envió, un fallo al limpiar el formulario NO debe mostrarse como error.
+    if (!enviadoOk) {
+      estado.className = 'form-envio__estado error';
+      estado.textContent = 'Error de conexión. Inténtalo de nuevo.';
+    }
   } finally {
     boton.disabled = false;
     renderCarrito();
@@ -1940,15 +1987,13 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
   estado.className = 'form-envio__estado';
   estado.textContent = 'Enviando pedido...';
 
+  let enviadoOk = false;
+
   try {
-    const resp = await fetch('/api/pedido', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(pedido)
-    });
-    const data = await resp.json();
+    const data = await enviarPedidoAlServidor(pedido);
 
     if (data.ok) {
+      enviadoOk = true;
       estado.className = 'form-envio__estado ok';
       estado.textContent = `¡Pedido #${data.pedidoId} enviado! Recuerda enviar el pago por PayPal a trakeballer@gmail.com (sin poner concepto) y mandarnos el comprobante y el número de pedido a ese mismo correo.`;
       TALLAS_AMIGO.forEach(t => { document.getElementById(t.input).value = 0; });
@@ -1963,8 +2008,11 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
       estado.textContent = data.error || 'No se pudo enviar el pedido.';
     }
   } catch (err) {
-    estado.className = 'form-envio__estado error';
-    estado.textContent = 'Error de conexión. Inténtalo de nuevo.';
+    console.error('[pedido] Error tras enviar:', err);
+    if (!enviadoOk) {
+      estado.className = 'form-envio__estado error';
+      estado.textContent = 'Error de conexión. Inténtalo de nuevo.';
+    }
   } finally {
     boton.disabled = false;
   }
