@@ -112,10 +112,15 @@ Los precios (`PRECIO_ACTUAL` = 25€ y `PRECIO_RETRO` = 30€) y los extras por 
 - El pedido se guarda siempre en `orders.json` en el servidor, aunque los avisos por email/SMS/WhatsApp fallen o no estén configurados — así nunca pierdes un pedido.
 - Esta versión no incluye pago online (tarjeta, Bizum, etc.): el pedido se cierra por contacto directo con el cliente, tal como se pedía (dirección + teléfono).
 
-## 7. Códigos de descuento (panel de administrador)
+## Dónde se guardan los pedidos y los códigos de descuento
 
-- Entra en `/admin-descuentos.html` (hay un enlace discreto "Acceso admin" en el pie de la web).
-- Usuario por defecto: `trakeballer`. Puedes cambiar usuario y contraseña con las variables `ADMIN_USER` y `ADMIN_PASS` en Render (recomendado).
-- Desde el panel añades códigos con su descuento en **% o en €**, los activas/desactivas o los eliminas, y ves cuántas veces se ha usado cada uno.
-- El cliente escribe el código en el **carrito** o en el **amigo invisible**. El descuento se aplica al subtotal (no al envío), el servidor lo valida y recalcula el total, y aparece en el **ticket del cliente**, en el **email a la tienda** y en el panel de pedidos.
-- Los códigos se guardan en `descuentos.json`. En Render, sin disco persistente, ese archivo se borra en cada redespliegue (igual que `orders.json`): añade un disco y pon `DATA_DIR` con su ruta para conservarlos.
+Los pedidos (panel `/trake_admin.html`) y los códigos (`/admin-descuentos.html`) se guardan en
+`orders.json` y `descuentos.json` dentro de la carpeta de datos:
+
+- Si existe la variable `DATA_DIR`, se usa esa carpeta.
+- Si no, y existe `/var/data` (disco de Render), se usa esa.
+- Si no, se usa la carpeta del código, que **se borra en cada redespliegue**. En ese caso los dos paneles
+  muestran un aviso en rojo.
+
+Para que no se pierdan nunca: en Render, **Disks → Add Disk → Mount Path `/var/data`**.
+Cada guardado es atómico y deja una copia `.bak` por si el archivo se corrompe.
