@@ -1738,16 +1738,39 @@ document.getElementById('btnIrEnvio').addEventListener('click', () => {
   document.getElementById('btnIrEnvio').style.display = 'none';
 });
 
+/* Texto de confirmación tras enviar el pedido, con el descuento aplicado. */
+function mensajePedidoEnviado(data) {
+  let txt = `¡Pedido #${data.pedidoId} enviado!`;
+  const r = data.resumen;
+
+  if (r) {
+    const partes = [];
+    if (r.descuentoCantidad > 0.004) {
+      partes.push(`oferta por cantidad -${Number(r.descuentoCantidad).toFixed(2)} €`);
+    }
+    if (r.descuentoCodigo) {
+      const dc = r.descuentoCodigo;
+      const valor = dc.tipo === 'porcentaje' ? `-${Number(dc.valor)}%` : `-${Number(dc.valor).toFixed(2)} €`;
+      partes.push(`código ${dc.codigo} (${valor}) -${Number(dc.importe).toFixed(2)} €`);
+    }
+    if (partes.length) txt += ` Descuentos aplicados: ${partes.join(' y ')}.`;
+    txt += ` Total a pagar: ${Number(r.total).toFixed(2)} €.`;
+  }
+
+  return txt + ' Recuerda enviar el pago por PayPal a trakeballer@gmail.com (sin poner concepto) y mandarnos el comprobante y el número de pedido a ese mismo correo.';
+}
+
 /* Envío del pedido al servidor.
    - Cada envío lleva un idCliente: si hay un corte de conexión se reintenta solo y el
      servidor NO duplica el pedido.
-   - Solo devuelve un error "incierto" si tras varios intentos no se pudo confirmar. */
+   - Si falla, el mensaje incluye el motivo técnico para poder diagnosticarlo. */
 async function enviarPedidoAlServidor(pedido) {
   pedido.idCliente = (window.crypto && crypto.randomUUID)
     ? crypto.randomUUID()
     : 'p' + Date.now() + Math.random().toString(36).slice(2, 10);
 
   const MAX_INTENTOS = 3;
+  let ultimo = { status: 0, error: '', detalle: '' };
 
   for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
     const control = new AbortController();
@@ -1768,18 +1791,30 @@ async function enviarPedidoAlServidor(pedido) {
       if (data && data.ok) return data;
       // Error de validación real (falta un dato, código inválido...): no se reintenta.
       if (data && resp.status >= 400 && resp.status < 500) return data;
+
+      ultimo = { status: resp.status, error: (data && data.error) || '', detalle: (data && data.detalle) || '' };
     } catch (err) {
       clearTimeout(temporizador);
+      ultimo = { status: 0, error: '', detalle: err.name === 'AbortError' ? 'tiempo de espera agotado' : 'sin conexión con el servidor' };
     }
+
+    console.error(`[pedido] Intento ${intento}/${MAX_INTENTOS} fallido:`, ultimo);
 
     if (intento < MAX_INTENTOS) {
       await new Promise(r => setTimeout(r, 1500 * intento));
     }
   }
 
+  const tecnico = [ultimo.status ? `HTTP ${ultimo.status}` : '', ultimo.detalle].filter(Boolean).join(' - ');
+
+  // El servidor respondió con un error suyo (ya sabemos que NO se registró)
+  if (ultimo.status === 500 && ultimo.error) {
+    return { ok: false, error: `${ultimo.error}${tecnico ? ` (${tecnico})` : ''}` };
+  }
+
   return {
     ok: false,
-    error: 'No hemos podido confirmar si tu pedido se envió (mala conexión). Antes de repetirlo, revisa tu correo o escríbenos a trakeballer@gmail.com con tu nombre.'
+    error: `No hemos podido confirmar si tu pedido se envió${tecnico ? ` (${tecnico})` : ''}. Antes de repetirlo, revisa tu correo o escríbenos a trakeballer@gmail.com con tu nombre.`
   };
 }
 
@@ -1824,7 +1859,7 @@ document.getElementById('formEnvio').addEventListener('submit', async (e) => {
     if (data.ok) {
       enviadoOk = true;
       estado.className = 'form-envio__estado ok';
-      estado.textContent = `¡Pedido #${data.pedidoId} enviado! Recuerda enviar el pago por PayPal a trakeballer@gmail.com (sin poner concepto) y mandarnos el comprobante y el número de pedido a ese mismo correo.`;
+      estado.textContent = mensajePedidoEnviado(data);
       carrito = [];
       guardarCarrito();
       try { if (cuponCarrito) cuponCarrito.reset(); } catch (e) { console.error(e); }
@@ -1834,7 +1869,7 @@ document.getElementById('formEnvio').addEventListener('submit', async (e) => {
         document.getElementById('btnIrEnvio').style.display = 'block';
         overlayCarrito.classList.remove('abierto');
         estado.textContent = '';
-      }, 8000);
+      }, 20000);
     } else {
       estado.className = 'form-envio__estado error';
       estado.textContent = data.error || 'No se pudo enviar el pedido.';
@@ -1995,7 +2030,7 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
     if (data.ok) {
       enviadoOk = true;
       estado.className = 'form-envio__estado ok';
-      estado.textContent = `¡Pedido #${data.pedidoId} enviado! Recuerda enviar el pago por PayPal a trakeballer@gmail.com (sin poner concepto) y mandarnos el comprobante y el número de pedido a ese mismo correo.`;
+      estado.textContent = mensajePedidoEnviado(data);
       TALLAS_AMIGO.forEach(t => { document.getElementById(t.input).value = 0; });
       document.getElementById('amigoNumPersonas').value = 1;
       document.getElementById('amigoObservaciones').value = '';
