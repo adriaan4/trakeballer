@@ -20,7 +20,7 @@
   .btn-verde { background:#4ade80; color:#111; }
   .btn-gris { background:#333; color:#eee; border:1px solid #555; }
   .btn-rojo { background:#3a1a1a; color:#f87171; border:1px solid #6b2a2a; }
-  .grid { display:grid; grid-template-columns: 1.4fr 1fr 1fr auto; gap:12px; align-items:end; }
+  .grid { display:grid; grid-template-columns: 1.3fr 1fr 1fr 1fr auto; gap:12px; align-items:end; }
   #login { max-width:340px; margin:60px auto; }
   #login .caja { margin:0; }
   #login input { margin-bottom:12px; }
@@ -37,7 +37,7 @@
   .nota { color:#888; font-size:0.82rem; margin:10px 0 0; }
   @media (max-width:640px) {
     .grid { grid-template-columns:1fr; }
-    th:nth-child(4), td:nth-child(4) { display:none; }
+    th:nth-child(5), td:nth-child(5) { display:none; }
   }
 </style>
 </head>
@@ -89,6 +89,10 @@
       <div>
         <label for="valor" id="valorLabel">Descuento aplicado (%)</label>
         <input id="valor" type="number" min="0" step="0.01" placeholder="10">
+      </div>
+      <div>
+        <label for="minCamisetas">Mínimo de camisetas</label>
+        <input id="minCamisetas" type="number" min="0" step="1" placeholder="0 = sin mínimo">
       </div>
       <button class="btn-verde" onclick="crear()">Añadir</button>
     </div>
@@ -162,12 +166,13 @@ function pintar() {
   }
   $('lista').innerHTML = `
     <table>
-      <thead><tr><th>Código</th><th>Descuento</th><th>Usos</th><th>Creado</th><th></th></tr></thead>
+      <thead><tr><th>Código</th><th>Descuento</th><th>Mín. camisetas</th><th>Usos</th><th>Creado</th><th></th></tr></thead>
       <tbody>
         ${DESCUENTOS.map(d => `
           <tr class="${d.activo === false ? 'inactivo' : ''}">
             <td class="codigo">${esc(d.codigo)}</td>
             <td>${esc(fmtValor(d))}</td>
+            <td>${Number(d.minCamisetas) > 0 ? Number(d.minCamisetas) : 'Sin mínimo'}</td>
             <td>${Number(d.usos) || 0}</td>
             <td>${esc(d.creado || '')}</td>
             <td><div class="acciones">
@@ -214,23 +219,25 @@ async function crear() {
   const codigo = $('codigo').value.trim();
   const tipo = $('tipo').value;
   const valor = parseFloat($('valor').value.replace(',', '.'));
+  const minCamisetas = parseInt($('minCamisetas').value, 10) || 0;
 
   if (!codigo) { msg.className = 'msg error'; msg.textContent = 'Escribe el código.'; return; }
   if (!(valor > 0)) { msg.className = 'msg error'; msg.textContent = 'Indica el descuento (mayor que 0).'; return; }
 
-  const data = await api('/api/admin/descuentos', { method: 'POST', body: JSON.stringify({ codigo, tipo, valor }) });
+  const data = await api('/api/admin/descuentos', { method: 'POST', body: JSON.stringify({ codigo, tipo, valor, minCamisetas }) });
   if (!data.ok) { msg.className = 'msg error'; msg.textContent = data.error || 'No se pudo crear.'; return; }
 
   DESCUENTOS.push(data.descuento);
   $('codigo').value = '';
   $('valor').value = '';
+  $('minCamisetas').value = '';
   msg.className = 'msg ok';
-  msg.textContent = `Código ${data.descuento.codigo} creado (${fmtValor(data.descuento)}).`;
+  msg.textContent = `Código ${data.descuento.codigo} creado (${fmtValor(data.descuento)}${data.descuento.minCamisetas > 0 ? ', mínimo ' + data.descuento.minCamisetas + ' camisetas' : ''}).`;
   pintar();
 }
 
 ['usuario', 'clave'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); }));
-['codigo', 'valor'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') crear(); }));
+['codigo', 'valor', 'minCamisetas'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') crear(); }));
 
 if (TOKEN) mostrarPanel();
 </script>
