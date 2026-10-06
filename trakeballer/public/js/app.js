@@ -1589,7 +1589,21 @@ function actualizarContadorCarrito() {
 var cuponCarrito = null;
 var cuponAmigo = null;
 
-function crearGestorCupon({ inputId, btnId, estadoId, getSubtotal, onChange }) {
+/* Pedido mínimo: 2 camisetas (el servidor también lo comprueba). */
+const MIN_CAMISETAS_PEDIDO = 2;
+
+function contarCamisetas(items) {
+  return items.reduce((s, it) => s + (Number(it.cantidad) || 0), 0);
+}
+
+function avisarMinimoCamisetas(estado) {
+  const texto = `El pedido mínimo es de ${MIN_CAMISETAS_PEDIDO} camisetas. Añade al menos otra camiseta para poder enviarlo.`;
+  estado.className = 'form-envio__estado error';
+  estado.textContent = texto;
+  alert(texto);
+}
+
+function crearGestorCupon({ inputId, btnId, estadoId, getSubtotal, getUnidades, onChange }) {
   const input = document.getElementById(inputId);
   const btn = document.getElementById(btnId);
   const estado = document.getElementById(estadoId);
@@ -1624,12 +1638,12 @@ function crearGestorCupon({ inputId, btnId, estadoId, getSubtotal, onChange }) {
       const resp = await fetch('/api/descuento/validar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ codigo, subtotal })
+        body: JSON.stringify({ codigo, subtotal, unidades: getUnidades() })
       });
       const data = await resp.json();
 
       if (data.ok) {
-        aplicado = { codigo: data.codigo, tipo: data.tipo, valor: data.valor };
+        aplicado = { codigo: data.codigo, tipo: data.tipo, valor: data.valor, minCamisetas: Number(data.minCamisetas) || 0 };
         input.value = data.codigo;
         input.disabled = true;
         btn.textContent = 'Quitar';
@@ -1645,6 +1659,17 @@ function crearGestorCupon({ inputId, btnId, estadoId, getSubtotal, onChange }) {
     }
   }
 
+  /* Si el cliente quita camisetas y se queda por debajo del mínimo del código, se retira. */
+  function revisarMinimo() {
+    if (!aplicado || !aplicado.minCamisetas) return;
+    const unidades = getUnidades();
+    if (unidades >= aplicado.minCamisetas) return;
+    const codigo = aplicado.codigo;
+    const min = aplicado.minCamisetas;
+    quitar();
+    mensaje(`Se ha quitado el código ${codigo}: requiere un mínimo de ${min} camisetas y ahora tienes ${unidades}.`, 'error');
+  }
+
   btn.addEventListener('click', aplicar);
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); aplicar(); }
@@ -1653,6 +1678,7 @@ function crearGestorCupon({ inputId, btnId, estadoId, getSubtotal, onChange }) {
   return {
     get: () => aplicado,
     reset: quitar,
+    revisarMinimo,
     importe(subtotal) {
       if (!aplicado) return 0;
       const bruto = aplicado.tipo === 'porcentaje' ? subtotal * aplicado.valor / 100 : aplicado.valor;
@@ -1701,6 +1727,8 @@ function renderCarrito() {
       });
     });
   }
+
+  if (cuponCarrito) cuponCarrito.revisarMinimo();
 
   const sinDescuento = carrito.reduce((s, it) => s + it.precioUnidad * it.cantidad, 0);
   const subtotal = calcularSubtotalConOfertas(carrito);
@@ -1825,6 +1853,11 @@ document.getElementById('formEnvio').addEventListener('submit', async (e) => {
   const estado = document.getElementById('estadoPedido');
   const boton = document.getElementById('btnEnviarPedido');
 
+  if (contarCamisetas(carrito) < MIN_CAMISETAS_PEDIDO) {
+    avisarMinimoCamisetas(estado);
+    return;
+  }
+
   const subtotal = calcularSubtotalConOfertas(carrito);
   const envio = calcularEnvio(carrito);
   const importeCupon = cuponCarrito ? cuponCarrito.importe(subtotal) : 0;
@@ -1917,6 +1950,7 @@ function itemsAmigoActuales() {
 }
 
 function actualizarResumenAmigo() {
+  if (cuponAmigo) cuponAmigo.revisarMinimo();
   const subtotal = calcularSubtotalConOfertas(itemsAmigoActuales());
   const importe = cuponAmigo ? cuponAmigo.importe(subtotal) : 0;
   const fila = document.getElementById('amigoResCuponWrap');
@@ -1937,6 +1971,7 @@ cuponCarrito = crearGestorCupon({
   btnId: 'cuponCarritoBtn',
   estadoId: 'cuponCarritoEstado',
   getSubtotal: () => calcularSubtotalConOfertas(carrito),
+  getUnidades: () => contarCamisetas(carrito),
   onChange: renderCarrito
 });
 
@@ -1945,6 +1980,7 @@ cuponAmigo = crearGestorCupon({
   btnId: 'cuponAmigoBtn',
   estadoId: 'cuponAmigoEstado',
   getSubtotal: () => calcularSubtotalConOfertas(itemsAmigoActuales()),
+  getUnidades: () => contarCamisetas(itemsAmigoActuales()),
   onChange: actualizarResumenAmigo
 });
 
@@ -1995,6 +2031,11 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
   if (!direccion) {
     estado.className = 'form-envio__estado error';
     estado.textContent = 'Indica la dirección de envío.';
+    return;
+  }
+
+  if (contarCamisetas(items) < MIN_CAMISETAS_PEDIDO) {
+    avisarMinimoCamisetas(estado);
     return;
   }
 
