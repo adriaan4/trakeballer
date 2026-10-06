@@ -357,6 +357,23 @@ function buscarDescuentoActivo(codigo) {
   return leerDescuentos().find(d => d.codigo === cod && d.activo !== false) || null;
 }
 
+// Mínimo de camisetas para poder hacer un pedido (si hay menos, no se guarda ni se envía nada).
+const MIN_CAMISETAS_PEDIDO = 2;
+
+function contarUnidades(pedido) {
+  return obtenerItems(pedido).reduce((suma, item) => suma + normalizarProducto(item).cantidad, 0);
+}
+
+// Mínimo de camisetas que exige un código (0 = sin mínimo).
+function minimoCamisetasCodigo(descuento) {
+  return Math.max(0, parseInt(descuento && descuento.minCamisetas, 10) || 0);
+}
+
+function textoMinimoCodigo(descuento, unidades) {
+  const min = minimoCamisetasCodigo(descuento);
+  return `El código ${descuento.codigo} solo se puede usar en pedidos de ${min} camisetas o más. Ahora tienes ${unidades} en el pedido.`;
+}
+
 // Importe (en €) que descuenta un código sobre un subtotal. Nunca supera el subtotal.
 function calcularImporteDescuento(descuento, subtotal) {
   const base = Math.max(0, Number(subtotal) || 0);
@@ -469,6 +486,13 @@ app.post('/api/admin/descuentos', (req, res) => {
       return res.status(400).json({ ok: false, error: 'El descuento en euros es demasiado alto.' });
     }
 
+    const minCamisetas = req.body?.minCamisetas === undefined || req.body?.minCamisetas === ''
+      ? 0
+      : Number(req.body.minCamisetas);
+    if (!Number.isInteger(minCamisetas) || minCamisetas < 0 || minCamisetas > 1000) {
+      return res.status(400).json({ ok: false, error: 'El mínimo de camisetas debe ser un número entero (0 = sin mínimo).' });
+    }
+
     const lista = leerDescuentos(true);
     if (lista.some(d => d.codigo === codigo)) {
       return res.status(409).json({ ok: false, error: 'Ese código ya existe. Elimínalo antes si quieres cambiarlo.' });
@@ -478,6 +502,7 @@ app.post('/api/admin/descuentos', (req, res) => {
       codigo,
       tipo,
       valor: redondear2(valor),
+      minCamisetas,
       activo: true,
       usos: 0,
       creado: new Date().toLocaleString('es-ES')
@@ -538,11 +563,18 @@ app.post('/api/descuento/validar', (req, res) => {
       return res.status(404).json({ ok: false, error: 'Ese código de descuento no es válido.' });
     }
 
+    const min = minimoCamisetasCodigo(d);
+    const unidades = Math.max(0, parseInt(req.body?.unidades, 10) || 0);
+    if (min > 0 && unidades < min) {
+      return res.status(400).json({ ok: false, minCamisetas: min, error: textoMinimoCodigo(d, unidades) });
+    }
+
     res.json({
       ok: true,
       codigo: d.codigo,
       tipo: d.tipo,
       valor: d.valor,
+      minCamisetas: min,
       importe: calcularImporteDescuento(d, req.body?.subtotal)
     });
   } catch (error) {
@@ -922,6 +954,15 @@ app.post('/api/pedido', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'El pedido no tiene artículos.' });
     }
 
+    // Mínimo de camisetas: si hay menos, se rechaza ANTES de guardar y de enviar ningún correo.
+    const unidadesPedido = contarUnidades(pedido);
+    if (unidadesPedido < MIN_CAMISETAS_PEDIDO) {
+      return res.status(400).json({
+        ok: false,
+        error: `El pedido mínimo es de ${MIN_CAMISETAS_PEDIDO} camisetas. Añade al menos otra camiseta para poder enviarlo.`
+      });
+    }
+
     const esAmigoInvisible = pedido.tipo === 'amigo-invisible';
 
     if (esAmigoInvisible) {
@@ -959,6 +1000,10 @@ app.post('/api/pedido', async (req, res) => {
       descuentoUsado = buscarDescuentoActivo(codigoRecibido);
       if (!descuentoUsado) {
         return res.status(400).json({ ok: false, error: 'El código de descuento no es válido. Quítalo o revísalo e inténtalo de nuevo.' });
+      }
+
+      if (unidadesPedido < minimoCamisetasCodigo(descuentoUsado)) {
+        return res.status(400).json({ ok: false, error: textoMinimoCodigo(descuentoUsado, unidadesPedido) + ' Quita el código o añade más camisetas.' });
       }
 
       const base = typeof pedido.subtotal === 'number' ? pedido.subtotal : Number(pedido.total) || 0;
