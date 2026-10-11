@@ -516,9 +516,9 @@ const PRECIO_RETRO = 27.99;
    cantidades intermedias/mayores combinando lotes (p. ej. 21 = 15+6).
 ========================================================= */
 const OFERTAS_CANTIDAD = [
-  { cantidad: 6, normal: 130, retro: 145 },
-  { cantidad: 10, normal: 195, retro: 220 },
-  { cantidad: 15, normal: 240, retro: 265 },
+  { cantidad: 6, normal: 130, retro: 150 },
+  { cantidad: 10, normal: 200, retro: 240 },
+  { cantidad: 15, normal: 330, retro: 400 },
 ];
 
 function calcularPrecioPorTipo(cantidad, tipo) {
@@ -534,7 +534,7 @@ function calcularPrecioPorTipo(cantidad, tipo) {
         mejor = Math.min(mejor, costes[n - oferta.cantidad] + precioLote);
       }
     });
-    costes[n] = mejor;
+    costes[n] = Math.round(mejor * 100) / 100;
   }
   return costes[cantidad];
 }
@@ -546,10 +546,11 @@ function calcularSubtotalConOfertas(items) {
   items.forEach(it => {
     unidadesPorTipo[it.tipo] = (unidadesPorTipo[it.tipo] || 0) + it.cantidad;
   });
-  return Object.keys(unidadesPorTipo).reduce(
-    (total, tipo) => total + calcularPrecioPorTipo(unidadesPorTipo[tipo], tipo),
+  const total = Object.keys(unidadesPorTipo).reduce(
+    (suma, tipo) => suma + calcularPrecioPorTipo(unidadesPorTipo[tipo], tipo),
     0
   );
+  return Math.round(total * 100) / 100;
 }
 
 
@@ -946,13 +947,10 @@ function svgCamiseta(c1, c2, claseExtra) {
    ESTADO
 ========================================================= */
 let carrito = JSON.parse(localStorage.getItem('carritoFutbol') || '[]');
-// Saneado defensivo: si algún artículo quedó guardado con un precio inválido
-// (p. ej. de una versión anterior con recargo por nombre/dorsal), se recalcula
-// con el precio base actual para que el carrito y los totales sean correctos.
+// Saneado: los artículos guardados en el navegador (de visitas anteriores, con precios
+// antiguos) se actualizan siempre al precio base vigente para que los totales cuadren.
 carrito = carrito.map(it => {
-  if (typeof it.precioUnidad !== 'number' || Number.isNaN(it.precioUnidad) || it.precioUnidad <= 0) {
-    it.precioUnidad = it.tipo === 'retro' ? PRECIO_RETRO : PRECIO_ACTUAL;
-  }
+  it.precioUnidad = it.tipo === 'retro' ? PRECIO_RETRO : PRECIO_ACTUAL;
   return it;
 });
 localStorage.setItem('carritoFutbol', JSON.stringify(carrito));
@@ -1861,7 +1859,7 @@ document.getElementById('formEnvio').addEventListener('submit', async (e) => {
   const subtotal = calcularSubtotalConOfertas(carrito);
   const envio = calcularEnvio(carrito);
   const importeCupon = cuponCarrito ? cuponCarrito.importe(subtotal) : 0;
-  const total = subtotal - importeCupon + envio;
+  const total = Math.round((subtotal - importeCupon + envio) * 100) / 100;
 
   const prefijoTelefono = document.getElementById('clienteTelefonoPrefijo').value;
   const numeroTelefono = document.getElementById('clienteTelefono').value.trim();
@@ -2000,7 +1998,7 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
   const contacto = document.getElementById('amigoCompradorContacto').value.trim();
   const direccion = document.getElementById('amigoDireccion').value.trim();
 
-  const precioUnidad = 25;
+  const precioUnidad = PRECIO_ACTUAL;
   const items = TALLAS_AMIGO
     .map(t => ({
       talla: t.talla,
@@ -2041,7 +2039,7 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
 
   const subtotal = calcularSubtotalConOfertas(items);
   const importeCupon = cuponAmigo ? cuponAmigo.importe(subtotal) : 0;
-  const total = subtotal - importeCupon;
+  const total = Math.round((subtotal - importeCupon) * 100) / 100;
   const esEmail = contacto.includes('@');
 
   const pedido = {
