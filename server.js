@@ -1355,7 +1355,7 @@ el mundo (Premier League, La Liga, Serie A, Bundesliga, Ligue 1, MLS, Liga MX,
 Brasileirao, Liga Portugal, Eredivisie, liga saudí, J1 League, etc.).
 
 PRODUCTO Y PERSONALIZACIÓN
-- Camiseta versión actual: 22.99€. Versión retro: 27.99€.
+- Camiseta versión actual: 22,99€. Versión retro: 27,99€.
 - Se puede elegir versión local, visitante o modelo retro.
 - Incluye personalización con nombre y dorsal sin coste extra.
 - Se pueden añadir parches opcionales, también sin coste extra.
@@ -1370,9 +1370,9 @@ ENVÍO
   torneos como Mundial/Eurocopa/Copa América) puede llegar hasta 20-25 días.
 
 OFERTAS POR CANTIDAD
-- 6 camisetas: 135€ normales / 150€ retro (envío gratis incluido).
-- 10 camisetas: 200€ normales / 225€ retro.
-- 15 camisetas: 250€ normales / 275€ retro.
+- 6 camisetas: 130€ normales / 150€ retro (envío gratis incluido).
+- 10 camisetas: 200€ normales / 240€ retro.
+- 15 camisetas: 330€ normales / 400€ retro.
 
 AMIGO INVISIBLE FUTBOLERO
 - Se puede organizar un "amigo invisible" de camisetas para grupos: el
