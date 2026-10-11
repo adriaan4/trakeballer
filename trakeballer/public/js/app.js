@@ -507,7 +507,7 @@ function limitarNumeroTelefono(id) {
 }
 
 const PRECIO_ACTUAL = 22.99;
-const PRECIO_RETRO = 30;
+const PRECIO_RETRO = 27.99;
 
 /* =========================================================
    OFERTAS POR CANTIDAD
