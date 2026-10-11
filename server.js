@@ -255,8 +255,8 @@ function formatearProductosTexto(pedido) {
 // DESGLOSE DE DESCUENTOS
 // ============================================================
 
-const PRECIO_ACTUAL_BASE = 25;
-const PRECIO_RETRO_BASE = 30;
+const PRECIO_ACTUAL_BASE = 22.99;
+const PRECIO_RETRO_BASE = 27.99;
 
 // Precio de los artículos SIN ningún descuento (usa el precio de cada línea; si una línea
 // no lo trae, como en el amigo invisible, usa el precio base según sea actual o retro).
@@ -1355,7 +1355,7 @@ el mundo (Premier League, La Liga, Serie A, Bundesliga, Ligue 1, MLS, Liga MX,
 Brasileirao, Liga Portugal, Eredivisie, liga saudí, J1 League, etc.).
 
 PRODUCTO Y PERSONALIZACIÓN
-- Camiseta versión actual: 25€. Versión retro: 30€.
+- Camiseta versión actual: 22.99€. Versión retro: 27.99€.
 - Se puede elegir versión local, visitante o modelo retro.
 - Incluye personalización con nombre y dorsal sin coste extra.
 - Se pueden añadir parches opcionales, también sin coste extra.
