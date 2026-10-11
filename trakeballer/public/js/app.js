@@ -506,7 +506,7 @@ function limitarNumeroTelefono(id) {
   });
 }
 
-const PRECIO_ACTUAL = 25;
+const PRECIO_ACTUAL = 22.99;
 const PRECIO_RETRO = 30;
 
 /* =========================================================
@@ -516,9 +516,9 @@ const PRECIO_RETRO = 30;
    cantidades intermedias/mayores combinando lotes (p. ej. 21 = 15+6).
 ========================================================= */
 const OFERTAS_CANTIDAD = [
-  { cantidad: 6, normal: 135, retro: 150 },
-  { cantidad: 10, normal: 200, retro: 225 },
-  { cantidad: 15, normal: 250, retro: 275 },
+  { cantidad: 6, normal: 130, retro: 145 },
+  { cantidad: 10, normal: 195, retro: 220 },
+  { cantidad: 15, normal: 240, retro: 265 },
 ];
 
 function calcularPrecioPorTipo(cantidad, tipo) {
