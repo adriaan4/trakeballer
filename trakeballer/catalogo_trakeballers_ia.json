@@ -1,0 +1,2924 @@
+{
+  "instrucciones_ia": {
+    "objetivo": "Responder si TRAKEBALLERS tiene camisetas de un equipo/selección y qué tallas están disponibles.",
+    "reglas": [
+      "Buscar coincidencias ignorando mayúsculas/minúsculas y acentos.",
+      "Si hay coincidencias, decir que sí y listar las camisetas encontradas.",
+      "Si no hay coincidencias, decir que no aparece ninguna camiseta de ese equipo en el catálogo.",
+      "Si el cliente pregunta por una talla, comprobarla únicamente si el campo tallas_disponibles está informado.",
+      "Si tallas_disponibles está vacío o no existe, indicar que el catálogo proporcionado no contiene información de stock por talla y no inventar disponibilidad.",
+      "No inventar camisetas, temporadas, tallas ni stock."
+    ],
+    "ejemplos": [
+      {
+        "pregunta": "¿Tenéis camisetas del Real Madrid?",
+        "respuesta_esperada": "Sí. Tenemos estas camisetas del Real Madrid: Real Madrid 12-13, Real Madrid 86-87, Real Madrid 17-18, Real Madrid 99-00 visitante, Real Madrid 06-07, Real Madrid 16-17 y Real Madrid 99-00 local."
+      },
+      {
+        "pregunta": "¿Tenéis alguna del Madrid en XL?",
+        "respuesta_esperada": "Puedo mostrarte las camisetas del Real Madrid, pero el catálogo proporcionado no indica qué tallas tienen stock. Necesito el stock por talla para confirmar la XL."
+      }
+    ]
+  },
+  "tallas_disponibles": [],
+  "selecciones": [
+    {
+      "nombre": "Alemania",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Alemania (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Arabia Saudí",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Arabia Saudí (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Argelia",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Argelia (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Argentina",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Argentina (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Austria",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Austria (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Bélgica",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Bélgica (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Brasil",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Brasil (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Cabo Verde",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Cabo Verde (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Canadá",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Canadá (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Chequia",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Chequia (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Chile",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Chile (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Colombia",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Colombia (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Corea del Sur",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Corea del Sur (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Costa Rica",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Costa Rica (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Croacia",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Croacia (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Curazao",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Curazao (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Egipto",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Egipto (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Escocia",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Escocia (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "España",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "España (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Estados Unidos",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Estados Unidos (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Francia",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Francia (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Gales",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Gales (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Ghana",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Ghana (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Hungría",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Hungría (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Inglaterra",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Inglaterra (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Islandia",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Islandia (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Italia",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Italia (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Jamaica",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Jamaica (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Japón",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Japón (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Jordania",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Jordania (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Malí",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Malí (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Marruecos",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Marruecos (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "México",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "México (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Noruega",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Noruega (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Países Bajos",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Países Bajos (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Paraguay",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Paraguay (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Perú",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Perú (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Portugal",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Portugal (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Qatar",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Qatar (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Senegal",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Senegal (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Sudáfrica",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Sudáfrica (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Suecia",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Suecia (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Suiza",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Suiza (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Túnez",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Túnez (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Turquía",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Turquía (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Ucrania",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Ucrania (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Uruguay",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Uruguay (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Venezuela",
+      "tipo": "seleccion",
+      "camisetas": [
+        {
+          "nombre": "Venezuela (camiseta actual)",
+          "tallas_disponibles": []
+        }
+      ]
+    }
+  ],
+  "clubes": [
+    {
+      "nombre": "Manchester United",
+      "tipo": "club",
+      "liga": "🏴 Premier League",
+      "camisetas": [
+        {
+          "nombre": "Manchester United",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Manchester City",
+      "tipo": "club",
+      "liga": "🏴 Premier League",
+      "camisetas": [
+        {
+          "nombre": "Manchester City",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Liverpool",
+      "tipo": "club",
+      "liga": "🏴 Premier League",
+      "camisetas": [
+        {
+          "nombre": "Liverpool",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Chelsea",
+      "tipo": "club",
+      "liga": "🏴 Premier League",
+      "camisetas": [
+        {
+          "nombre": "Chelsea",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Arsenal",
+      "tipo": "club",
+      "liga": "🏴 Premier League",
+      "camisetas": [
+        {
+          "nombre": "Arsenal",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Tottenham Hotspur",
+      "tipo": "club",
+      "liga": "🏴 Premier League",
+      "camisetas": [
+        {
+          "nombre": "Tottenham Hotspur",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Newcastle United",
+      "tipo": "club",
+      "liga": "🏴 Premier League",
+      "camisetas": [
+        {
+          "nombre": "Newcastle United",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Aston Villa",
+      "tipo": "club",
+      "liga": "🏴 Premier League",
+      "camisetas": [
+        {
+          "nombre": "Aston Villa",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Real Madrid",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Real Madrid",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "FC Barcelona",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "FC Barcelona",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Atlético de Madrid",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Atlético de Madrid",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Sevilla FC",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Sevilla FC",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "RCD Espanyol",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "RCD Espanyol",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Real Sociedad",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Real Sociedad",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Real Betis",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Real Betis",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Athletic Club",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Athletic Club",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Valencia CF",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Valencia CF",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Deportivo Alavés",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Deportivo Alavés",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "RC Celta de Vigo",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "RC Celta de Vigo",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Deportivo de La Coruña",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Deportivo de La Coruña",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Getafe CF",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Getafe CF",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Levante UD",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Levante UD",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Málaga CF",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Málaga CF",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "CA Osasuna",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "CA Osasuna",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Villarreal CF",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Villarreal CF",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Elche CF",
+      "tipo": "club",
+      "liga": "🇪🇸 Spanish La Liga",
+      "camisetas": [
+        {
+          "nombre": "Elche CF",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Juventus",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie A",
+      "camisetas": [
+        {
+          "nombre": "Juventus",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "AC Milan",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie A",
+      "camisetas": [
+        {
+          "nombre": "AC Milan",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Inter de Milán",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie A",
+      "camisetas": [
+        {
+          "nombre": "Inter de Milán",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Napoli",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie A",
+      "camisetas": [
+        {
+          "nombre": "Napoli",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "AS Roma",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie A",
+      "camisetas": [
+        {
+          "nombre": "AS Roma",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Lazio",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie A",
+      "camisetas": [
+        {
+          "nombre": "Lazio",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Fiorentina",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie A",
+      "camisetas": [
+        {
+          "nombre": "Fiorentina",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Torino FC",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie A",
+      "camisetas": [
+        {
+          "nombre": "Torino FC",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Cagliari Calcio",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie A",
+      "camisetas": [
+        {
+          "nombre": "Cagliari Calcio",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Bologna FC",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie A",
+      "camisetas": [
+        {
+          "nombre": "Bologna FC",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Atalanta",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie A",
+      "camisetas": [
+        {
+          "nombre": "Atalanta",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Bayern de Múnich",
+      "tipo": "club",
+      "liga": "🇩🇪 Bundesliga",
+      "camisetas": [
+        {
+          "nombre": "Bayern de Múnich",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Borussia Dortmund",
+      "tipo": "club",
+      "liga": "🇩🇪 Bundesliga",
+      "camisetas": [
+        {
+          "nombre": "Borussia Dortmund",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "RB Leipzig",
+      "tipo": "club",
+      "liga": "🇩🇪 Bundesliga",
+      "camisetas": [
+        {
+          "nombre": "RB Leipzig",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Bayer Leverkusen",
+      "tipo": "club",
+      "liga": "🇩🇪 Bundesliga",
+      "camisetas": [
+        {
+          "nombre": "Bayer Leverkusen",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Eintracht Frankfurt",
+      "tipo": "club",
+      "liga": "🇩🇪 Bundesliga",
+      "camisetas": [
+        {
+          "nombre": "Eintracht Frankfurt",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Borussia Mönchengladbach",
+      "tipo": "club",
+      "liga": "🇩🇪 Bundesliga",
+      "camisetas": [
+        {
+          "nombre": "Borussia Mönchengladbach",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "VfB Stuttgart",
+      "tipo": "club",
+      "liga": "🇩🇪 Bundesliga",
+      "camisetas": [
+        {
+          "nombre": "VfB Stuttgart",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Paris Saint-Germain",
+      "tipo": "club",
+      "liga": "🇫🇷 Ligue 1",
+      "camisetas": [
+        {
+          "nombre": "Paris Saint-Germain",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Olympique de Marsella",
+      "tipo": "club",
+      "liga": "🇫🇷 Ligue 1",
+      "camisetas": [
+        {
+          "nombre": "Olympique de Marsella",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Olympique de Lyon",
+      "tipo": "club",
+      "liga": "🇫🇷 Ligue 1",
+      "camisetas": [
+        {
+          "nombre": "Olympique de Lyon",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "AS Mónaco",
+      "tipo": "club",
+      "liga": "🇫🇷 Ligue 1",
+      "camisetas": [
+        {
+          "nombre": "AS Mónaco",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "LOSC Lille",
+      "tipo": "club",
+      "liga": "🇫🇷 Ligue 1",
+      "camisetas": [
+        {
+          "nombre": "LOSC Lille",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "OGC Nice",
+      "tipo": "club",
+      "liga": "🇫🇷 Ligue 1",
+      "camisetas": [
+        {
+          "nombre": "OGC Nice",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Stade Rennais",
+      "tipo": "club",
+      "liga": "🇫🇷 Ligue 1",
+      "camisetas": [
+        {
+          "nombre": "Stade Rennais",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "RC Lens",
+      "tipo": "club",
+      "liga": "🇫🇷 Ligue 1",
+      "camisetas": [
+        {
+          "nombre": "RC Lens",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Flamengo",
+      "tipo": "club",
+      "liga": "🇧🇷 Brasileirão",
+      "camisetas": [
+        {
+          "nombre": "Flamengo",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Palmeiras",
+      "tipo": "club",
+      "liga": "🇧🇷 Brasileirão",
+      "camisetas": [
+        {
+          "nombre": "Palmeiras",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Corinthians",
+      "tipo": "club",
+      "liga": "🇧🇷 Brasileirão",
+      "camisetas": [
+        {
+          "nombre": "Corinthians",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "São Paulo",
+      "tipo": "club",
+      "liga": "🇧🇷 Brasileirão",
+      "camisetas": [
+        {
+          "nombre": "São Paulo",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Santos",
+      "tipo": "club",
+      "liga": "🇧🇷 Brasileirão",
+      "camisetas": [
+        {
+          "nombre": "Santos",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Grêmio",
+      "tipo": "club",
+      "liga": "🇧🇷 Brasileirão",
+      "camisetas": [
+        {
+          "nombre": "Grêmio",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Internacional",
+      "tipo": "club",
+      "liga": "🇧🇷 Brasileirão",
+      "camisetas": [
+        {
+          "nombre": "Internacional",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Fluminense",
+      "tipo": "club",
+      "liga": "🇧🇷 Brasileirão",
+      "camisetas": [
+        {
+          "nombre": "Fluminense",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Cruzeiro",
+      "tipo": "club",
+      "liga": "🇧🇷 Brasileirão",
+      "camisetas": [
+        {
+          "nombre": "Cruzeiro",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Botafogo",
+      "tipo": "club",
+      "liga": "🇧🇷 Brasileirão",
+      "camisetas": [
+        {
+          "nombre": "Botafogo",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Sunderland",
+      "tipo": "club",
+      "liga": "🏴 EFL Championship",
+      "camisetas": [
+        {
+          "nombre": "Sunderland",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Portsmouth",
+      "tipo": "club",
+      "liga": "🏴 EFL Championship",
+      "camisetas": [
+        {
+          "nombre": "Portsmouth",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Celtic FC",
+      "tipo": "club",
+      "liga": "🏴 Scottish Premiership",
+      "camisetas": [
+        {
+          "nombre": "Celtic FC",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Rangers FC",
+      "tipo": "club",
+      "liga": "🏴 Scottish Premiership",
+      "camisetas": [
+        {
+          "nombre": "Rangers FC",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Heart of Midlothian",
+      "tipo": "club",
+      "liga": "🏴 Scottish Premiership",
+      "camisetas": [
+        {
+          "nombre": "Heart of Midlothian",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Aberdeen FC",
+      "tipo": "club",
+      "liga": "🏴 Scottish Premiership",
+      "camisetas": [
+        {
+          "nombre": "Aberdeen FC",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Racing de Santander",
+      "tipo": "club",
+      "liga": "🇪🇸 La Liga 2",
+      "camisetas": [
+        {
+          "nombre": "Racing de Santander",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Real Zaragoza",
+      "tipo": "club",
+      "liga": "🇪🇸 La Liga 2",
+      "camisetas": [
+        {
+          "nombre": "Real Zaragoza",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Sporting de Gijón",
+      "tipo": "club",
+      "liga": "🇪🇸 La Liga 2",
+      "camisetas": [
+        {
+          "nombre": "Sporting de Gijón",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "SD Eibar",
+      "tipo": "club",
+      "liga": "🇪🇸 La Liga 2",
+      "camisetas": [
+        {
+          "nombre": "SD Eibar",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Albacete Balompié",
+      "tipo": "club",
+      "liga": "🇪🇸 La Liga 2",
+      "camisetas": [
+        {
+          "nombre": "Albacete Balompié",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "CD Tenerife",
+      "tipo": "club",
+      "liga": "🇪🇸 La Liga 2",
+      "camisetas": [
+        {
+          "nombre": "CD Tenerife",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Granada CF",
+      "tipo": "club",
+      "liga": "🇪🇸 La Liga 2",
+      "camisetas": [
+        {
+          "nombre": "Granada CF",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Real Valladolid",
+      "tipo": "club",
+      "liga": "🇪🇸 La Liga 2",
+      "camisetas": [
+        {
+          "nombre": "Real Valladolid",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "LA Galaxy",
+      "tipo": "club",
+      "liga": "🇺🇸 MLS",
+      "camisetas": [
+        {
+          "nombre": "LA Galaxy",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "LAFC",
+      "tipo": "club",
+      "liga": "🇺🇸 MLS",
+      "camisetas": [
+        {
+          "nombre": "LAFC",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "New York City FC",
+      "tipo": "club",
+      "liga": "🇺🇸 MLS",
+      "camisetas": [
+        {
+          "nombre": "New York City FC",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "CF Montréal",
+      "tipo": "club",
+      "liga": "🇺🇸 MLS",
+      "camisetas": [
+        {
+          "nombre": "CF Montréal",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Toronto FC",
+      "tipo": "club",
+      "liga": "🇺🇸 MLS",
+      "camisetas": [
+        {
+          "nombre": "Toronto FC",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Club Atlético Peñarol",
+      "tipo": "club",
+      "liga": "🌎 Otras Ligas de Sudamérica",
+      "camisetas": [
+        {
+          "nombre": "Club Atlético Peñarol",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Club Olimpia",
+      "tipo": "club",
+      "liga": "🌎 Otras Ligas de Sudamérica",
+      "camisetas": [
+        {
+          "nombre": "Club Olimpia",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Sporting Cristal",
+      "tipo": "club",
+      "liga": "🌎 Otras Ligas de Sudamérica",
+      "camisetas": [
+        {
+          "nombre": "Sporting Cristal",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Club América",
+      "tipo": "club",
+      "liga": "🇲🇽 Liga MX",
+      "camisetas": [
+        {
+          "nombre": "Club América",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Club Tijuana",
+      "tipo": "club",
+      "liga": "🇲🇽 Liga MX",
+      "camisetas": [
+        {
+          "nombre": "Club Tijuana",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Boca Juniors",
+      "tipo": "club",
+      "liga": "🇦🇷 Argentina LPF",
+      "camisetas": [
+        {
+          "nombre": "Boca Juniors",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "River Plate",
+      "tipo": "club",
+      "liga": "🇦🇷 Argentina LPF",
+      "camisetas": [
+        {
+          "nombre": "River Plate",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Benfica",
+      "tipo": "club",
+      "liga": "🇵🇹 Liga Portugal",
+      "camisetas": [
+        {
+          "nombre": "Benfica",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "FC Porto",
+      "tipo": "club",
+      "liga": "🇵🇹 Liga Portugal",
+      "camisetas": [
+        {
+          "nombre": "FC Porto",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Sporting CP",
+      "tipo": "club",
+      "liga": "🇵🇹 Liga Portugal",
+      "camisetas": [
+        {
+          "nombre": "Sporting CP",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "SC Braga",
+      "tipo": "club",
+      "liga": "🇵🇹 Liga Portugal",
+      "camisetas": [
+        {
+          "nombre": "SC Braga",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Ajax",
+      "tipo": "club",
+      "liga": "🇳🇱 Dutch Eredivisie",
+      "camisetas": [
+        {
+          "nombre": "Ajax",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "PSV Eindhoven",
+      "tipo": "club",
+      "liga": "🇳🇱 Dutch Eredivisie",
+      "camisetas": [
+        {
+          "nombre": "PSV Eindhoven",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Feyenoord",
+      "tipo": "club",
+      "liga": "🇳🇱 Dutch Eredivisie",
+      "camisetas": [
+        {
+          "nombre": "Feyenoord",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Al Hilal",
+      "tipo": "club",
+      "liga": "🇸🇦 Saudi Arabian League",
+      "camisetas": [
+        {
+          "nombre": "Al Hilal",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Al Nassr",
+      "tipo": "club",
+      "liga": "🇸🇦 Saudi Arabian League",
+      "camisetas": [
+        {
+          "nombre": "Al Nassr",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Al Ittihad",
+      "tipo": "club",
+      "liga": "🇸🇦 Saudi Arabian League",
+      "camisetas": [
+        {
+          "nombre": "Al Ittihad",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Al Shabab",
+      "tipo": "club",
+      "liga": "🇸🇦 Saudi Arabian League",
+      "camisetas": [
+        {
+          "nombre": "Al Shabab",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Parma",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie B",
+      "camisetas": [
+        {
+          "nombre": "Parma",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Palermo",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie B",
+      "camisetas": [
+        {
+          "nombre": "Palermo",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Sampdoria",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie B",
+      "camisetas": [
+        {
+          "nombre": "Sampdoria",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Venezia",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie B",
+      "camisetas": [
+        {
+          "nombre": "Venezia",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Cremonese",
+      "tipo": "club",
+      "liga": "🇮🇹 Serie B",
+      "camisetas": [
+        {
+          "nombre": "Cremonese",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Hamburger SV",
+      "tipo": "club",
+      "liga": "🇩🇪 2. Bundesliga",
+      "camisetas": [
+        {
+          "nombre": "Hamburger SV",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Fortuna Düsseldorf",
+      "tipo": "club",
+      "liga": "🇩🇪 2. Bundesliga",
+      "camisetas": [
+        {
+          "nombre": "Fortuna Düsseldorf",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "FC Nürnberg",
+      "tipo": "club",
+      "liga": "🇩🇪 2. Bundesliga",
+      "camisetas": [
+        {
+          "nombre": "FC Nürnberg",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Hertha BSC",
+      "tipo": "club",
+      "liga": "🇩🇪 2. Bundesliga",
+      "camisetas": [
+        {
+          "nombre": "Hertha BSC",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "FC St. Pauli",
+      "tipo": "club",
+      "liga": "🇩🇪 2. Bundesliga",
+      "camisetas": [
+        {
+          "nombre": "FC St. Pauli",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Olympiacos",
+      "tipo": "club",
+      "liga": "🌍 Más",
+      "camisetas": [
+        {
+          "nombre": "Olympiacos",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Beşiktaş",
+      "tipo": "club",
+      "liga": "🌍 Más",
+      "camisetas": [
+        {
+          "nombre": "Beşiktaş",
+          "tallas_disponibles": []
+        }
+      ]
+    },
+    {
+      "nombre": "Galatasaray",
+      "tipo": "club",
+      "liga": "🌍 Más",
+      "camisetas": [
+        {
+          "nombre": "Galatasaray",
+          "tallas_disponibles": []
+        }
+      ]
+    }
+  ],
+  "retro": [
+    {
+      "equipo": "🇦🇷 Boca Juniors",
+      "nombre": "Boca Juniors 99-00 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇦🇷 Boca Juniors",
+      "nombre": "Boca Juniors 13-14 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇦🇷 Boca Juniors",
+      "nombre": "Boca Juniors 13-14 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇦🇷 Boca Juniors",
+      "nombre": "Boca Juniors 99-00 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇦🇷 River Plate",
+      "nombre": "River Plate 91-92",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇦🇷 River Plate",
+      "nombre": "River Plate 96-97",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇦🇷 River Plate",
+      "nombre": "River Plate 00-01",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Bayern de Múnich",
+      "nombre": "Bayern Munich 98-99",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Bayern de Múnich",
+      "nombre": "Bayern Munich 93-94 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Bayern de Múnich",
+      "nombre": "Bayern Munich 21-22",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Bayern de Múnich",
+      "nombre": "Bayern Munich 95-96",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Bayern de Múnich",
+      "nombre": "Bayern Munich 93-94 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Borussia Dortmund",
+      "nombre": "Dortmund 96-97 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Borussia Dortmund",
+      "nombre": "Dortmund 97-98",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Borussia Dortmund",
+      "nombre": "Dortmund 96-97 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Corinthians",
+      "nombre": "Corinthians 09-10",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Corinthians",
+      "nombre": "Corinthians 99-00",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Corinthians",
+      "nombre": "Corinthians 10-11 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Corinthians",
+      "nombre": "Corinthians 10-11 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Corinthians",
+      "nombre": "Corinthians 07-08",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Flamengo",
+      "nombre": "Flamengo 06-07",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Flamengo",
+      "nombre": "Flamengo 94-95 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Flamengo",
+      "nombre": "Flamengo 94-95 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Fluminense",
+      "nombre": "Fluminense 12-13",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Grêmio",
+      "nombre": "Gremio 95-96",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Palmeiras",
+      "nombre": "Palmeiras 98-99",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Palmeiras",
+      "nombre": "Palmeiras 92-93",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Palmeiras",
+      "nombre": "Palmeiras 13-14",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Santos",
+      "nombre": "Santos 11-12",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Sunderland",
+      "nombre": "Sunderland 92-93",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇫🇷 LOSC Lille",
+      "nombre": "Lille 95-96",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇫🇷 Olympique de Lyon",
+      "nombre": "Olympique Lyon 08-09",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇫🇷 Olympique de Lyon",
+      "nombre": "Olympique Lyon 10-11",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇫🇷 Olympique de Marsella",
+      "nombre": "Marsella 11-12",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇫🇷 Olympique de Marsella",
+      "nombre": "Marsella 90-91",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇫🇷 PSG",
+      "nombre": "PSG 19/20",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇫🇷 PSG",
+      "nombre": "PSG 91-92",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇫🇷 PSG",
+      "nombre": "PSG 21-22",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Granada CF",
+      "nombre": "Granada 96-98",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Racing de Santander",
+      "nombre": "Racing de Santander 97-98",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Sporting de Gijón",
+      "nombre": "Sporting Gijon 15-16",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Sporting de Gijón",
+      "nombre": "Sporting Gijon 09-09",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Valladolid",
+      "nombre": "Real Valladolid 84-85",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Zaragoza",
+      "nombre": "Zaragoza 92-93",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Zaragoza",
+      "nombre": "Zaragoza 04-05",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Zaragoza",
+      "nombre": "Zaragoza 83-84",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Zaragoza",
+      "nombre": "Zaragoza 01-02",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Zaragoza",
+      "nombre": "Zaragoza 99-00",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Zaragoza",
+      "nombre": "Zaragoza 95-96",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Zaragoza",
+      "nombre": "Zaragoza 96-97",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Athletic Club",
+      "nombre": "Athletic Bilbao 95-97",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Athletic Club",
+      "nombre": "Athletic Bilbao 11-12",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Atlético de Madrid",
+      "nombre": "Atletico Madrid Centenary",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Atlético de Madrid",
+      "nombre": "Atletico Madrid 90-93",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Atlético de Madrid",
+      "nombre": "Atletico Madrid 11-12",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Atlético de Madrid",
+      "nombre": "Atletico Madrid 14-15",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Atlético de Madrid",
+      "nombre": "Atletico Madrid 82-83",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Atlético de Madrid",
+      "nombre": "Atletico Madrid 96-97 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Atlético de Madrid",
+      "nombre": "Atletico de Madrid 96-97 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 FC Barcelona",
+      "nombre": "Barcelona 07-08",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 FC Barcelona",
+      "nombre": "Barcelona 13-14 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 FC Barcelona",
+      "nombre": "Barcelona 95-96",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 FC Barcelona",
+      "nombre": "Barcelona 12-13",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 FC Barcelona",
+      "nombre": "Barcelona 16-17",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 FC Barcelona",
+      "nombre": "Barcelona 10-11 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 FC Barcelona",
+      "nombre": "Barcelona 17-18",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 FC Barcelona",
+      "nombre": "Barcelona 02-03",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 FC Barcelona",
+      "nombre": "Barcelona 01-02",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 FC Barcelona",
+      "nombre": "Barcelona 13-14 tercera",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 FC Barcelona",
+      "nombre": "Barcelona 08-098",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Betis",
+      "nombre": "Real Betis 88-89",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 RC Celta de Vigo",
+      "nombre": "Celta de Vigo 02-04",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Deportivo de La Coruña",
+      "nombre": "Deportivo La Coruña 98-99",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Deportivo de La Coruña",
+      "nombre": "Deportivo La Coruña 99-00 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Deportivo de La Coruña",
+      "nombre": "Deportivo La Coruña 94-95",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Deportivo de La Coruña",
+      "nombre": "Deportivo La Coruna 99-00 visitante 2",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Deportivo de La Coruña",
+      "nombre": "Deportivo de La Coruna 02-04",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Elche CF",
+      "nombre": "Elche 99-00",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 RCD Espanyol",
+      "nombre": "Espanyol 99-00",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Málaga CF",
+      "nombre": "Malaga 25-26",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Málaga CF",
+      "nombre": "Malaga 97-98",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Málaga CF",
+      "nombre": "Malaga 98-99",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Málaga CF",
+      "nombre": "Malaga 12-13",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Madrid",
+      "nombre": "Real Madrid 12-13",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Madrid",
+      "nombre": "Real Madrid 86-87",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Madrid",
+      "nombre": "Real Madrid 17-18",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Madrid",
+      "nombre": "Real Madrid 99-00 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Madrid",
+      "nombre": "Real Madrid 06-07",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Madrid",
+      "nombre": "Real Madrid 16-17",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Real Madrid",
+      "nombre": "Real Madrid 99-00 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Sevilla FC",
+      "nombre": "Sevilla FC 92-93",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Sevilla FC",
+      "nombre": "Sevilla 94-96",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Valencia CF",
+      "nombre": "Valencia 80-82",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Valencia CF",
+      "nombre": "Valencia 99-00",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Valencia CF",
+      "nombre": "Valencia 06-07",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 Villarreal CF",
+      "nombre": "Villarreal 10-11",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇹🇷 Beşiktaş",
+      "nombre": "Besiktas 96-97",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇹🇷 Galatasaray",
+      "nombre": "Galatasaray 99-00 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇹🇷 Galatasaray",
+      "nombre": "Galatasaray 99-00 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇹🇷 Galatasaray",
+      "nombre": "Galatasaray 00-01 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇹🇷 Galatasaray",
+      "nombre": "Galatasaray 98-99",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇹🇷 Galatasaray",
+      "nombre": "Galatasaray 00-01 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇬🇷 Olympiacos",
+      "nombre": "Olympiacos 04-05",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Alemania",
+      "nombre": "German Originals Germany Adicolor Classics 3-Stripes",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Alemania",
+      "nombre": "Germany 1984 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Alemania",
+      "nombre": "Germany 2014",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Alemania",
+      "nombre": "Germany 1994",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Alemania",
+      "nombre": "Germany 2006",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Alemania",
+      "nombre": "Germany 1984 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇩🇪 Alemania",
+      "nombre": "Germany 2018",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇦🇷 Argentina",
+      "nombre": "Argentina 2006",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Brasil",
+      "nombre": "Brasil Corteiz visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Brasil",
+      "nombre": "Brasil 2011",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Brasil",
+      "nombre": "Brasil Corteiz local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Brasil",
+      "nombre": "Brasil 2006",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇧🇷 Brasil",
+      "nombre": "Brasil 2010",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇨🇴 Colombia",
+      "nombre": "Colombia 1990",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇨🇴 Colombia",
+      "nombre": "Commemorative Edition Colombia Centennial",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇭🇷 Croacia",
+      "nombre": "Croacia 2018",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇭🇷 Croacia",
+      "nombre": "Croacia 2010-12",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 España",
+      "nombre": "España 1996",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 España",
+      "nombre": "España 2010-11",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇪🇸 España",
+      "nombre": "España 2010 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇺🇸 Estados Unidos",
+      "nombre": "EEUU 1988",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇫🇷 Francia",
+      "nombre": "France 120th Anniversary Blue",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇫🇷 Francia",
+      "nombre": "Francia 1984",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇫🇷 Francia",
+      "nombre": "Francia 1992-94",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Italia",
+      "nombre": "Italia 2006",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇯🇲 Jamaica",
+      "nombre": "Jamaica 1998 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇯🇲 Jamaica",
+      "nombre": "Jamaica 1998 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇯🇵 Japón",
+      "nombre": "Japon 1998",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇯🇵 Japón",
+      "nombre": "Japon 2018",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇲🇽 México",
+      "nombre": "Mexico 1999",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇳🇱 Países Bajos",
+      "nombre": "Paises Bajos 1988",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇳🇱 Países Bajos",
+      "nombre": "Paises Bajos 1994",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇵🇹 Portugal",
+      "nombre": "Portugal 2016 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇵🇹 Portugal",
+      "nombre": "Portugal 1992-94",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇵🇹 Portugal",
+      "nombre": "Portugal 2016 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇵🇹 Portugal",
+      "nombre": "Portugal 1998",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇵🇹 Portugal",
+      "nombre": "Portugal 2004",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇸🇪 Suecia",
+      "nombre": "Suecia 1994",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇺🇾 Uruguay",
+      "nombre": "Uruguay 1990",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇻🇪 Venezuela",
+      "nombre": "Venezuela 2000",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇳🇱 PSV Eindhoven",
+      "nombre": "PSV 93-94",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇳🇱 PSV Eindhoven",
+      "nombre": "98-99",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Arsenal",
+      "nombre": "Arsenal 01-02",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Arsenal",
+      "nombre": "Arsenal 125th Anniversary",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Arsenal",
+      "nombre": "Arsenal 94-96",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Arsenal",
+      "nombre": "Arsenal 04-05",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Arsenal",
+      "nombre": "Arsenal 98-99",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Arsenal",
+      "nombre": "Arsenal 07-08",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Arsenal",
+      "nombre": "Arsenal 05-06",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Chelsea",
+      "nombre": "Chelsea 10-11",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Chelsea",
+      "nombre": "Chelsea 14/15",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Chelsea",
+      "nombre": "Chelsea 11/12",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Manchester City",
+      "nombre": "Manchester City 07-08",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Manchester City",
+      "nombre": "Manchester City 97-98",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Manchester City",
+      "nombre": "Manchester City 89-90",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Manchester City",
+      "nombre": "Manchester City 19-20",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Manchester United",
+      "nombre": "Manchester United 05-06",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Manchester United",
+      "nombre": "Manchester United 21-22 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Manchester United",
+      "nombre": "Manchester United 06-07",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Manchester United",
+      "nombre": "Manchester United 17-18",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Manchester United",
+      "nombre": "Manchester United 20-21",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Manchester United",
+      "nombre": "Manchester United 18-19",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Manchester United",
+      "nombre": "Manchester United 21-22 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Newcastle United",
+      "nombre": "Newcastle United 98-99",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🏴 Tottenham Hotspur",
+      "nombre": "Tottenham Hotspur 19-20",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇵🇹 Benfica",
+      "nombre": "Benfica 98-99",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇵🇹 FC Porto",
+      "nombre": "Porto 94-95",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇵🇹 FC Porto",
+      "nombre": "Porto 97-98",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇵🇹 Sporting CP",
+      "nombre": "Sporting CP 02-03 Visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇵🇹 Sporting CP",
+      "nombre": "Sporting CP 00-01",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇵🇹 Sporting CP",
+      "nombre": "Sporting CP 03-04",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Fiorentina",
+      "nombre": "Fiorentina 97-98",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Fiorentina",
+      "nombre": "Fiorentina 99-00",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Inter de Milán",
+      "nombre": "Inter Milan 15-16",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Inter de Milán",
+      "nombre": "Inter Milan 21-22",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Inter de Milán",
+      "nombre": "Inter Milan 98-99",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Inter de Milán",
+      "nombre": "Inter Milan 09-10",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Inter de Milán",
+      "nombre": "Inter Milan 96-97",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Inter de Milán",
+      "nombre": "Inter Milan 92-94",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Lazio",
+      "nombre": "Lazio 92-94",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Lazio",
+      "nombre": "Lazio 99-00",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Lazio",
+      "nombre": "Lazio 98-99",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 AC Milan",
+      "nombre": "AC MILAN 02-03",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 AC Milan",
+      "nombre": "AC Milan 120th Anniversary",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 AC Milan",
+      "nombre": "AC Milan 97-98",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 AC Milan",
+      "nombre": "AC Milan 04-05",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 AC Milan",
+      "nombre": "AC Milan 95-96",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 AC Milan",
+      "nombre": "AC Milan 06-07",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 AC Milan",
+      "nombre": "AC Milan 11-12",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 AC Milan",
+      "nombre": "AC Milan Special Edition",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Napoli",
+      "nombre": "Napoles 90-91 local",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Napoli",
+      "nombre": "Napoles 90-91 visitante",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Napoli",
+      "nombre": "Napoles 90-91 local 2",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    },
+    {
+      "equipo": "🇮🇹 Napoli",
+      "nombre": "Napoles 19-20",
+      "tipo": "retro",
+      "tallas_disponibles": []
+    }
+  ]
+}

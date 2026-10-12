@@ -1,0 +1,1502 @@
+require('dotenv').config();
+
+const express = require('express');
+const path = require('path');
+const fs = require('fs');
+const cors = require('cors');
+const crypto = require('crypto');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+const EMAIL_TIENDA = 'trakeballer@gmail.com';
+
+app.set('trust proxy', 1);
+app.use(cors());
+app.use(express.json({ limit: '2mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ============================================================
+// ARCHIVOS
+// ============================================================
+
+// Carpeta donde se guardan los PEDIDOS (trake_admin) y los CÓDIGOS DE DESCUENTO
+// (admin-descuentos). Para que no se pierdan al redesplegar hace falta un disco
+// persistente: en Render, crea un "Disk" con Mount Path /var/data (se detecta solo)
+// o pon la variable DATA_DIR con la ruta del disco.
+function elegirCarpetaDatos() {
+  if (process.env.DATA_DIR) return { dir: process.env.DATA_DIR, persistente: true };
+  try {
+    if (fs.existsSync('/var/data') && fs.statSync('/var/data').isDirectory()) {
+      fs.accessSync('/var/data', fs.constants.W_OK);
+      return { dir: '/var/data', persistente: true };
+    }
+  } catch (_) { /* seguimos con la carpeta del código */ }
+  return { dir: __dirname, persistente: false };
+}
+
+const { dir: DATA_DIR, persistente: ALMACENAMIENTO_PERSISTENTE } = elegirCarpetaDatos();
+
+try {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+} catch (err) {
+  console.error(`[FS] No se pudo crear la carpeta de datos ${DATA_DIR}:`, err.message);
+}
+
+const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
+const DESCUENTOS_FILE = path.join(DATA_DIR, 'descuentos.json');
+const SUGERENCIAS_FILE = path.join(__dirname, 'sugerencias.json');
+const RESENAS_FILE = path.join(__dirname, 'resenas.json');
+
+function inicializarArchivo(ruta) {
+  try {
+    if (!fs.existsSync(ruta)) {
+      fs.writeFileSync(ruta, '[]', 'utf8');
+    }
+  } catch (err) {
+    console.error(`[FS] No se pudo inicializar ${ruta}:`, err.message);
+  }
+}
+
+// Si antes los archivos estaban en la carpeta del código, se copian a la carpeta de datos.
+function migrarArchivoAntiguo(nombre) {
+  if (DATA_DIR === __dirname) return;
+  try {
+    const viejo = path.join(__dirname, nombre);
+    const nuevo = path.join(DATA_DIR, nombre);
+    if (fs.existsSync(viejo) && !fs.existsSync(nuevo)) {
+      fs.copyFileSync(viejo, nuevo);
+      console.log(`[FS] Migrado ${nombre} a ${DATA_DIR}`);
+    }
+  } catch (err) {
+    console.error(`[FS] No se pudo migrar ${nombre}:`, err.message);
+  }
+}
+
+migrarArchivoAntiguo('orders.json');
+migrarArchivoAntiguo('descuentos.json');
+
+inicializarArchivo(ORDERS_FILE);
+inicializarArchivo(SUGERENCIAS_FILE);
+inicializarArchivo(RESENAS_FILE);
+inicializarArchivo(DESCUENTOS_FILE);
+
+console.log(`[datos] Carpeta de datos: ${DATA_DIR} (${ALMACENAMIENTO_PERSISTENTE ? 'persistente' : 'NO persistente: se borra al redesplegar'})`);
+
+// ============================================================
+// FUNCIONES ARCHIVOS
+// ============================================================
+
+function leerJSON(archivo) {
+  try {
+    if (!fs.existsSync(archivo)) return [];
+    return JSON.parse(fs.readFileSync(archivo, 'utf8'));
+  } catch (error) {
+    console.error(`Error leyendo ${archivo}:`, error);
+    return [];
+  }
+}
+
+function guardarJSON(archivo, datos) {
+  try {
+    fs.writeFileSync(archivo, JSON.stringify(datos, null, 2), 'utf8');
+  } catch (error) {
+    console.error(`Error escribiendo en ${archivo}:`, error);
+  }
+}
+
+// Lectura estricta: nunca devuelve [] por un error de lectura (así no se pisan
+// pedidos/códigos buenos con una lista vacía). Si el archivo está corrupto usa la copia .bak.
+function leerJSONSeguro(archivo) {
+  if (!fs.existsSync(archivo)) return [];
+
+  const leer = ruta => {
+    const texto = fs.readFileSync(ruta, 'utf8');
+    if (!texto.trim()) return [];
+    const datos = JSON.parse(texto);
+    if (!Array.isArray(datos)) throw new Error('El archivo no contiene una lista');
+    return datos;
+  };
+
+  try {
+    return leer(archivo);
+  } catch (error) {
+    console.error(`[FS] ${archivo} ilegible:`, error.message);
+    const copia = archivo + '.bak';
+    if (!fs.existsSync(copia)) throw error;
+    const datos = leer(copia);
+    try { fs.copyFileSync(archivo, `${archivo}.corrupto-${Date.now()}`); } catch (_) {}
+    console.warn(`[FS] Recuperado desde ${copia}`);
+    return datos;
+  }
+}
+
+// Escritura atómica (archivo temporal + rename) con copia .bak; lanza error si falla.
+function guardarJSONSeguro(archivo, datos) {
+  const tmp = archivo + '.tmp';
+
+  try {
+    if (fs.existsSync(archivo)) {
+      JSON.parse(fs.readFileSync(archivo, 'utf8') || '[]'); // solo copiamos si el actual es válido
+      fs.copyFileSync(archivo, archivo + '.bak');
+    }
+  } catch (_) { /* si el actual está corrupto no pisamos la copia buena */ }
+
+  fs.writeFileSync(tmp, JSON.stringify(datos, null, 2), 'utf8');
+  fs.renameSync(tmp, archivo);
+}
+
+// Guarda el pedido y comprueba que quedó escrito. Lanza error si no se pudo guardar.
+function guardarPedido(pedido) {
+  const pedidos = leerJSONSeguro(ORDERS_FILE);
+
+  let id = Date.now();
+  while (pedidos.some(p => p.id === id)) id += 1;
+  pedido.id = id;
+
+  pedidos.push(pedido);
+  guardarJSONSeguro(ORDERS_FILE, pedidos);
+
+  if (!leerJSONSeguro(ORDERS_FILE).some(p => p.id === id)) {
+    throw new Error('El pedido no quedó guardado en disco');
+  }
+}
+
+function guardarSugerencia(sugerencia) {
+  const sugerencias = leerJSON(SUGERENCIAS_FILE);
+  sugerencias.push(sugerencia);
+  guardarJSON(SUGERENCIAS_FILE, sugerencias);
+}
+
+function guardarResena(resena) {
+  const resenas = leerJSON(RESENAS_FILE);
+  resenas.push(resena);
+  guardarJSON(RESENAS_FILE, resenas);
+}
+
+// ============================================================
+// OBTENER PRODUCTOS DEL PEDIDO
+// ============================================================
+
+function obtenerItems(pedido) {
+  if (Array.isArray(pedido.items)) return pedido.items;
+  if (Array.isArray(pedido.productos)) return pedido.productos;
+  if (Array.isArray(pedido.carrito)) return pedido.carrito;
+  return [];
+}
+
+// ============================================================
+// NORMALIZAR PRODUCTO
+// ============================================================
+
+function normalizarProducto(item) {
+  const nombre =
+    item.equipo || item.nombre || item.name || item.producto || item.titulo || 'Camiseta';
+
+  const tipo = item.tipo || item.category || '';
+  const talla = item.talla || item.size || '';
+  const dorsal = item.dorsal || item.numero || item.number || '';
+
+  const nombreCamiseta =
+    item.nombreCamiseta ||
+    item.nombreJugador ||
+    item.nombrePersonalizado ||
+    item.nombre_personalizado ||
+    '';
+
+  const cantidad = Number(item.cantidad ?? item.quantity ?? 1) || 1;
+  const precioUnidad =
+    Number(item.precioUnidad ?? item.precio ?? item.price ?? 0) || 0;
+
+  let parches = [];
+  if (Array.isArray(item.parches)) {
+    parches = item.parches;
+  } else if (item.parches) {
+    parches = [String(item.parches)];
+  }
+
+  return { nombre, tipo, talla, dorsal, nombreCamiseta, cantidad, precioUnidad, parches };
+}
+
+// ============================================================
+// FORMATEAR PRODUCTOS
+// ============================================================
+
+function formatearProductosTexto(pedido) {
+  const items = obtenerItems(pedido);
+
+  if (items.length === 0) {
+    return 'No se recibieron artículos en el pedido.';
+  }
+
+  return items
+    .map((item, index) => {
+      const p = normalizarProducto(item);
+      const tipoTexto = p.tipo.toLowerCase().includes('retro') ? 'Retro' : 'Actual';
+
+      let linea = `${index + 1}. ${p.nombre} (${tipoTexto})`;
+
+      if (p.talla) linea += ` - Talla: ${p.talla}`;
+      if (p.dorsal) linea += ` - Dorsal: ${p.dorsal}`;
+      if (p.nombreCamiseta) linea += ` - Nombre: ${p.nombreCamiseta}`;
+      if (p.parches.length > 0) linea += ` - Parches: ${p.parches.join(', ')}`;
+
+      linea +=
+        ` - Cantidad: ${p.cantidad}` +
+        ` - ${p.precioUnidad.toFixed(2)}€/u` +
+        ` - Total: ${(p.precioUnidad * p.cantidad).toFixed(2)}€`;
+
+      return linea;
+    })
+    .join('\n');
+}
+
+// ============================================================
+// DESGLOSE DE DESCUENTOS
+// ============================================================
+
+const PRECIO_ACTUAL_BASE = 25;
+const PRECIO_RETRO_BASE = 30;
+
+// Precio de los artículos SIN ningún descuento (usa el precio de cada línea; si una línea
+// no lo trae, como en el amigo invisible, usa el precio base según sea actual o retro).
+function calcularSubtotalSinDescuentos(pedido) {
+  return redondear2(
+    obtenerItems(pedido).reduce((suma, item) => {
+      const p = normalizarProducto(item);
+      const base = String(p.tipo).toLowerCase().includes('retro') ? PRECIO_RETRO_BASE : PRECIO_ACTUAL_BASE;
+      const unidad = p.precioUnidad > 0 ? p.precioUnidad : base;
+      return suma + unidad * p.cantidad;
+    }, 0)
+  );
+}
+
+// Guarda en el pedido cuánto se ha descontado y por qué: la oferta por cantidad
+// (6, 10 o 15 camisetas) y/o el código de descuento.
+function aplicarDesglose(pedido) {
+  const sinDescuentos = calcularSubtotalSinDescuentos(pedido);
+  pedido.subtotalSinDescuentos = sinDescuentos;
+
+  const subtotal = typeof pedido.subtotal === 'number' ? pedido.subtotal : null;
+  pedido.descuentoCantidad = subtotal === null ? 0 : Math.max(0, redondear2(sinDescuentos - subtotal));
+}
+
+// Resumen que se devuelve a la web para enseñárselo al cliente.
+function resumenPedido(pedido) {
+  return {
+    subtotalSinDescuentos: typeof pedido.subtotalSinDescuentos === 'number' ? pedido.subtotalSinDescuentos : null,
+    descuentoCantidad: Number(pedido.descuentoCantidad) || 0,
+    descuentoCodigo: pedido.descuentoCodigo || null,
+    envio: typeof pedido.envio === 'number' ? pedido.envio : null,
+    total: Number(pedido.total) || 0
+  };
+}
+
+// ============================================================
+// LINEAS DE SUBTOTAL / ENVIO (texto)
+// ============================================================
+
+function lineasTotalesTexto(pedido) {
+  const total = Number(pedido.total || 0).toFixed(2);
+  const subtotal =
+    typeof pedido.subtotal === 'number' ? pedido.subtotal.toFixed(2) : null;
+  const envio = typeof pedido.envio === 'number' ? pedido.envio : null;
+  const dCantidad = Number(pedido.descuentoCantidad) || 0;
+  const hayDescuentos = dCantidad > 0.004 || !!pedido.descuentoCodigo;
+
+  let texto = '';
+
+  if (hayDescuentos && typeof pedido.subtotalSinDescuentos === 'number') {
+    texto += `Artículos (precio sin descuentos): ${pedido.subtotalSinDescuentos.toFixed(2)}€\n`;
+  } else if (subtotal !== null) {
+    texto += `Subtotal: ${subtotal}€\n`;
+  }
+
+  if (dCantidad > 0.004) {
+    texto += `Descuento por oferta de cantidad: -${dCantidad.toFixed(2)}€\n`;
+  }
+
+  if (pedido.descuentoCodigo) {
+    texto += `Descuento por código ${descripcionDescuento(pedido.descuentoCodigo)}: -${Number(pedido.descuentoCodigo.importe).toFixed(2)}€\n`;
+  }
+
+  if (envio !== null) {
+    texto += `Envío: ${envio > 0 ? envio.toFixed(2) + '€' : 'Gratis'}\n`;
+  }
+
+  return texto + `TOTAL: ${total}€`;
+}
+
+// ============================================================
+// CÓDIGOS DE DESCUENTO
+// ============================================================
+
+function normalizarCodigo(codigo) {
+  return String(codigo || '').trim().toUpperCase().replace(/\s+/g, '');
+}
+
+function redondear2(n) {
+  return Math.round((Number(n) || 0) * 100) / 100;
+}
+
+// Para consultar (validar código) es tolerante; para modificar (estricto=true) lanza
+// error si el archivo no se puede leer, para no borrar los códigos existentes.
+function leerDescuentos(estricto = false) {
+  if (estricto) return leerJSONSeguro(DESCUENTOS_FILE);
+  try {
+    return leerJSONSeguro(DESCUENTOS_FILE);
+  } catch (error) {
+    console.error('[descuentos] No se pudo leer:', error.message);
+    return [];
+  }
+}
+
+function buscarDescuentoActivo(codigo) {
+  const cod = normalizarCodigo(codigo);
+  if (!cod) return null;
+  return leerDescuentos().find(d => d.codigo === cod && d.activo !== false) || null;
+}
+
+// Mínimo de camisetas para poder hacer un pedido (si hay menos, no se guarda ni se envía nada).
+const MIN_CAMISETAS_PEDIDO = 2;
+
+function contarUnidades(pedido) {
+  return obtenerItems(pedido).reduce((suma, item) => suma + normalizarProducto(item).cantidad, 0);
+}
+
+// Mínimo de camisetas que exige un código (0 = sin mínimo).
+function minimoCamisetasCodigo(descuento) {
+  return Math.max(0, parseInt(descuento && descuento.minCamisetas, 10) || 0);
+}
+
+function textoMinimoCodigo(descuento, unidades) {
+  const min = minimoCamisetasCodigo(descuento);
+  return `El código ${descuento.codigo} solo se puede usar en pedidos de ${min} camisetas o más. Ahora tienes ${unidades} en el pedido.`;
+}
+
+// Importe (en €) que descuenta un código sobre un subtotal. Nunca supera el subtotal.
+function calcularImporteDescuento(descuento, subtotal) {
+  const base = Math.max(0, Number(subtotal) || 0);
+  const bruto = descuento.tipo === 'porcentaje'
+    ? base * Number(descuento.valor) / 100
+    : Number(descuento.valor);
+  return redondear2(Math.min(Math.max(0, bruto), base));
+}
+
+function textoValorDescuento(tipo, valor) {
+  return tipo === 'porcentaje' ? `-${Number(valor)}%` : `-${Number(valor).toFixed(2)}€`;
+}
+
+function descripcionDescuento(dc) {
+  return `${dc.codigo} ${textoValorDescuento(dc.tipo, dc.valor)}`;
+}
+
+// --- Limitador simple por IP (frena adivinar códigos / contraseñas) ---
+const intentos = new Map();
+
+function superaLimite(clave, max, ventanaMs) {
+  const ahora = Date.now();
+  const reg = intentos.get(clave);
+  if (!reg || reg.reinicio < ahora) {
+    intentos.set(clave, { n: 1, reinicio: ahora + ventanaMs });
+    return false;
+  }
+  reg.n += 1;
+  return reg.n > max;
+}
+
+setInterval(() => {
+  const ahora = Date.now();
+  for (const [k, v] of intentos) if (v.reinicio < ahora) intentos.delete(k);
+}, 10 * 60 * 1000).unref();
+
+// --- Acceso de administrador (usuario + contraseña) ---
+// Por defecto: usuario "trakeballer". La contraseña NO está en claro en el código,
+// solo su hash. Puedes cambiarla poniendo ADMIN_USER y ADMIN_PASS en Render.
+const sha256 = txt => crypto.createHash('sha256').update(String(txt)).digest();
+const ADMIN_USER = process.env.ADMIN_USER || 'trakeballer';
+const ADMIN_PASS_HASH = process.env.ADMIN_PASS
+  ? sha256(process.env.ADMIN_PASS)
+  : Buffer.from('99a849ebcf21976ff3d62d1af64f08666b92005a3e0ff7d7f0e6924dbb10f415', 'hex');
+
+function iguales(a, b) {
+  return crypto.timingSafeEqual(sha256(a), sha256(b));
+}
+
+const SESIONES_ADMIN = new Map(); // token -> caducidad
+const DURACION_SESION_MS = 8 * 60 * 60 * 1000;
+
+function comprobarSesionAdmin(req, res) {
+  const cabecera = req.get('authorization') || '';
+  const token = cabecera.startsWith('Bearer ') ? cabecera.slice(7) : '';
+  const caduca = SESIONES_ADMIN.get(token);
+
+  if (!token || !caduca || caduca < Date.now()) {
+    SESIONES_ADMIN.delete(token);
+    res.status(401).json({ ok: false, error: 'Sesión no válida. Vuelve a entrar.' });
+    return false;
+  }
+  return true;
+}
+
+app.post('/api/admin/login', (req, res) => {
+  if (superaLimite('login:' + req.ip, 10, 15 * 60 * 1000)) {
+    return res.status(429).json({ ok: false, error: 'Demasiados intentos. Espera unos minutos.' });
+  }
+
+  const { usuario, clave } = req.body || {};
+  const userOk = iguales(usuario ?? '', ADMIN_USER);
+  const passOk = crypto.timingSafeEqual(sha256(clave ?? ''), ADMIN_PASS_HASH);
+
+  if (!userOk || !passOk) {
+    return res.status(401).json({ ok: false, error: 'Usuario o contraseña incorrectos.' });
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  SESIONES_ADMIN.set(token, Date.now() + DURACION_SESION_MS);
+  res.json({ ok: true, token });
+});
+
+app.get('/api/admin/descuentos', (req, res) => {
+  if (!comprobarSesionAdmin(req, res)) return;
+  res.json({ ok: true, descuentos: leerDescuentos(), almacenamientoPersistente: ALMACENAMIENTO_PERSISTENTE });
+});
+
+app.post('/api/admin/descuentos', (req, res) => {
+  try {
+    if (!comprobarSesionAdmin(req, res)) return;
+
+    const codigo = normalizarCodigo(req.body?.codigo);
+    const tipo = req.body?.tipo;
+    const valor = Number(req.body?.valor);
+
+    if (!/^[A-Z0-9_-]{3,30}$/.test(codigo)) {
+      return res.status(400).json({ ok: false, error: 'El código debe tener 3-30 caracteres (letras, números, - o _).' });
+    }
+    if (tipo !== 'porcentaje' && tipo !== 'euros') {
+      return res.status(400).json({ ok: false, error: 'Elige si el descuento es en % o en €.' });
+    }
+    if (!Number.isFinite(valor) || valor <= 0) {
+      return res.status(400).json({ ok: false, error: 'El valor del descuento debe ser mayor que 0.' });
+    }
+    if (tipo === 'porcentaje' && valor > 100) {
+      return res.status(400).json({ ok: false, error: 'El porcentaje no puede superar el 100%.' });
+    }
+    if (tipo === 'euros' && valor > 10000) {
+      return res.status(400).json({ ok: false, error: 'El descuento en euros es demasiado alto.' });
+    }
+
+    const minCamisetas = req.body?.minCamisetas === undefined || req.body?.minCamisetas === ''
+      ? 0
+      : Number(req.body.minCamisetas);
+    if (!Number.isInteger(minCamisetas) || minCamisetas < 0 || minCamisetas > 1000) {
+      return res.status(400).json({ ok: false, error: 'El mínimo de camisetas debe ser un número entero (0 = sin mínimo).' });
+    }
+
+    const lista = leerDescuentos(true);
+    if (lista.some(d => d.codigo === codigo)) {
+      return res.status(409).json({ ok: false, error: 'Ese código ya existe. Elimínalo antes si quieres cambiarlo.' });
+    }
+
+    const nuevo = {
+      codigo,
+      tipo,
+      valor: redondear2(valor),
+      minCamisetas,
+      activo: true,
+      usos: 0,
+      creado: new Date().toLocaleString('es-ES')
+    };
+    lista.push(nuevo);
+    guardarJSONSeguro(DESCUENTOS_FILE, lista);
+    res.json({ ok: true, descuento: nuevo });
+  } catch (error) {
+    console.error('[descuentos] Error creando:', error);
+    res.status(500).json({ ok: false, error: 'Error interno al crear el código.' });
+  }
+});
+
+app.patch('/api/admin/descuentos/:codigo', (req, res) => {
+  try {
+    if (!comprobarSesionAdmin(req, res)) return;
+
+    const lista = leerDescuentos(true);
+    const d = lista.find(x => x.codigo === normalizarCodigo(req.params.codigo));
+    if (!d) return res.status(404).json({ ok: false, error: 'Código no encontrado.' });
+
+    d.activo = !!req.body?.activo;
+    guardarJSONSeguro(DESCUENTOS_FILE, lista);
+    res.json({ ok: true, descuento: d });
+  } catch (error) {
+    console.error('[descuentos] Error actualizando:', error);
+    res.status(500).json({ ok: false, error: 'Error interno al actualizar el código.' });
+  }
+});
+
+app.delete('/api/admin/descuentos/:codigo', (req, res) => {
+  try {
+    if (!comprobarSesionAdmin(req, res)) return;
+
+    const codigo = normalizarCodigo(req.params.codigo);
+    const lista = leerDescuentos(true);
+    const resto = lista.filter(d => d.codigo !== codigo);
+    if (resto.length === lista.length) {
+      return res.status(404).json({ ok: false, error: 'Código no encontrado.' });
+    }
+    guardarJSONSeguro(DESCUENTOS_FILE, resto);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('[descuentos] Error eliminando:', error);
+    res.status(500).json({ ok: false, error: 'Error interno al eliminar el código.' });
+  }
+});
+
+// Público: la web comprueba un código antes de enviar el pedido.
+app.post('/api/descuento/validar', (req, res) => {
+  if (superaLimite('validar:' + req.ip, 40, 10 * 60 * 1000)) {
+    return res.status(429).json({ ok: false, error: 'Demasiados intentos. Espera unos minutos.' });
+  }
+
+  try {
+    const d = buscarDescuentoActivo(req.body?.codigo);
+    if (!d) {
+      return res.status(404).json({ ok: false, error: 'Ese código de descuento no es válido.' });
+    }
+
+    const min = minimoCamisetasCodigo(d);
+    const unidades = Math.max(0, parseInt(req.body?.unidades, 10) || 0);
+    if (min > 0 && unidades < min) {
+      return res.status(400).json({ ok: false, minCamisetas: min, error: textoMinimoCodigo(d, unidades) });
+    }
+
+    res.json({
+      ok: true,
+      codigo: d.codigo,
+      tipo: d.tipo,
+      valor: d.valor,
+      minCamisetas: min,
+      importe: calcularImporteDescuento(d, req.body?.subtotal)
+    });
+  } catch (error) {
+    console.error('[descuentos] Error validando:', error);
+    res.status(500).json({ ok: false, error: 'No se pudo comprobar el código. Inténtalo de nuevo.' });
+  }
+});
+
+// ============================================================
+// CORREO PARA TRAKEBALLER
+// ============================================================
+
+function formatearPedidoTexto(pedido) {
+  const cabecera =
+    pedido.tipo === 'amigo-invisible'
+      ? `NUEVO PEDIDO DE AMIGO INVISIBLE #${pedido.id}`
+      : `NUEVO PEDIDO #${pedido.id}`;
+
+  const avisoPanel = pedido.noGuardadoEnPanel
+    ? `⚠️ ATENCIÓN: este pedido NO se pudo guardar en el panel trake_admin. Apúntalo desde este correo.\n\n`
+    : '';
+
+  return `${avisoPanel}${cabecera}
+
+Fecha: ${pedido.fecha}
+
+CLIENTE
+------------------------------------------
+Nombre: ${pedido.cliente?.nombre || ''}
+Dirección: ${pedido.cliente?.direccion || ''}
+Teléfono: ${pedido.cliente?.telefono || ''}
+Email: ${pedido.cliente?.email || ''}
+${pedido.notas ? `\nNotas: ${pedido.notas}\n` : ''}
+PEDIDO
+------------------------------------------
+${formatearProductosTexto(pedido)}
+
+${lineasTotalesTexto(pedido)}`;
+}
+
+// ============================================================
+// CORREO PARA EL CLIENTE
+// ============================================================
+
+function formatearJustificanteCliente(pedido) {
+  const total = Number(pedido.total || 0).toFixed(2);
+  const nombreCliente = pedido.cliente?.nombre || 'cliente';
+
+  return `¡Hola ${nombreCliente}!
+
+Hemos recibido tu pedido #${pedido.id} en Trakeballer. Este es tu justificante:
+
+Fecha: ${pedido.fecha}
+
+TU PEDIDO
+------------------------------------------
+${formatearProductosTexto(pedido)}
+
+${lineasTotalesTexto(pedido)}
+
+------------------------------------------
+CÓMO PAGAR (ÚNICAMENTE POR PAYPAL)
+------------------------------------------
+1. Envía ${total}€ por PayPal a:
+
+   ${EMAIL_TIENDA}
+
+2. Envíalo como AMIGOS Y FAMILIARES.
+
+3. NO pongas ningún concepto ni mensaje en el pago.
+
+4. Después, manda el comprobante de pago junto con la captura o el número
+   de pedido (#${pedido.id}) a este mismo correo: ${EMAIL_TIENDA}
+
+El pedido no se tramita hasta que recibamos el pago y el comprobante.
+------------------------------------------
+
+Nos pondremos en contacto contigo para confirmar el pedido. ¡Gracias por tu compra!
+
+Para cualquier duda sobre tu pedido, escríbenos a ${EMAIL_TIENDA}
+
+- Trakeballer`;
+}
+
+// ============================================================
+// ESCAPAR HTML
+// ============================================================
+
+function escapeHTML(texto) {
+  return String(texto)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// ============================================================
+// HTML DE LOS PRODUCTOS
+// ============================================================
+
+function crearHTMLProductos(pedido) {
+  const items = obtenerItems(pedido);
+
+  if (items.length === 0) {
+    return `<p>No se recibieron artículos en el pedido.</p>`;
+  }
+
+  return items
+    .map((item, index) => {
+      const p = normalizarProducto(item);
+      const tipoTexto = p.tipo.toLowerCase().includes('retro') ? 'Retro' : 'Actual';
+
+      return `
+        <div style="border:1px solid #dddddd;border-radius:10px;padding:15px;margin-bottom:12px;font-family:Arial,sans-serif;">
+          <strong style="font-size:16px;">
+            ${index + 1}. ${escapeHTML(p.nombre)}
+          </strong>
+
+          <div style="margin-top:8px;">Tipo: ${escapeHTML(tipoTexto)}</div>
+
+          ${p.talla ? `<div>Talla: ${escapeHTML(p.talla)}</div>` : ''}
+          ${p.dorsal ? `<div>Dorsal: ${escapeHTML(p.dorsal)}</div>` : ''}
+          ${p.nombreCamiseta ? `<div>Nombre: ${escapeHTML(p.nombreCamiseta)}</div>` : ''}
+          ${p.parches.length ? `<div>Parches: ${escapeHTML(p.parches.join(', '))}</div>` : ''}
+
+          <div style="margin-top:8px;">Cantidad: ${p.cantidad}</div>
+          <div>Precio unidad: ${p.precioUnidad.toFixed(2)}€</div>
+          <strong>Total: ${(p.precioUnidad * p.cantidad).toFixed(2)}€</strong>
+        </div>
+      `;
+    })
+    .join('');
+}
+
+// ============================================================
+// HTML COMPLETO DEL EMAIL
+// ============================================================
+
+function bloqueTotalesHTML(pedido) {
+  const dCantidad = Number(pedido.descuentoCantidad) || 0;
+  const hayDescuentos = dCantidad > 0.004 || !!pedido.descuentoCodigo;
+  const verde = 'color:#1a7f37;';
+  let html = '';
+
+  if (hayDescuentos && typeof pedido.subtotalSinDescuentos === 'number') {
+    html += `<p><strong>Artículos (precio sin descuentos):</strong> ${pedido.subtotalSinDescuentos.toFixed(2)}€</p>`;
+  } else if (typeof pedido.subtotal === 'number') {
+    html += `<p><strong>Subtotal:</strong> ${pedido.subtotal.toFixed(2)}€</p>`;
+  }
+
+  if (dCantidad > 0.004) {
+    html += `<p style="${verde}"><strong>Descuento por oferta de cantidad:</strong> -${dCantidad.toFixed(2)}€</p>`;
+  }
+
+  if (pedido.descuentoCodigo) {
+    html += `<p style="${verde}"><strong>Descuento por código ${escapeHTML(descripcionDescuento(pedido.descuentoCodigo))}:</strong> -${Number(pedido.descuentoCodigo.importe).toFixed(2)}€</p>`;
+  }
+
+  if (typeof pedido.envio === 'number') {
+    html += `<p><strong>Envío:</strong> ${pedido.envio > 0 ? pedido.envio.toFixed(2) + '€' : 'Gratis'}</p>`;
+  }
+
+  return html;
+}
+
+function crearHTMLPedido(pedido, esCliente = false) {
+  const productosHTML = crearHTMLProductos(pedido);
+  const total = Number(pedido.total || 0).toFixed(2);
+  const nombre = pedido.cliente?.nombre || 'cliente';
+
+  const bloqueCliente = `
+    <div style="background:#f7f7f7;border-radius:10px;padding:15px;margin-bottom:10px;">
+      <p style="margin:4px 0;"><strong>Cliente:</strong> ${escapeHTML(nombre)}</p>
+      <p style="margin:4px 0;"><strong>Email:</strong> ${escapeHTML(pedido.cliente?.email || '')}</p>
+      <p style="margin:4px 0;"><strong>Teléfono:</strong> ${escapeHTML(pedido.cliente?.telefono || '')}</p>
+      <p style="margin:4px 0;"><strong>Dirección:</strong> ${escapeHTML(pedido.cliente?.direccion || '')}</p>
+      ${pedido.notas ? `<p style="margin:4px 0;"><strong>Notas:</strong> ${escapeHTML(pedido.notas)}</p>` : ''}
+    </div>
+  `;
+
+  const bloquePaypal = `
+    <div style="margin-top:25px;border:2px solid #0070ba;border-radius:12px;padding:20px;background:#f0f7fd;">
+      <h3 style="margin-top:0;color:#0070ba;">Cómo pagar (únicamente por PayPal)</h3>
+      <ol style="padding-left:20px;line-height:1.7;">
+        <li>Envía <strong>${total}€</strong> por PayPal a:<br>
+          <strong style="font-size:17px;">${EMAIL_TIENDA}</strong>
+        </li>
+        <li>Envíalo como <strong>AMIGOS Y FAMILIARES</strong>.</li>
+        <li><strong>NO pongas ningún concepto ni mensaje</strong> en el pago.</li>
+        <li>Después, manda el <strong>comprobante de pago</strong> y la captura o el número de pedido (<strong>#${pedido.id}</strong>) a este mismo correo: <strong>${EMAIL_TIENDA}</strong></li>
+      </ol>
+      <p style="margin-bottom:0;">
+        <strong>El pedido no se tramita hasta que recibamos el pago y el comprobante.</strong>
+      </p>
+    </div>
+    <p style="margin-top:25px;">Nos pondremos en contacto contigo para confirmar el pedido. ¡Gracias por tu compra!</p>
+    <p style="color:#666;font-size:14px;">Para cualquier duda sobre tu pedido, escríbenos a <strong>${EMAIL_TIENDA}</strong><br>- Trakeballer</p>
+  `;
+
+  return `
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:20px;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif;color:#222;">
+<div style="max-width:650px;margin:auto;background:#ffffff;padding:25px;border-radius:12px;">
+  ${!esCliente && pedido.noGuardadoEnPanel ? `<p style="background:#fdecea;color:#b42318;padding:10px;border-radius:8px;"><strong>⚠️ Este pedido NO se pudo guardar en el panel trake_admin.</strong> Apúntalo desde este correo.</p>` : ''}
+  <h2>${esCliente ? `¡Hola ${escapeHTML(nombre)}!` : `NUEVO PEDIDO #${pedido.id}`}</h2>
+  ${
+    esCliente
+      ? `<p>Hemos recibido tu pedido <strong>#${pedido.id}</strong> en Trakeballer. Este es tu justificante.</p>
+         <p style="color:#666;font-size:14px;">Fecha: ${escapeHTML(pedido.fecha || '')}</p>`
+      : `<p style="color:#666;font-size:14px;">Fecha: ${escapeHTML(pedido.fecha || '')}</p>${bloqueCliente}`
+  }
+  <h3 style="margin-top:30px;">${esCliente ? 'TU PEDIDO' : 'PEDIDO'}</h3>
+  ${productosHTML}
+  ${bloqueTotalesHTML(pedido)}
+  <h2>TOTAL: ${total}€</h2>
+  ${esCliente ? bloquePaypal : ''}
+</div>
+</body>
+</html>
+`;
+}
+
+// ============================================================
+// BREVO
+// ============================================================
+
+async function enviarEmail(destino, asunto, texto, nombreDestino = '', html = '') {
+  if (!process.env.BREVO_API_KEY) {
+    console.warn('[email] Falta BREVO_API_KEY');
+    return { ok: false, motivo: 'BREVO_API_KEY no configurada' };
+  }
+
+  if (!process.env.EMAIL_FROM) {
+    console.warn('[email] Falta EMAIL_FROM');
+    return { ok: false, motivo: 'EMAIL_FROM no configurada' };
+  }
+
+  try {
+    const respuesta = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': process.env.BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: 'Trakeballer', email: process.env.EMAIL_FROM },
+        to: [{ email: destino, ...(nombreDestino ? { name: nombreDestino } : {}) }],
+        subject: asunto,
+        textContent: texto,
+        ...(html ? { htmlContent: html } : {})
+      })
+    });
+
+    const datos = await respuesta.json();
+
+    if (!respuesta.ok) {
+      console.error('[email] Error Brevo:', datos);
+      return {
+        ok: false,
+        motivo: datos.message || 'Error enviando email con Brevo',
+        statusCode: respuesta.status
+      };
+    }
+
+    console.log(`[email] Enviado a ${destino} - ID: ${datos.messageId}`);
+    return { ok: true, id: datos.messageId };
+  } catch (error) {
+    console.error(`[email] Error enviando email a ${destino}:`, error.message);
+    return { ok: false, motivo: error.message };
+  }
+}
+
+// ============================================================
+// TWILIO (Manejo de error por si no está instalado)
+// ============================================================
+
+async function avisarPorTwilio(texto, { from, to }) {
+  if (
+    !process.env.TWILIO_ACCOUNT_SID ||
+    !process.env.TWILIO_AUTH_TOKEN ||
+    !from ||
+    !to
+  ) {
+    return { ok: false, motivo: 'no configurado' };
+  }
+
+  try {
+    const twilio = require('twilio');
+    const client = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN
+    );
+    const resultado = await client.messages.create({ body: texto, from, to });
+    return { ok: true, sid: resultado.sid };
+  } catch (error) {
+    console.warn('[Twilio] No se envió mensaje:', error.message);
+    return { ok: false, motivo: error.message };
+  }
+}
+
+// ============================================================
+// PEDIDO
+// ============================================================
+
+// Avisos al dueño y al cliente (email, SMS, WhatsApp). Se lanza DESPUÉS de guardar el
+// pedido y de responder a la web: si algo falla aquí, el cliente ya no ve ningún error.
+async function notificarPedido(pedido) {
+  const esAmigoInvisible = pedido.tipo === 'amigo-invisible';
+
+  const resultados = {};
+
+  const intentar = async (nombre, fn) => {
+    try {
+      const resultado = await fn();
+      resultados[nombre] = resultado;
+      if (resultado && resultado.ok === false) {
+        console.warn(`[aviso:${nombre}] No enviado:`, resultado.motivo || resultado);
+      }
+      return resultado;
+    } catch (error) {
+      console.error(`[aviso:${nombre}] Error:`, error);
+      resultados[nombre] = { ok: false, motivo: error.message };
+      return resultados[nombre];
+    }
+  };
+
+  let textoAdmin = '';
+
+  await intentar('email-tienda', async () => {
+    textoAdmin = formatearPedidoTexto(pedido);
+    const htmlAdmin = crearHTMLPedido(pedido, false);
+    const prefijo = pedido.noGuardadoEnPanel ? '⚠️ NO GUARDADO EN EL PANEL - ' : '';
+    const asuntoAdmin = esAmigoInvisible
+      ? `${prefijo}Nuevo pedido de amigo invisible #${pedido.id} - ${Number(pedido.total || 0).toFixed(2)}€`
+      : `${prefijo}Nuevo pedido #${pedido.id} - ${Number(pedido.total || 0).toFixed(2)}€`;
+
+    return enviarEmail(process.env.EMAIL_TO || EMAIL_TIENDA, asuntoAdmin, textoAdmin, '', htmlAdmin);
+  });
+
+  if (pedido.cliente && pedido.cliente.email) {
+    await intentar('email-cliente', async () => enviarEmail(
+      pedido.cliente.email,
+      `Tu pedido #${pedido.id} en Trakeballer`,
+      formatearJustificanteCliente(pedido),
+      pedido.cliente.nombre,
+      crearHTMLPedido(pedido, true)
+    ));
+  }
+
+  await intentar('sms', () => avisarPorTwilio(textoAdmin, {
+    from: process.env.TWILIO_SMS_FROM,
+    to: process.env.TWILIO_SMS_TO
+  }));
+
+  await intentar('whatsapp', () => avisarPorTwilio(textoAdmin, {
+    from: process.env.TWILIO_WHATSAPP_FROM,
+    to: process.env.TWILIO_WHATSAPP_TO
+  }));
+
+  return resultados;
+}
+
+app.post('/api/pedido', async (req, res) => {
+  let pedido;
+
+  try {
+    pedido = req.body;
+    const items = obtenerItems(pedido);
+
+    console.log('[pedido] Artículos recibidos:', items.length);
+
+    if (!pedido || items.length === 0) {
+      return res.status(400).json({ ok: false, error: 'El pedido no tiene artículos.' });
+    }
+
+    // Mínimo de camisetas: si hay menos, se rechaza ANTES de guardar y de enviar ningún correo.
+    const unidadesPedido = contarUnidades(pedido);
+    if (unidadesPedido < MIN_CAMISETAS_PEDIDO) {
+      return res.status(400).json({
+        ok: false,
+        error: `El pedido mínimo es de ${MIN_CAMISETAS_PEDIDO} camisetas. Añade al menos otra camiseta para poder enviarlo.`
+      });
+    }
+
+    const esAmigoInvisible = pedido.tipo === 'amigo-invisible';
+
+    if (esAmigoInvisible) {
+      if (!pedido.cliente || !pedido.cliente.nombre || (!pedido.cliente.telefono && !pedido.cliente.email)) {
+        return res.status(400).json({ ok: false, error: 'Faltan datos de contacto.' });
+      }
+    } else {
+      if (!pedido.cliente || !pedido.cliente.nombre || !pedido.cliente.direccion || !pedido.cliente.telefono) {
+        return res.status(400).json({ ok: false, error: 'Faltan datos de contacto.' });
+      }
+    }
+
+    // Identificador que genera la web en cada envío: si la web reintenta por un corte de
+    // conexión, el pedido NO se duplica (se devuelve el que ya estaba guardado).
+    const idCliente = typeof pedido.idCliente === 'string'
+      ? pedido.idCliente.replace(/[^\w-]/g, '').slice(0, 64)
+      : '';
+
+    if (idCliente) {
+      const existente = leerJSONSeguro(ORDERS_FILE).find(p => p.idCliente === idCliente);
+      if (existente) {
+        return res.json({ ok: true, pedidoId: existente.id, repetido: true, resumen: resumenPedido(existente) });
+      }
+      pedido.idCliente = idCliente;
+    } else {
+      delete pedido.idCliente;
+    }
+
+    // Código de descuento: se valida SIEMPRE en el servidor y se recalcula el total.
+    delete pedido.descuentoCodigo;
+    const codigoRecibido = normalizarCodigo(pedido.codigoDescuento);
+    let descuentoUsado = null;
+
+    if (codigoRecibido) {
+      descuentoUsado = buscarDescuentoActivo(codigoRecibido);
+      if (!descuentoUsado) {
+        return res.status(400).json({ ok: false, error: 'El código de descuento no es válido. Quítalo o revísalo e inténtalo de nuevo.' });
+      }
+
+      if (unidadesPedido < minimoCamisetasCodigo(descuentoUsado)) {
+        return res.status(400).json({ ok: false, error: textoMinimoCodigo(descuentoUsado, unidadesPedido) + ' Quita el código o añade más camisetas.' });
+      }
+
+      const base = typeof pedido.subtotal === 'number' ? pedido.subtotal : Number(pedido.total) || 0;
+      const importe = calcularImporteDescuento(descuentoUsado, base);
+      const envio = typeof pedido.envio === 'number' ? pedido.envio : 0;
+
+      pedido.codigoDescuento = descuentoUsado.codigo;
+      pedido.subtotal = base;
+      pedido.descuentoCodigo = {
+        codigo: descuentoUsado.codigo,
+        tipo: descuentoUsado.tipo,
+        valor: descuentoUsado.valor,
+        importe
+      };
+      pedido.total = redondear2(Math.max(0, base - importe) + envio);
+    } else {
+      delete pedido.codigoDescuento;
+    }
+
+    pedido.fecha = new Date().toLocaleString('es-ES');
+
+    // Cuánto se ha descontado y por qué (oferta por cantidad y/o código)
+    aplicarDesglose(pedido);
+  } catch (error) {
+    console.error('[pedido] Error preparando el pedido:', error);
+    return res.status(500).json({ ok: false, error: 'No se pudo procesar el pedido.', detalle: error.message });
+  }
+
+  // 1) GUARDAR (aparece en trake_admin).
+  //    Si el disco falla, el pedido NO se pierde: se manda igualmente por email a la tienda
+  //    (con un aviso) y solo se da error al cliente si tampoco se puede enviar ese email.
+  try {
+    guardarPedido(pedido);
+  } catch (error) {
+    console.error('[pedido] NO SE PUDO GUARDAR EN DISCO:', error);
+    pedido.id = pedido.id || Date.now();
+    pedido.noGuardadoEnPanel = true;
+
+    const avisos = await notificarPedido(pedido).catch(e => ({ 'email-tienda': { ok: false, motivo: e.message } }));
+
+    if (avisos['email-tienda'] && avisos['email-tienda'].ok) {
+      return res.json({ ok: true, pedidoId: pedido.id, resumen: resumenPedido(pedido) });
+    }
+
+    return res.status(500).json({
+      ok: false,
+      error: 'No se pudo registrar el pedido por un fallo del servidor. Escríbenos a trakeballer@gmail.com con tu pedido.',
+      detalle: error.message
+    });
+  }
+
+  // 2) Contar el uso del código (si falla no afecta al pedido, que ya está guardado)
+  try {
+    if (pedido.descuentoCodigo) {
+      const lista = leerDescuentos(true);
+      const d = lista.find(x => x.codigo === pedido.descuentoCodigo.codigo);
+      if (d) {
+        d.usos = (d.usos || 0) + 1;
+        guardarJSONSeguro(DESCUENTOS_FILE, lista);
+      }
+    }
+  } catch (error) {
+    console.error('[pedido] No se pudo contar el uso del código:', error);
+  }
+
+  // 3) Responder YA a la web: el pedido está guardado.
+  res.json({ ok: true, pedidoId: pedido.id, resumen: resumenPedido(pedido) });
+
+  // 4) Avisos en segundo plano (nunca pueden provocar un error al cliente)
+  notificarPedido(pedido).catch(error => console.error('[pedido] Error en avisos:', error));
+});
+
+// ============================================================
+// SUGERENCIAS
+// ============================================================
+
+app.post('/api/sugerencia', async (req, res) => {
+  try {
+    const { mensaje, nombre, email } = req.body || {};
+
+    if (!mensaje || !mensaje.trim()) {
+      return res.status(400).json({ ok: false, error: 'Cuéntanos qué camiseta te falta.' });
+    }
+
+    const sugerencia = {
+      id: Date.now(),
+      fecha: new Date().toLocaleString('es-ES'),
+      mensaje: mensaje.trim(),
+      nombre: nombre?.trim() || '',
+      email: email?.trim() || ''
+    };
+
+    guardarSugerencia(sugerencia);
+
+    const texto = `NUEVA SUGERENCIA DE CAMISETA\n\nFecha:\n${sugerencia.fecha}\n\nNombre:\n${sugerencia.nombre || 'No indicado'}\n\nEmail:\n${sugerencia.email || 'No indicado'}\n\nMensaje:\n${sugerencia.mensaje}`;
+
+    const html = `
+      <h2>Nueva sugerencia de camiseta</h2>
+      <p><strong>Fecha:</strong> ${escapeHTML(sugerencia.fecha)}</p>
+      <p><strong>Nombre:</strong> ${escapeHTML(sugerencia.nombre || 'No indicado')}</p>
+      <p><strong>Email:</strong> ${escapeHTML(sugerencia.email || 'No indicado')}</p>
+      <p><strong>Mensaje:</strong></p>
+      <p>${escapeHTML(sugerencia.mensaje)}</p>
+    `;
+
+    const resultado = await enviarEmail(
+      process.env.EMAIL_TO || EMAIL_TIENDA,
+      'Sugerencia de camiseta en Trakeballer',
+      texto,
+      '',
+      html
+    );
+
+    res.json({ ok: true, aviso: resultado });
+  } catch (error) {
+    console.error('[sugerencia] Error:', error);
+    res.status(500).json({ ok: false, error: 'Error interno al enviar la sugerencia.' });
+  }
+});
+
+// ============================================================
+// RESEÑAS
+// ============================================================
+
+app.get('/api/resenas', (req, res) => {
+  try {
+    const resenas = leerJSON(RESENAS_FILE)
+      .filter(r => r.aprobada !== false)
+      .sort((a, b) => b.id - a.id);
+
+    res.json({ ok: true, resenas });
+  } catch (error) {
+    console.error('[resenas] Error:', error);
+    res.status(500).json({ ok: false, error: 'Error interno al leer las reseñas.' });
+  }
+});
+
+app.post('/api/resena', async (req, res) => {
+  try {
+    const { nombre, valoracion, mensaje } = req.body || {};
+    const estrellas = Math.round(Number(valoracion));
+
+    if (!nombre || !nombre.trim()) {
+      return res.status(400).json({ ok: false, error: 'Cuéntanos tu nombre.' });
+    }
+
+    if (!estrellas || estrellas < 1 || estrellas > 5) {
+      return res.status(400).json({ ok: false, error: 'Elige una valoración de 1 a 5 estrellas.' });
+    }
+
+    if (!mensaje || !mensaje.trim()) {
+      return res.status(400).json({ ok: false, error: 'Cuéntanos tu opinión.' });
+    }
+
+    const resena = {
+      id: Date.now(),
+      fecha: new Date().toLocaleString('es-ES'),
+      nombre: nombre.trim().slice(0, 80),
+      valoracion: estrellas,
+      mensaje: mensaje.trim().slice(0, 600),
+      aprobada: true
+    };
+
+    guardarResena(resena);
+
+    const texto = `NUEVA RESEÑA EN TRAKEBALLER\n\nFecha:\n${resena.fecha}\n\nNombre:\n${resena.nombre}\n\nValoración:\n${resena.valoracion} / 5 estrellas\n\nOpinión:\n${resena.mensaje}`;
+
+    const html = `
+      <h2>Nueva reseña en Trakeballer</h2>
+      <p><strong>Fecha:</strong> ${escapeHTML(resena.fecha)}</p>
+      <p><strong>Nombre:</strong> ${escapeHTML(resena.nombre)}</p>
+      <p><strong>Valoración:</strong> ${resena.valoracion} / 5 estrellas</p>
+      <p><strong>Opinión:</strong></p>
+      <p>${escapeHTML(resena.mensaje)}</p>
+    `;
+
+    const resultado = await enviarEmail(
+      process.env.EMAIL_TO || EMAIL_TIENDA,
+      `Nueva reseña (${resena.valoracion}★) de ${resena.nombre} - Trakeballer`,
+      texto,
+      '',
+      html
+    );
+
+    res.json({ ok: true, resena, aviso: resultado });
+  } catch (error) {
+    console.error('[resena] Error:', error);
+    res.status(500).json({ ok: false, error: 'Error interno al enviar la reseña.' });
+  }
+});
+
+// ============================================================
+// ADMIN: VER Y GESTIONAR PEDIDOS
+// ============================================================
+
+function comprobarAdmin(req, res) {
+  const clave = req.query.clave || req.headers['x-admin-key'];
+
+  if (!process.env.ADMIN_PASSWORD || clave !== process.env.ADMIN_PASSWORD) {
+    res.status(401).json({ ok: false, error: 'No autorizado.' });
+    return false;
+  }
+
+  return true;
+}
+
+app.get('/api/pedidos', (req, res) => {
+  try {
+    if (!comprobarAdmin(req, res)) return;
+    const pedidos = leerJSONSeguro(ORDERS_FILE).sort((a, b) => b.id - a.id);
+    res.json({ ok: true, pedidos, almacenamientoPersistente: ALMACENAMIENTO_PERSISTENTE });
+  } catch (error) {
+    console.error('[pedidos] Error:', error);
+    res.status(500).json({ ok: false, error: 'Error interno al leer los pedidos.' });
+  }
+});
+
+app.post('/api/pedidos/:id/listo', (req, res) => {
+  try {
+    if (!comprobarAdmin(req, res)) return;
+
+    const id = Number(req.params.id);
+    const listo = !!(req.body && req.body.listo);
+
+    const pedidos = leerJSONSeguro(ORDERS_FILE);
+    const pedido = pedidos.find(p => p.id === id);
+
+    if (!pedido) {
+      return res.status(404).json({ ok: false, error: 'Pedido no encontrado.' });
+    }
+
+    pedido.listo = listo;
+    guardarJSONSeguro(ORDERS_FILE, pedidos);
+
+    res.json({ ok: true, pedido });
+  } catch (error) {
+    console.error('[pedidos/listo] Error:', error);
+    res.status(500).json({ ok: false, error: 'Error interno al actualizar el pedido.' });
+  }
+});
+
+// ============================================================
+// SALUD Y SEO
+// ============================================================
+
+app.get('/api/salud', (req, res) => {
+  let escribible = false;
+  try {
+    fs.accessSync(DATA_DIR, fs.constants.W_OK);
+    escribible = true;
+  } catch (_) { /* sin permisos de escritura */ }
+
+  res.json({
+    ok: true,
+    servicio: 'Trakeballer',
+    datos: { persistente: ALMACENAMIENTO_PERSISTENTE, escribible },
+    email: { brevo: !!process.env.BREVO_API_KEY, remitente: !!process.env.EMAIL_FROM }
+  });
+});
+
+function urlBase(req) {
+  if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, '');
+  const host = req.get('host');
+  const proto = /^localhost|^127\./.test(host)
+    ? 'http'
+    : (req.get('x-forwarded-proto') || 'https').split(',')[0];
+  return `${proto}://${host}`;
+}
+
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(`User-agent: *\nAllow: /\n\nSitemap: ${urlBase(req)}/sitemap.xml\n`);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>${urlBase(req)}/</loc>\n    <changefreq>weekly</changefreq>\n    <priority>1.0</priority>\n  </url>\n</urlset>\n`);
+});
+
+// ============================================================
+// CHAT CON IA (widget de la web)
+// ============================================================
+
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const CHAT_MODEL = 'openai/gpt-oss-120b';
+
+// ------------------------------------------------------------
+// Carga del catálogo real (catalogo_trakeballers_ia.json) y lo
+// convierte en texto para dárselo a la IA como contexto.
+// El archivo DEBE estar en la misma carpeta que este server.js
+// (si lo mueves a otra carpeta, cambia la ruta de abajo).
+// ------------------------------------------------------------
+
+function cargarCatalogoIA() {
+  try {
+    const ruta = path.join(__dirname, 'catalogo_trakeballers_ia.json');
+    const catalogo = JSON.parse(fs.readFileSync(ruta, 'utf8'));
+    const lineas = [];
+
+    lineas.push('');
+    lineas.push('CATÁLOGO REAL DE TRAKEBALLER');
+    lineas.push(
+      'Usa ÚNICAMENTE esta lista para saber qué equipos y camisetas hay disponibles. ' +
+      'Ignora mayúsculas/minúsculas y acentos al comparar. Si el cliente pregunta por un ' +
+      'equipo que SÍ aparece aquí, confírmalo y, si quieres, menciona algún modelo concreto ' +
+      '(actual y/o retro si tiene). Si el equipo NO aparece en esta lista, di claramente que ' +
+      'no está en el catálogo y ofrécele dejar una sugerencia en la web. No inventes equipos, ' +
+      'modelos, temporadas ni tallas que no estén aquí. Si preguntan por una talla concreta, ' +
+      'indica que el catálogo no especifica stock por talla, salvo que aquí se indique lo contrario.'
+    );
+    lineas.push('');
+
+    if (Array.isArray(catalogo.selecciones) && catalogo.selecciones.length) {
+      lineas.push('SELECCIONES NACIONALES:');
+      catalogo.selecciones.forEach(sel => {
+        lineas.push(`- ${sel.nombre}`);
+      });
+      lineas.push('');
+    }
+
+    if (Array.isArray(catalogo.clubes) && catalogo.clubes.length) {
+      lineas.push('CLUBES (versión actual):');
+      catalogo.clubes.forEach(club => {
+        lineas.push(`- ${club.nombre}${club.liga ? ` (${club.liga})` : ''}`);
+      });
+      lineas.push('');
+    }
+
+    if (Array.isArray(catalogo.retro) && catalogo.retro.length) {
+      lineas.push('CAMISETAS RETRO:');
+      catalogo.retro.forEach(r => {
+        lineas.push(`- ${r.nombre}${r.equipo ? ` — ${r.equipo}` : ''}`);
+      });
+    }
+
+    console.log(`[catalogo-ia] Catálogo cargado: ${catalogo.selecciones?.length || 0} selecciones, ${catalogo.clubes?.length || 0} clubes, ${catalogo.retro?.length || 0} retro.`);
+
+    return lineas.join('\n');
+  } catch (error) {
+    console.error('[catalogo-ia] No se pudo cargar catalogo_trakeballers_ia.json:', error.message);
+    return '';
+  }
+}
+
+const CATALOGO_IA_TEXTO = cargarCatalogoIA();
+
+const KNOWLEDGE_BASE = `
+Eres el asistente virtual de Trakeballer, una tienda online de camisetas de
+fútbol personalizadas (actuales y retro), de clubes y selecciones de todo
+el mundo (Premier League, La Liga, Serie A, Bundesliga, Ligue 1, MLS, Liga MX,
+Brasileirao, Liga Portugal, Eredivisie, liga saudí, J1 League, etc.).
+
+PRODUCTO Y PERSONALIZACIÓN
+- Camiseta versión actual: 25€. Versión retro: 30€.
+- Se puede elegir versión local, visitante o modelo retro.
+- Incluye personalización con nombre y dorsal sin coste extra.
+- Se pueden añadir parches opcionales, también sin coste extra.
+- Tallas disponibles: XS, S, M, L, XL, XXL, y tallas de niño (8, 10, 12).
+- Pedido mínimo: 2 camisetas.
+
+ENVÍO
+- Coste de envío: 5€ en pedidos de menos de 6 camisetas.
+- Envío gratis a partir de 6 camisetas.
+- Plazo de entrega habitual: unos 15 días. En casos puntuales (mucha demanda,
+  aduanas, festivos como Navidad, Black Friday o Año Nuevo Chino, o grandes
+  torneos como Mundial/Eurocopa/Copa América) puede llegar hasta 20-25 días.
+
+OFERTAS POR CANTIDAD
+- 6 camisetas: 135€ normales / 150€ retro (envío gratis incluido).
+- 10 camisetas: 200€ normales / 225€ retro.
+- 15 camisetas: 250€ normales / 275€ retro.
+
+AMIGO INVISIBLE FUTBOLERO
+- Se puede organizar un "amigo invisible" de camisetas para grupos: el
+  cliente indica cuántas personas son y cuántas camisetas por talla quieren
+  (sin elegir equipo, nombre ni dorsal), y Trakeballer las elige al azar
+  y las prepara.
+
+CÓMO SE COMPRA (proceso en 5 pasos)
+1. Elegir selección o club en el catálogo.
+2. Personalizar: versión actual/retro, talla, nombre, dorsal y parches.
+3. Añadir al carrito (se puede repetir para varias camisetas y aprovechar
+   descuentos por cantidad).
+4. Confirmar el pedido con los datos de envío y contacto.
+5. Pagar por PayPal (único método de pago) enviando el importe a
+   trakeballer@gmail.com como "Amigos y familiares", SIN poner concepto ni
+   mensaje en el pago, y luego enviar el comprobante de pago y el
+   número/captura del pedido a ese mismo correo para que preparen el envío.
+
+DEVOLUCIONES
+- Al ser productos personalizados (nombre y dorsal a elección del cliente),
+  no se admiten devoluciones salvo defecto de fabricación.
+
+CONTACTO Y SUGERENCIAS
+- Dudas o incidencias con un pedido: trakeballer@gmail.com.
+- Si un cliente busca una camiseta que no está en el catálogo, puede dejar
+  una sugerencia en la web (o decírtelo a ti) indicando qué camiseta quiere.
+
+PRIVACIDAD
+- Solo se recogen los datos necesarios para el pedido (nombre, dirección,
+  teléfono y, si se indica, email). No se comparten con terceros salvo
+  obligación legal ni se usan con fines publicitarios.
+- La web usa localStorage solo para recordar el carrito en el propio
+  navegador del cliente; no hay cookies de publicidad ni de seguimiento.
+
+INSTRUCCIONES PARA TI (el asistente)
+- Responde siempre en español, de forma breve, cercana y clara.
+- Usa el CATÁLOGO REAL que se te proporciona a continuación para saber qué
+  equipos y camisetas existen realmente. No lo inventes.
+- Si te preguntan por un equipo o camiseta concreta que NO aparece en el
+  catálogo, dile al usuario que no está disponible ahora mismo, sugiérele
+  dejar una sugerencia en la web, y ofrécete a ayudarle con cualquier otra
+  duda (precio, tallas, envío, personalización, pago...).
+- No inventes plazos, precios, equipos ni políticas que no estén en esta
+  información.
+- Si preguntan algo que no tiene que ver con la tienda, responde con
+  amabilidad y redirige la conversación hacia cómo puedes ayudarles con su
+  pedido.
+`;
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { messages } = req.body || {};
+
+    if (!GROQ_API_KEY) {
+      return res.status(500).json({ error: 'Falta configurar GROQ_API_KEY en Render.' });
+    }
+    if (!Array.isArray(messages)) {
+      return res.status(400).json({ error: "Formato inválido: se esperaba 'messages'." });
+    }
+
+    const respuesta = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: CHAT_MODEL,
+        messages: [
+          { role: 'system', content: KNOWLEDGE_BASE + CATALOGO_IA_TEXTO },
+          ...messages,
+        ],
+        max_tokens: 500,
+      }),
+    });
+
+    if (!respuesta.ok) {
+      const errText = await respuesta.text();
+      console.error('[chat] Error de Groq:', errText);
+      return res.status(502).json({ error: 'Error al contactar con la IA.' });
+    }
+
+    const data = await respuesta.json();
+    const reply = data.choices?.[0]?.message?.content ?? 'Lo siento, no pude generar una respuesta.';
+    res.json({ reply });
+
+  } catch (error) {
+    console.error('[chat] Error:', error);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// ============================================================
+// RUTA PRINCIPAL
+// ============================================================
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ============================================================
+// INICIAR
+// ============================================================
+
+app.listen(PORT, () => {
+  console.log(`🚀 Trakeballer funcionando en puerto ${PORT}`);
+  console.log(`[email] EMAIL_TO: ${process.env.EMAIL_TO || EMAIL_TIENDA}`);
+  console.log(`[email] EMAIL_FROM: ${process.env.EMAIL_FROM || 'NO CONFIGURADO'}`);
+  console.log(`[email] Brevo: ${process.env.BREVO_API_KEY ? 'CONFIGURADO' : 'NO CONFIGURADO'}`);
+
+  const URL_PUBLICA = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL;
+ 
+  if (URL_PUBLICA) {
+    setInterval(async () => {
+      try {
+        const r = await fetch(`${URL_PUBLICA}/api/salud`);
+        console.log(`[keep-alive] ping ${r.status}`);
+      } catch (error) {
+        console.warn('[keep-alive] error:', error.message);
+      }
+    }, 60 * 1000);
+ 
+    console.log(`[keep-alive] Activo: ${URL_PUBLICA}`);
+  } else {
+    console.log('[keep-alive] Desactivado (no hay RENDER_EXTERNAL_URL)');
+  }
+});
