@@ -5,12 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Trakeballer — Tienda de Camisetas de Fútbol</title>
 <meta name="description" content="Camisetas de fútbol actuales y retro de clubes y selecciones, personalizadas con nombre y dorsal. Pide la tuya en Trakeballer.">
+<link rel="canonical" href="https://trakeballer-ut6z.onrender.com/">
 <meta name="theme-color" content="#0d2618">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://trakeballer-ut6z.onrender.com/">
+<meta property="og:site_name" content="Trakeballer">
 <meta property="og:title" content="Trakeballer — Tienda de Camisetas de Fútbol">
 <meta property="og:description" content="Camisetas de fútbol actuales y retro de clubes y selecciones, personalizadas con nombre y dorsal.">
-<meta property="og:image" content="img/marca/logo-trakeballer.png">
+<meta property="og:image" content="https://trakeballer-ut6z.onrender.com/img/marca/logo-trakeballer.png">
 <link rel="icon" type="image/png" href="img/marca/logo-trakeballer-header.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Trakeballer",
+  "alternateName": "Trakeballer Tienda de Camisetas de Fútbol",
+  "url": "https://trakeballer-ut6z.onrender.com/"
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -381,10 +393,10 @@
       </details>
     </li>
 
-    <li><a href="#ofertas" data-cerrar-menu><span class="menu-icon">🔥</span> Ofertas</a></li>
+<li><a href="#ofertas" data-cerrar-menu><span class="menu-icon">🔥</span> Ofertas</a></li>
     <li><a href="#amigo-invisible" data-cerrar-menu><span class="menu-icon">🎁</span> Amigo invisible</a></li>
-    <li><a href="#como-funciona" data-cerrar-menu><span class="menu-icon">❓</span> Cómo funciona</a></li>
-    <li><a href="#resenas" data-cerrar-menu><span class="menu-icon">⭐</span> Reseñas</a></li>
+    <li><a href="#como-funciona" data-cerrar-menu ><span class="menu-icon">❓</span> Cómo funciona</a></li>
+    <li><a href="#resenas" data-cerrar-menu ><span class="menu-icon">⭐</span> Reseñas</a></li>
 
     <li><a href="mailto:trakeballer@gmail.com" data-cerrar-menu><span class="menu-icon">✉️</span> Contacto</a></li>
     <li><a href="#sugerencia" data-cerrar-menu><span class="menu-icon">💡</span> Sugerir camiseta</a></li>
@@ -413,9 +425,9 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
 
     <div class="hero__ctas">
       <a href="#selecciones" class="btn btn--primary">Ver selecciones</a>
-      <a href="#equipos" class="btn btn--ghost">Ver equipos</a>
-      <a href="#sugerencia" class="btn btn--ghost">💡 Sugerir camiseta</a>
-      <a href="#ofertas" class="btn btn--ghost">Amigo invisible</a>
+      <a href="#equipos" class="btn btn--ghost" style="color: white;">Ver equipos</a>
+      <a href="#sugerencia" class="btn btn--ghost"style="color: white;">💡 Sugerir camiseta</a>
+      <a href="#ofertas" class="btn btn--ghost"style="color: white;">Amigo invisible</a>
     </div>
   </div>
 </section>
@@ -455,25 +467,25 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
 </section>
 
 <section class="seccion" id="selecciones">
-  <img src="img/jugadores/haaland.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--izq">
-  <img src="img/jugadores/pedri.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--der">
   <div class="seccion__head">
-    <h2>🌍 Mundial 2026</h2>
-    <p>Escudos de las selecciones que tenemos disponibles. Dentro de cada equipo encontrarás sus camisetas local, visitante y retro cuando estén disponibles.</p>
+    <h2>Elige por dónde empezar</h2>
+    <p>Entra en Mundiales o en Ligas, elige un escudo y verás todas sus camisetas.</p>
   </div>
-  <div class="grid" id="gridSelecciones"></div>
+  <div class="hub">
+    <button type="button" class="hub__card" id="hubMundiales"><span class="hub__logos" id="hubLogosMundial"></span><strong>🌍 Mundiales</strong><small id="hubNumMundial"></small></button>
+    <button type="button" class="hub__card" id="hubLigas"><span class="hub__logos" id="hubLogosLigas"></span><strong>🏆 Ligas</strong><small id="hubNumLigas"></small></button>
+  </div>
+  <span id="equipos"></span>
 </section>
 
-<section class="seccion seccion--alt" id="equipos">
-  <img src="img/jugadores/oblak.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--izq">
-  <img src="img/jugadores/aubameyang.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--der">
-  <div class="seccion__head">
-    <h2>🏆 Ligas</h2>
-    <p>Elige una liga por su logo para ver todos los equipos disponibles y sus camisetas.</p>
+<div class="vista" id="vistaCat" aria-modal="true" role="dialog">
+  <div class="vista__bar">
+    <button type="button" class="vista__btn" id="vistaVolver">← Volver</button>
+    <h2 id="vistaTitulo"></h2>
+    <button type="button" class="vista__btn" id="vistaCerrar" aria-label="Cerrar">✕</button>
   </div>
-  <div class="ligas-tabs" id="ligasTabs"></div>
-  <div class="grid" id="gridEquipos"></div>
-</section>
+  <div class="vista__body" id="vistaBody"></div>
+</div>
 
 <section class="seccion" id="ofertas">
   <img src="img/jugadores/pedri.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--izq seccion__crack--baja">
@@ -495,18 +507,18 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
   <tbody>
     <tr>
       <td>6</td>
-      <td>135,00 €</td>
+      <td>130,00 €</td>
       <td>150,00 €</td>
     </tr>
     <tr>
       <td>10</td>
       <td>200,00 €</td>
-      <td>225,00 €</td>
+      <td>240,00 €</td>
     </tr>
     <tr>
       <td>15</td>
-      <td>250,00 €</td>
-      <td>275,00 €</td>
+      <td>330,00 €</td>
+      <td>400,00 €</td>
     </tr>
   </tbody>
 </table>
@@ -594,6 +606,9 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
   <p class="footer__legal">
     <button type="button" id="btnAbrirLegalFooter" class="footer__legal-link">Aviso legal, privacidad y cookies</button>
   </p>
+  <p class="footer__legal">
+    <a href="admin-descuentos.html" class="footer__legal-link" rel="nofollow">Acceso admin</a>
+  </p>
 </footer>
 
 <!-- Botón flotante de contacto -->
@@ -609,6 +624,7 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
       <button type="button" class="legal-tab" data-legal="privacidad">Privacidad</button>
       <button type="button" class="legal-tab" data-legal="cookies">Cookies</button>
       <button type="button" class="legal-tab" data-legal="condiciones">Condiciones de venta</button>
+      <button type="button" class="legal-tab" data-legal="envio">Politica de envío</button>
     </div>
 
     <div class="legal-panel activo" id="legal-aviso">
@@ -637,6 +653,16 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
       <p>El envío tiene un coste de 5€ en pedidos de menos de 6 camisetas; a partir de 6 camisetas el envío es gratuito. Los plazos de entrega pueden variar según la disponibilidad del pedido.</p>
       <p>Por tratarse de productos personalizados (con nombre y dorsal a elección del cliente), no se admiten devoluciones salvo defecto de fabricación. Cualquier incidencia con el pedido puede comunicarse a <a href="mailto:trakeballer@gmail.com">trakeballer@gmail.com</a>.</p>
     </div>
+    <div class="legal-panel" id="legal-envio">
+      <h4>Politica de envio</h4>
+      <p>Tiempos estimados y seguimiento de tu pedido
+El plazo de entrega estándar de nuestra tienda es de aproximadamente 15 días desde la confirmación de la compra. Trabajamos a diario para que tu camiseta llegue al terreno de juego lo antes posible; sin embargo, dependiendo de las rutas logísticas y la ubicación de destino, el plazo máximo de entrega puede extenderse hasta los 20-25 días. Si deseas conocer el estado exacto de tu envío, puedes contactarnos en cualquier momento escribiendo a <a href="mailto:trakeballer@gmail.com">trakeballer@gmail.com.</a>. Te responderemos rápidamente facilitándote tu número de seguimiento para que sepas dónde está tu paquete.
+Torneos oficiales y alta demanda deportiva
+La pasión por el fútbol marca nuestro ritmo de trabajo. Te informamos que durante las semanas previas y durante la celebración de grandes competiciones (como el Mundial, la Eurocopa, la Copa América o las finales de clubes europeos), el volumen de pedidos a nivel global aumenta de forma drástica. En estas épocas de máxima demanda, los plazos de procesamiento y envío pueden verse ligeramente ampliados debido a la saturación de los transportistas. Te recomendamos anticipar tu pedido si deseas tener la camiseta lista para el día del partido.
+Festividades y fechas señaladas internacionales
+Nuestra red de distribución opera a nivel internacional, por lo que los tiempos de tránsito están sujetos al calendario global. Pueden producirse retrasos ajenos a nuestro control durante fechas de alto volumen logístico y festividades que paralizan temporalmente las aduanas o el transporte. Esto incluye períodos como las Navidades, el Black Friday, festividades nacionales de los países de tránsito, y especialmente el Año Nuevo Chino. Agradecemos tu paciencia y comprensión durante estas fechas excepcionales, garantizando siempre que tu pedido llegará a tus manos de forma segura.</p>
+      
+    </div>
   </div>
 </div>
 
@@ -655,8 +681,8 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
         <label class="campo">
           <span>Versión</span>
           <div class="segmentado" id="prodTipo">
-            <button type="button" data-tipo="actual" class="activo">Actual · 25€</button>
-            <button type="button" data-tipo="retro">Retro · 30€</button>
+            <button type="button" data-tipo="actual" class="activo">Actual · 22,99€</button>
+            <button type="button" data-tipo="retro">Retro · 27,99€</button>
           </div>
         </label>
 
@@ -710,7 +736,7 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
 
         <div class="modal__precio">
           <span>Precio <small id="prodPrecioUnidad"></small></span>
-          <strong id="prodPrecioTotal">25 €</strong>
+          <strong id="prodPrecioTotal">22,99 €</strong>
         </div>
 
         <button class="btn btn--primary btn--full" id="btnAnadirCarrito">Añadir al carrito</button>
@@ -732,11 +758,19 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
     </div>
 
     <div class="panel-carrito__resumen">
+      <div class="cupon">
+        <div class="cupon__fila">
+          <input type="text" id="cuponCarritoInput" placeholder="Código de descuento" maxlength="30" autocomplete="off" autocapitalize="characters" aria-label="Código de descuento">
+          <button type="button" class="btn btn--ghost" id="cuponCarritoBtn">Aplicar</button>
+        </div>
+        <p class="form-envio__estado" id="cuponCarritoEstado"></p>
+      </div>
       <div class="resumen-linea"><span>Subtotal</span><strong id="resSubtotal">0,00 €</strong></div>
       <div class="resumen-linea" id="resDescuentoWrap" style="display:none"><span>Descuento por cantidad</span><strong id="resDescuento">-0,00 €</strong></div>
+      <div class="resumen-linea" id="resCuponWrap" style="display:none"><span id="resCuponLabel">Código</span><strong id="resCupon">-0,00 €</strong></div>
       <div class="resumen-linea"><span>Envío</span><strong id="resEnvio">0,00 €</strong></div>
       <div class="resumen-linea resumen-linea--total"><span>Total</span><strong id="resTotal">0,00 €</strong></div>
-      <p class="resumen-nota" id="resEnvioNota">Envío: 5 € en pedidos de menos de 6 camisetas. A partir de 6, envío gratis. Ofertas por cantidad: 6 camisetas 135€ (150€ retro), 10 camisetas 200€ (225€ retro), 15 camisetas 250€ (275€ retro).</p>
+      <p class="resumen-nota" id="resEnvioNota">Envío: 5 € en pedidos de menos de 6 camisetas. A partir de 6, envío gratis. Ofertas por cantidad: 6 camisetas 130€ (150€ retro), 10 camisetas 200€ (240€ retro), 15 camisetas 330€ (400€ retro).</p>
 
       <button class="btn btn--primary btn--full" id="btnIrEnvio">Continuar con el envío</button>
     </div>
@@ -877,13 +911,36 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
     </label>
 
     <label class="campo">
-      <span>Teléfono o email de contacto</span>
+      <span>Email de contacto</span>
       <input
         type="text"
         id="amigoCompradorContacto"
-        placeholder="+34 600 000 000 o tú@email.com"
+        placeholder="tú@email.com"
       >
     </label>
+
+    <label class="campo">
+      <span>Dirección de envío</span>
+      <input
+        type="text"
+        id="amigoDireccion"
+        placeholder="Calle, número, piso, código postal, ciudad"
+      >
+    </label>
+
+    <div class="cupon">
+      <div class="cupon__fila">
+        <input type="text" id="cuponAmigoInput" placeholder="Código de descuento" maxlength="30" autocomplete="off" autocapitalize="characters" aria-label="Código de descuento">
+        <button type="button" class="btn btn--ghost" id="cuponAmigoBtn">Aplicar</button>
+      </div>
+      <p class="form-envio__estado" id="cuponAmigoEstado"></p>
+    </div>
+
+    <div class="panel-carrito__resumen amigo-resumen">
+      <div class="resumen-linea"><span>Subtotal</span><strong id="amigoResSubtotal">0,00 €</strong></div>
+      <div class="resumen-linea" id="amigoResCuponWrap" style="display:none"><span id="amigoResCuponLabel">Código</span><strong id="amigoResCupon">-0,00 €</strong></div>
+      <div class="resumen-linea resumen-linea--total"><span>Total</span><strong id="amigoResTotal">0,00 €</strong></div>
+    </div>
 
     <div class="pago-paypal">
       <h5>Método de pago: solo PayPal</h5>
@@ -940,12 +997,8 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
         var equipo = liga.equipos.find(function (e) { return e.id === equipoId; });
         if (!equipo) return;
 
-        ligaActiva = liga.id;
-        renderLigasTabs();
-        renderEquiposGrid();
-
         cerrarMenu();
-        abrirModalProducto(equipo, liga.nombre);
+        abrirCamisetasEquipo(equipo, liga.nombre);
       });
     });
   })();
@@ -972,5 +1025,179 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
     });
   })();
 </script>
+
+<!-- ============================================================
+     CHAT CON IA (asistente virtual de Trakeballer)
+     ============================================================ -->
+<style>
+  #tk-chat-bubble {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: #0d2618;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+    z-index: 99999;
+  }
+  #tk-chat-window {
+    position: fixed;
+    bottom: 88px;
+    left: 20px;
+    width: 340px;
+    max-width: 92vw;
+    height: 460px;
+    max-height: 75vh;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 99999;
+    font-family: system-ui, sans-serif;
+  }
+  @media (max-width: 480px) {
+    #tk-chat-bubble { left: 14px; bottom: 14px; width: 48px; height: 48px; font-size: 22px; }
+    #tk-chat-window { left: 14px; bottom: 72px; }
+  }
+  #tk-chat-header {
+    background: #0d2618;
+    color: #fff;
+    padding: 12px 16px;
+    font-weight: 600;
+  }
+  #tk-chat-messages {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #f7f7f7;
+  }
+  .tk-chat-msg {
+    padding: 8px 12px;
+    border-radius: 12px;
+    max-width: 82%;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+  }
+  .tk-chat-msg.user {
+    align-self: flex-end;
+    background: #0d2618;
+    color: #fff;
+  }
+  .tk-chat-msg.bot {
+    align-self: flex-start;
+    background: #e9e9e9;
+    color: #222;
+  }
+  #tk-chat-input-area {
+    display: flex;
+    border-top: 1px solid #eee;
+    background: #fff;
+  }
+  #tk-chat-input {
+    flex: 1;
+    border: none;
+    padding: 12px;
+    font-size: 14px;
+    outline: none;
+  }
+  #tk-chat-send {
+    background: #0d2618;
+    color: #fff;
+    border: none;
+    padding: 0 16px;
+    cursor: pointer;
+  }
+</style>
+
+<div id="tk-chat-bubble">💬</div>
+
+<div id="tk-chat-window">
+  <div id="tk-chat-header">Asistente Trakeballer</div>
+  <div id="tk-chat-messages"></div>
+  <div id="tk-chat-input-area">
+    <input id="tk-chat-input" type="text" placeholder="Escribe tu pregunta..." />
+    <button id="tk-chat-send">Enviar</button>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var bubble = document.getElementById('tk-chat-bubble');
+    var win = document.getElementById('tk-chat-window');
+    var messagesEl = document.getElementById('tk-chat-messages');
+    var input = document.getElementById('tk-chat-input');
+    var sendBtn = document.getElementById('tk-chat-send');
+    var history = [];
+
+    bubble.addEventListener('click', function () {
+      win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
+      if (messagesEl.children.length === 0) {
+        addMessage('bot', '¡Hola! ⚽ Soy el asistente de Trakeballer. Pregúntame sobre equipos, tallas, precios, envíos o cómo hacer tu pedido.');
+      }
+    });
+
+    function addMessage(role, text) {
+      var div = document.createElement('div');
+      div.className = 'tk-chat-msg ' + (role === 'user' ? 'user' : 'bot');
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function sendMessage() {
+      var text = input.value.trim();
+      if (!text) return;
+      addMessage('user', text);
+      history.push({ role: 'user', content: text });
+      input.value = '';
+      sendBtn.disabled = true;
+
+      var thinkingDiv = document.createElement('div');
+      thinkingDiv.className = 'tk-chat-msg bot';
+      thinkingDiv.textContent = 'Escribiendo...';
+      messagesEl.appendChild(thinkingDiv);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          thinkingDiv.remove();
+          var reply = data.reply || data.error || 'Ocurrió un error.';
+          addMessage('bot', reply);
+          history.push({ role: 'assistant', content: reply });
+        })
+        .catch(function () {
+          thinkingDiv.remove();
+          addMessage('bot', 'Error de conexión, inténtalo de nuevo.');
+        })
+        .finally(function () {
+          sendBtn.disabled = false;
+        });
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') sendMessage();
+    });
+  })();
+</script>
+
 </body>
 </html>

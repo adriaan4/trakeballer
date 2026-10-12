@@ -1,0 +1,941 @@
+/* =========================================================
+   TOKENS — estilo tomado de trake.html:
+   verde césped, blanco tiza, ámbar de los focos del estadio.
+   Se mantienen los NOMBRES de variable que ya usaba el resto
+   del CSS (--verde-noche, --foco, --borde, --radio...) pero
+   con los valores de trake.html, para no tener que tocar
+   cada regla una por una.
+========================================================= */
+:root {
+  --pitch-950: #0d2618;
+  --pitch-800: #123321;
+  --pitch-600: #1f5c3a;
+  --chalk: #f6f4ee;
+  --surface: #ffffff;
+  --ink: #12201a;
+  --muted: #5c6a62;
+  --amber: #ffb703;
+  --amber-dark: #d99400;
+  --line: #e4e1d4;
+  --overlay: rgba(9, 20, 14, .6);
+  --radius: 16px;
+  --shadow: 0 12px 28px rgba(13, 38, 24, .12);
+
+  /* Alias hacia los nombres que ya usaba el resto de las reglas */
+  --verde-noche: var(--chalk);
+  --verde-panel: var(--surface);
+  --verde-panel-2: var(--surface);
+  --linea-cal: var(--ink);
+  --foco: var(--amber);
+  --foco-oscuro: var(--amber-dark);
+  --rojo-retro: #c1432b;
+  --texto: var(--ink);
+  --texto-tenue: var(--muted);
+  --borde: var(--line);
+  --radio: var(--radius);
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--chalk);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, .brand {
+  font-family: 'Barlow Condensed', sans-serif;
+  text-transform: none;
+  letter-spacing: 0.2px;
+  margin: 0;
+  font-weight: 700;
+}
+
+h2 { font-size: clamp(1.8rem, 3vw, 2.4rem); }
+h3 { font-size: 1.3rem; }
+
+p { color: var(--muted); }
+
+a { color: inherit; text-decoration: none; }
+
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001s !important; transition-duration: .001s !important; }
+}
+
+/* ---------- Topbar (estilo header.site de trake.html) ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--pitch-950);
+}
+.topbar__inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 10px 20px;
+  min-height: 64px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+/* Botón hamburguesa (abre el menú lateral) */
+.hamburger {
+  background: none; border: none; color: #fff; cursor: pointer;
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 6px; position: absolute;
+  left: 16px; top: 50%; transform: translateY(-50%);
+}
+.hamburger span { width: 23px; height: 2.5px; background: #fff; border-radius: 2px; }
+
+/* Logo y nombre centrados en la cabecera, independientes del resto
+   de elementos (lupa y carrito quedan agrupados a la derecha).
+   El logo va en su propio círculo del tamaño de la barra para que
+   quepa siempre bien, sin desbordar la cabecera. */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 2rem;
+  color: #fff;
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+.brand span { color: var(--amber); }
+.brand__logo {
+  height: 60px;
+  width: 60px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+.brand__texto {
+  font-size: 1.5rem;
+  letter-spacing: .3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Nav horizontal clásica: se conserva por accesibilidad/SEO pero
+   el menú principal ahora es el drawer hamburguesa */
+.nav { display: none; }
+
+.cart-btn {
+  position: relative;
+  background: none;
+  border: none;
+  color: #fff;
+  padding: 6px;
+  border-radius: 999px;
+  font-size: 1.6rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.cart-btn:hover { background: rgba(255,255,255,.12); }
+#cartCount {
+  position: absolute; top: -2px; right: -2px;
+  background: var(--amber); color: var(--pitch-950);
+  font-size: 11px; font-weight: 700; border-radius: 999px;
+  min-width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 3px; line-height: 1;
+}
+
+/* ---------- Menú lateral (drawer), como en trake.html ---------- */
+.overlay-menu {
+  position: fixed; inset: 0; background: var(--overlay); z-index: 90;
+  opacity: 0; pointer-events: none; transition: opacity .25s ease;
+}
+.overlay-menu.activo { opacity: 1; pointer-events: auto; }
+
+.drawer {
+  position: fixed; top: 0; left: 0; height: 100%; width: 87%; max-width: 340px;
+  background: var(--surface); z-index: 95; display: flex; flex-direction: column;
+  transform: translateX(-100%); transition: transform .32s cubic-bezier(.4,0,.2,1);
+  box-shadow: 10px 0 34px rgba(0,0,0,.18);
+}
+.drawer.abierto { transform: translateX(0); }
+
+.drawer-header {
+  display: flex; align-items: center; gap: 6px; padding: 16px 10px;
+  background: var(--pitch-950); color: #fff; flex: 0 0 auto;
+}
+.drawer-header h4 { flex: 1; margin: 0; font-size: 21px; padding: 0 4px; color: #fff; }
+.drawer-header button {
+  background: none; border: none; color: #fff; cursor: pointer;
+  width: 34px; height: 34px; border-radius: 9px; font-size: 20px;
+  display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+}
+.drawer-header button:hover { background: rgba(255,255,255,.12); }
+
+.menu-list { list-style: none; margin: 0; padding: 4px 0; flex: 1; overflow-y: auto; }
+.menu-list li a, .menu-list li button {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  background: none; border: none; font: inherit; color: var(--ink);
+  padding: 14px 18px; cursor: pointer; font-size: 15.5px; font-weight: 500;
+  border-bottom: 1px solid var(--line);
+}
+.menu-list li a:hover, .menu-list li button:hover { background: #eef6f0; }
+.menu-icon { font-size: 18px; }
+
+/* ---------- Hero (tarjeta oscura tipo estadio, como en trake.html) ---------- */
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin: 16px;
+  padding: 44px 28px;
+  border-radius: var(--radius);
+  background-color: var(--pitch-800);
+  background-image: repeating-linear-gradient(120deg, rgba(255,255,255,.05) 0 26px, rgba(255,255,255,0) 26px 52px);
+  color: #fff;
+}
+.hero__field { display: none; }
+.hero__content { position: relative; max-width: 640px; margin: 0 auto; text-align: left; }
+.hero__kicker { color: var(--amber); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 6px; }
+.hero__title { font-size: clamp(2.2rem, 6vw, 3.6rem); line-height: 1.05; color: #fff; }
+.hero__sub { max-width: 460px; margin-top: 16px; font-size: 1rem; color: rgba(255,255,255,.82); }
+.hero__ctas { display: flex; gap: 14px; margin-top: 26px; flex-wrap: wrap; }
+
+/* ---------- Botones ---------- */
+.btn {
+  display: inline-block;
+  padding: 12px 26px;
+  border-radius: 999px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.btn--primary { background: var(--amber); color: var(--pitch-950); }
+.btn--primary:hover { background: var(--amber-dark); }
+.btn--ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn--ghost:hover { border-color: var(--pitch-600); color: var(--pitch-600); }
+.btn--full { width: 100%; text-align: center; }
+
+/* ---------- Fotos de jugadores flotando en el hero (decoración) ---------- */
+.hero__crack {
+  position: absolute;
+  z-index: 0;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 20px 38px rgba(0,0,0,.4);
+  opacity: .92;
+  pointer-events: none;
+  display: none;
+}
+.hero__crack--izq-arriba  { top: -26px;  left: -26px;  width: 200px; height: 250px; transform: rotate(-8deg); }
+.hero__crack--izq-abajo   { bottom: -34px; left: 110px;  width: 160px; height: 195px; transform: rotate(6deg); }
+.hero__crack--der-arriba  { top: -30px;  right: 50px;  width: 175px; height: 215px; transform: rotate(7deg); }
+.hero__crack--der-abajo   { bottom: -26px; right: -18px; width: 205px; height: 255px; transform: rotate(-6deg); }
+.hero__content { position: relative; z-index: 1; }
+@media (min-width: 860px) {
+  .hero__crack { display: block; }
+  .hero { overflow: visible; margin-top: 48px; margin-bottom: 60px; }
+}
+
+/* ---------- Franja precios ---------- */
+.franja-precios {
+  display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;
+  padding: 14px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+.franja-precios strong { color: var(--pitch-600); }
+.franja-precios__sep { width: 1px; background: var(--line); }
+
+/* ---------- Secciones ---------- */
+.seccion { padding: 44px 20px; max-width: 1180px; margin: 0 auto; position: relative; }
+.seccion--alt { background: rgba(13, 38, 24, 0.035); }
+.seccion__head { max-width: 520px; margin-bottom: 24px; }
+.seccion__head h2 { color: var(--ink); }
+
+/* Fotos de jugadores decorativas repartidas por la web (solo pantallas anchas,
+   colocadas en el margen fuera del contenido para no tapar productos) */
+.seccion__crack {
+  position: absolute;
+  top: 60px;
+  width: 190px;
+  height: 240px;
+  border-radius: 16px;
+  object-fit: cover;
+  opacity: .94;
+  box-shadow: 0 20px 38px rgba(0,0,0,.32);
+  pointer-events: none;
+  display: none;
+}
+.seccion__crack--izq { left: -222px; transform: rotate(-6deg); }
+.seccion__crack--der { right: -222px; transform: rotate(6deg); }
+.seccion__crack--baja { top: auto; bottom: 30px; }
+@media (min-width: 1700px) {
+  .seccion__crack { display: block; }
+}
+.footer { position: relative; padding-right: 150px; }
+.footer__crack {
+  position: absolute;
+  right: 24px;
+  bottom: 10px;
+  width: 120px;
+  height: 150px;
+  border-radius: 14px;
+  object-fit: cover;
+  object-position: top center;
+  box-shadow: 0 16px 30px rgba(0,0,0,.35);
+  opacity: .95;
+  pointer-events: none;
+  display: none;
+  transform: rotate(4deg);
+}
+@media (min-width: 860px) {
+  .footer { padding-right: 0; }
+  .footer__crack { display: block; }
+}
+
+
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+/* ---------- Pestañas de liga (estilo "chip" de trake.html) ---------- */
+.ligas-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.liga-tab {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 9px 17px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.liga-tab:hover { border-color: var(--pitch-600); color: var(--pitch-600); }
+.liga-tab.activo { background: var(--pitch-950); color: #fff; border-color: var(--pitch-950); }
+
+/* ---------- Tarjeta de producto (estilo product-card de trake.html) ---------- */
+.tarjeta {
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform .12s;
+}
+.tarjeta:hover { transform: translateY(-3px); }
+.tarjeta__top { height: 4px; }
+.tarjeta__visual {
+  aspect-ratio: 1 / 1;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--chalk);
+  overflow: hidden;
+}
+.tarjeta__cuerpo { padding: 12px 13px 14px; }
+.tarjeta__cuerpo h4 { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1rem; color: var(--ink); margin: 0 0 4px; }
+.tarjeta__precio { color: var(--pitch-600); font-weight: 700; font-size: 0.92rem; }
+
+/* mini camiseta SVG usada tanto en tarjetas como preview */
+.mini-camiseta { width: 84px; height: 84px; }
+
+/* Fotos reales de camisetas (Mundial 2026) */
+.tarjeta__foto {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  padding: 10px;
+}
+.camiseta-preview__foto {
+  max-width: 100%; max-height: 100%;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  cursor: zoom-in;
+  transition: transform .18s ease-out;
+  will-change: transform;
+}
+.item-carrito__foto {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--chalk);
+}
+
+/* ---------- Tabla de ofertas ---------- */
+.tabla-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 18px; }
+.tabla-scroll table {
+  width: 100%;
+  min-width: 320px;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.tabla-scroll th, .tabla-scroll td {
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 0.92rem;
+}
+.tabla-scroll thead th {
+  background: var(--pitch-950);
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  letter-spacing: .3px;
+  font-size: 0.85rem;
+}
+.tabla-scroll tbody tr:nth-child(even) { background: rgba(13,38,24,.035); }
+.tabla-scroll tbody td:first-child { font-weight: 700; color: var(--pitch-600); }
+.tabla-scroll tbody td { color: var(--ink); border-bottom: 1px solid var(--line); }
+.tabla-scroll tbody tr:last-child td { border-bottom: none; }
+@media (max-width: 480px) {
+  .tabla-scroll th, .tabla-scroll td { padding: 10px 8px; font-size: 0.85rem; }
+}
+
+/* ---------- Ofertas ---------- */
+.ofertas { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+.oferta-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--amber);
+  padding: 26px;
+}
+.sugerencia { max-width: 900px; margin: 0 auto; padding: 10px 20px 50px; }
+.sugerencia__card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--amber);
+  padding: 26px;
+}
+.sugerencia__card h3 { color: var(--ink); margin-bottom: 6px; }
+.sugerencia__card > p { margin-bottom: 18px; }
+.sugerencia__form { display: block; }
+.sugerencia__form textarea { resize: vertical; }
+.sugerencia__form .btn { margin-top: 4px; }
+.oferta-card__tag {
+  display: inline-block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--amber-dark);
+  margin-bottom: 10px;
+}
+.oferta-card h3 { color: var(--ink); margin-bottom: 10px; }
+.oferta-card__lista { margin: 10px 0; padding-left: 18px; color: var(--muted); }
+.oferta-card__lista li { margin-bottom: 4px; }
+.oferta-card__nota { font-size: 0.85rem; margin-top: 10px; }
+
+/* ---------- Footer ---------- */
+.footer { text-align: center; padding: 26px 16px 40px; color: var(--muted); font-size: 0.9rem; }
+.footer__contacto { margin-top: 8px; }
+.footer__contacto a { color: var(--amber-dark); font-weight: 600; text-decoration: none; }
+.footer__contacto a:hover { text-decoration: underline; }
+.pago-paypal a { color: var(--amber-dark); text-decoration: none; }
+.pago-paypal a:hover { text-decoration: underline; }
+
+/* ---------- Overlay / modales ---------- */
+.overlay {
+  position: fixed; inset: 0;
+  background: var(--overlay);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.overlay.abierto { display: flex; }
+
+.modal {
+  position: relative;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  max-width: 760px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 30px;
+}
+.modal--estrecho { max-width: 480px; }
+.modal__cerrar {
+  position: absolute; top: 14px; right: 14px;
+  background: none; border: none; color: var(--muted);
+  font-size: 1.2rem; cursor: pointer;
+  width: 32px; height: 32px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal__cerrar:hover { background: rgba(18,32,26,.08); color: var(--ink); }
+.modal__grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 28px; }
+.modal__visual { display: flex; align-items: center; justify-content: center; background: var(--chalk); border-radius: 12px; overflow: hidden; }
+.camiseta-preview { width: 180px; height: 180px; }
+.modal__categoria { font-family: 'Barlow Condensed', sans-serif; color: var(--amber-dark); font-size: 0.85rem; margin: 0; font-weight: 700; }
+.modal__form h3 { color: var(--ink); margin-top: 2px; margin-bottom: 16px; }
+.modal__ayuda { font-size: 0.92rem; margin-top: -6px; }
+
+.campo { display: block; margin-bottom: 14px; }
+.campo span { display: block; font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+.campo input, .campo select, .campo textarea {
+  width: 100%;
+  background: var(--chalk);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 10px 13px;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.98rem;
+}
+.campo input:focus, .campo select:focus, .campo textarea:focus { outline: 2px solid var(--amber); }
+.campo-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.campo-telefono { display: flex; gap: 8px; }
+.campo-telefono__prefijo { flex: 0 0 128px; max-width: 128px; }
+.campo-telefono input { flex: 1 1 auto; min-width: 0; }
+@media (max-width: 480px) {
+  .campo-telefono { flex-direction: column; }
+  .campo-telefono__prefijo { flex: none; max-width: 100%; }
+}
+
+.segmentado { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.segmentado button {
+  flex: 1; padding: 9px 6px; background: var(--chalk); color: var(--muted);
+  border: none; cursor: pointer; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 0.92rem;
+}
+.segmentado button.activo { background: var(--amber); color: var(--pitch-950); }
+
+.stepper { display: flex; align-items: center; gap: 8px; }
+.stepper button { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--chalk); color: var(--ink); font-size: 1.1rem; cursor: pointer; }
+.stepper input { width: 70px; text-align: center; }
+
+.modal__precio { display: flex; justify-content: space-between; align-items: baseline; margin: 18px 0; font-family: 'Barlow Condensed', sans-serif; }
+.modal__precio strong { font-size: 1.5rem; color: var(--pitch-600); }
+
+/* ---------- Carrito ---------- */
+.panel-carrito {
+  position: fixed; top: 0; right: 0; height: 100%; width: 420px; max-width: 100%;
+  background: var(--surface);
+  box-shadow: -10px 0 34px rgba(0,0,0,.14);
+  display: flex; flex-direction: column;
+  padding: 22px;
+  overflow-y: auto;
+}
+.panel-carrito__head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; position: relative; }
+.panel-carrito__head h3 { color: var(--ink); }
+.panel-carrito__head .modal__cerrar { position: static; }
+
+.carrito-vacio { font-size: 0.95rem; }
+.item-carrito {
+  display: grid; grid-template-columns: 56px 1fr auto; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--line); align-items: center;
+}
+.item-carrito__icono { width: 56px; height: 56px; }
+.item-carrito__info h5 { margin: 0 0 3px; color: var(--ink); font-size: 0.98rem; font-family: 'Barlow Condensed', sans-serif; }
+.item-carrito__info p { margin: 0; font-size: 0.82rem; }
+.item-carrito__precio { text-align: right; font-weight: 700; color: var(--pitch-600); font-size: 0.95rem; }
+.item-carrito__quitar { background: none; border: none; color: var(--muted); font-size: 0.78rem; cursor: pointer; text-decoration: underline; margin-top: 4px; }
+
+.panel-carrito__resumen { border-top: 1px solid var(--line); padding-top: 14px; margin-top: 10px; }
+.resumen-linea { display: flex; justify-content: space-between; font-size: 0.95rem; margin-bottom: 6px; }
+.resumen-linea--total { font-size: 1.15rem; color: var(--ink); font-weight: 700; margin-top: 8px; }
+.resumen-nota { font-size: 0.8rem; color: var(--muted); margin: 6px 0 0; }
+#resDescuento { color: var(--amber-dark); }
+
+.form-envio { display: none; margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
+.form-envio.mostrar { display: block; }
+.form-envio h4 { color: var(--ink); font-family: 'Barlow Condensed', sans-serif; margin-bottom: 12px; }
+.form-envio__estado { font-size: 0.88rem; margin-top: 10px; min-height: 20px; }
+.form-envio__estado.ok { color: #2f8f47; }
+.form-envio__estado.error { color: var(--rojo-retro); }
+
+/* ---------- Amigo invisible ---------- */
+.amigo-anadir { display: flex; gap: 8px; margin-bottom: 12px; }
+.amigo-anadir input { flex: 1; background: var(--chalk); border: 1px solid var(--line); color: var(--ink); padding: 10px 12px; border-radius: 10px; }
+.amigo-anadir--col { flex-direction: column; }
+.amigo-anadir--col textarea { background: var(--chalk); border: 1px solid var(--line); color: var(--ink); padding: 10px 12px; border-radius: 10px; resize: vertical; font-family: inherit; }
+.amigo-lista { list-style: none; padding: 0; margin: 0 0 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+.amigo-lista li { background: var(--chalk); border: 1px solid var(--line); border-radius: 20px; padding: 6px 12px; font-size: 0.88rem; display: flex; align-items: center; gap: 8px; }
+.amigo-lista li button { background: none; border: none; color: var(--muted); cursor: pointer; }
+.amigo-lista--camisetas { width: 100%; }
+.amigo-lista--camisetas li { width: 100%; box-sizing: border-box; border-radius: 10px; justify-content: space-between; }
+.amigo-participante { display: flex; flex-direction: column; }
+.amigo-participante small { color: var(--muted); font-weight: 400; }
+.tallas-cantidades { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.talla-cantidad { display: flex; flex-direction: column; gap: 6px; background: var(--chalk); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+.talla-cantidad span { font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; color: var(--muted); }
+.talla-cantidad input { width: 100%; background: transparent; border: none; color: var(--ink); font-size: 1rem; padding: 2px 0; }
+.talla-cantidad input:focus { outline: none; }
+.pedido-indicaciones { background: rgba(255,183,3,0.12); border: 1px solid var(--amber); border-radius: 10px; padding: 12px 14px; }
+.pedido-indicaciones p { color: var(--muted); font-size: 0.85rem; margin: 0 0 6px; }
+.pedido-indicaciones p:last-child { margin-bottom: 0; }
+@media (max-width: 480px) {
+  .tallas-cantidades { grid-template-columns: repeat(2, 1fr); }
+}
+/* ---------- Aviso de pago (PayPal) ---------- */
+.pago-paypal { background: rgba(255,183,3,0.12); border: 1px solid var(--amber); border-radius: 10px; padding: 12px 14px; margin: 14px 0; }
+.pago-paypal h5 { font-family: 'Barlow Condensed', sans-serif; font-size: 1.05rem; color: var(--ink); margin: 0 0 8px; text-transform: uppercase; letter-spacing: .5px; }
+.pago-paypal p { color: var(--muted); font-size: 0.85rem; margin: 0 0 6px; line-height: 1.45; }
+.pago-paypal p:last-child { margin-bottom: 0; }
+.pago-paypal strong { color: var(--ink); word-break: break-word; }
+
+.separador { border: none; border-top: 1px solid var(--line); margin: 18px 0; }
+.amigo-revelado { font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; color: var(--amber-dark); text-align: center; min-height: 24px; }
+.amigo-descuento { background: rgba(255,183,3,0.12); border: 1px solid var(--amber); border-radius: 10px; padding: 14px; margin-top: 12px; }
+.amigo-descuento p { color: var(--ink); font-size: 0.92rem; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 720px) {
+  .modal__grid { grid-template-columns: 1fr; gap: 16px; }
+  /* Antes la foto de la camiseta se ocultaba entera en móvil.
+     Ahora se muestra arriba del formulario, más pequeña. */
+  .modal__visual { width: 100%; max-width: 260px; margin: 0 auto; aspect-ratio: 1 / 1; }
+  .camiseta-preview { width: 100%; height: 100%; max-width: 100%; }
+  .panel-carrito { width: 100%; }
+  .campo-fila { grid-template-columns: 1fr; }
+  .modal { padding: 20px 16px; }
+}
+
+@media (max-width: 480px) {
+  /* Menos aire en tarjetas y secciones para que todo respire mejor
+     en pantallas estrechas, sin perder el diseño. */
+  .seccion { padding: 32px 16px; }
+  .hero { margin: 12px; padding: 32px 20px; }
+  .oferta-card, .sugerencia__card, .resenas__form-card { padding: 18px; }
+  .modal--legal { padding: 22px 16px; }
+  .panel-carrito { padding: 18px 16px; }
+  .search-resultados { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 430px) {
+  /* En móvil muy estrecho no caben el escudo y el nombre completo junto
+     a la hamburguesa y los iconos: se deja solo el escudo, ya identifica
+     la marca de sobra y evita que el texto choque con la lupa/carrito. */
+  .topbar__inner { padding: 10px 12px; }
+  .brand__texto { display: none; }
+  .brand__logo { height: 42px; width: 42px; }
+}
+
+/* ---------- Buscador ---------- */
+.search-btn {
+  background: none; border: none; color: #fff; padding: 6px;
+  border-radius: 999px; font-size: 1.5rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.search-btn:hover { background: rgba(255,255,255,.12); }
+
+.search-bar {
+  max-height: 0;
+  overflow: hidden;
+  background: var(--pitch-800);
+  transition: max-height .22s ease;
+}
+.search-bar.abierto { max-height: 420px; }
+.search-bar__inner {
+  max-width: 1180px; margin: 0 auto; padding: 12px 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+.search-bar__inner input {
+  flex: 1; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+  color: #fff; padding: 10px 14px; border-radius: 999px; font-size: 0.95rem;
+}
+.search-bar__inner input::placeholder { color: rgba(255,255,255,.55); }
+.search-bar__inner input:focus { outline: 2px solid var(--amber); }
+.search-bar__inner button {
+  background: none; border: none; color: #fff; cursor: pointer;
+  width: 34px; height: 34px; border-radius: 999px; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+}
+.search-bar__inner button:hover { background: rgba(255,255,255,.12); }
+
+.search-resultados {
+  max-width: 1180px; margin: 0 auto; padding: 0 20px 14px;
+  max-height: 320px; overflow-y: auto;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px;
+}
+.search-resultados__vacio { color: rgba(255,255,255,.65); font-size: 0.9rem; grid-column: 1 / -1; }
+.search-resultado {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px; padding: 8px; cursor: pointer; text-align: left;
+}
+.search-resultado:hover { background: rgba(255,255,255,.12); }
+.search-resultado__foto, .search-resultado__svg { width: 40px; height: 40px; object-fit: contain; flex: 0 0 auto; }
+.search-resultado__info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.search-resultado__info strong { color: #fff; font-size: 0.9rem; font-family: 'Barlow Condensed', sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-resultado__info small { color: rgba(255,255,255,.6); font-size: 0.75rem; }
+
+/* ---------- Cómo funciona ---------- */
+.pasos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+.paso {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 18px;
+  text-align: left;
+}
+.paso__num {
+  display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 999px;
+  background: var(--amber); color: var(--pitch-950);
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1.05rem;
+  margin-bottom: 12px;
+}
+.paso h4 { color: var(--ink); font-family: 'Barlow Condensed', sans-serif; margin-bottom: 6px; }
+.paso p { font-size: 0.88rem; margin: 0; }
+
+/* ---------- Preview retro ----------
+   Se muestran las fotos reales de las camisetas retro, sin ningún
+   filtro/efecto aplicado sobre la imagen. */
+
+/* ---------- Reseñas ---------- */
+.resenas { max-width: 1180px; }
+.resenas__contenido {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.resenas__lista {
+  display: flex; flex-direction: column; gap: 12px;
+  max-height: 520px; overflow-y: auto; padding-right: 4px;
+}
+.resenas__cargando, .resenas__vacio { font-size: 0.92rem; }
+.resena {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+}
+.resena__cabecera { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.resena__cabecera strong { color: var(--ink); font-family: 'Barlow Condensed', sans-serif; font-size: 1.02rem; }
+.resena__estrellas { color: var(--amber-dark); letter-spacing: 1px; font-size: 0.95rem; }
+.resena__mensaje { margin: 8px 0 4px; font-size: 0.92rem; color: var(--ink); }
+.resena__fecha { color: var(--muted); font-size: 0.76rem; }
+
+.resenas__form-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--amber);
+  padding: 22px;
+}
+.resenas__form-card h3 { color: var(--ink); margin-bottom: 14px; }
+.resena-estrellas { display: flex; gap: 4px; }
+.resena-estrella {
+  background: none; border: none; cursor: pointer;
+  font-size: 1.6rem; color: var(--line); line-height: 1;
+  padding: 2px;
+}
+.resena-estrella.activa { color: var(--amber-dark); }
+
+@media (max-width: 860px) {
+  .resenas__contenido { grid-template-columns: 1fr; }
+  .resenas__lista { max-height: none; }
+}
+
+/* ---------- Modal legal ---------- */
+.modal--legal { max-width: 620px; }
+.modal--legal h3 { color: var(--ink); margin-bottom: 14px; }
+.legal-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.legal-tab {
+  background: var(--chalk); border: 1px solid var(--line); color: var(--muted);
+  padding: 7px 13px; border-radius: 999px; font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600; font-size: 0.85rem; cursor: pointer;
+}
+.legal-tab.activo { background: var(--pitch-950); color: #fff; border-color: var(--pitch-950); }
+.legal-panel { display: none; }
+.legal-panel.activo { display: block; }
+.legal-panel h4 { color: var(--ink); margin-bottom: 10px; }
+.legal-panel p { font-size: 0.9rem; margin: 0 0 10px; line-height: 1.55; }
+.legal-panel a { color: var(--amber-dark); text-decoration: underline; }
+
+.footer__legal { margin-top: 10px; }
+.footer__legal-link {
+  background: none; border: none; color: var(--muted);
+  font-size: 0.82rem; text-decoration: underline; cursor: pointer; padding: 0;
+}
+.footer__legal-link:hover { color: var(--ink); }
+
+/* ---------- Botón flotante de contacto ---------- */
+.contacto-flotante {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 80;
+  width: 54px; height: 54px;
+  border-radius: 999px;
+  background: var(--amber);
+  color: var(--pitch-950);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  box-shadow: 0 10px 24px rgba(0,0,0,.28);
+  transition: transform .15s ease, background .15s ease;
+}
+.contacto-flotante:hover { background: var(--amber-dark); transform: translateY(-2px); }
+@media (max-width: 480px) {
+  .contacto-flotante { right: 14px; bottom: 14px; width: 48px; height: 48px; font-size: 1.2rem; }
+}
+
+
+/* ---------- Mundial y ligas: escudos ---------- */
+.equipo-escudo-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform .15s, box-shadow .15s;
+}
+.equipo-escudo-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0,0,0,.12);
+}
+.equipo-escudo-card__shield {
+  min-height: 180px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--chalk);
+  padding: 22px;
+}
+.equipo-escudo-card__shield img {
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+}
+.equipo-escudo-card__body { padding: 12px 13px 14px; }
+.equipo-escudo-card__body h3 {
+  margin: 0 0 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.1rem;
+}
+.equipo-mini-camisetas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.equipo-mini-camiseta {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px;
+  background: #fff;
+  text-align: center;
+}
+.equipo-mini-camiseta img {
+  width: 100%;
+  height: 74px;
+  object-fit: contain;
+  display: block;
+}
+.equipo-mini-camiseta span {
+  display: block;
+  font-size: .68rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.equipo-escudo-card__cta {
+  margin: 10px 0 0;
+  color: var(--pitch-600);
+  font-size: .82rem;
+  font-weight: 700;
+}
+.sin-camisetas, .catalogo-vacio { opacity: .7; font-size: .85rem; }
+.ligas-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 12px;
+}
+.liga-card {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 12px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: var(--shadow);
+  transition: transform .15s, border-color .15s, background .15s;
+}
+.liga-card:hover, .liga-card.activo {
+  transform: translateY(-2px);
+  border-color: var(--pitch-600);
+}
+.liga-card.activo { background: #eef6f0; }
+.liga-card img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 8px;
+}
+.liga-card span {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 1rem;
+}
+.liga-card small {
+  display: block;
+  margin-top: 4px;
+  opacity: .65;
+  font-size: .72rem;
+}
+@media (max-width: 520px) {
+  .equipo-mini-camisetas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .equipo-escudo-card__shield { min-height: 145px; }
+}
+
+/* ===== Inicio: Mundiales / Ligas y pantallas de escudos y camisetas ===== */
+.hub { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; max-width: 900px; margin: 0 auto; }
+.hub__card { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 26px 18px; background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; font: inherit; color: var(--ink); transition: transform .15s, border-color .15s; }
+.hub__card:hover { transform: translateY(-3px); border-color: var(--amber); }
+.hub__card strong { font-size: 1.5rem; }
+.hub__card small { color: var(--muted); }
+.hub__logos { display: flex; gap: 10px; }
+.hub__logos img { width: 54px; height: 54px; object-fit: contain; }
+.vista { position: fixed; inset: 0; z-index: 85; background: var(--chalk); display: none; flex-direction: column; }
+.vista.abierto { display: flex; }
+.vista__bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--pitch-950); color: #fff; }
+.vista__bar h2 { flex: 1; margin: 0; font-size: 1.15rem; text-align: center; }
+.vista__btn { background: var(--amber); color: var(--ink); border: 0; border-radius: 999px; padding: 8px 14px; font: inherit; font-weight: 700; cursor: pointer; }
+.vista__body { flex: 1; overflow-y: auto; padding: 18px 14px 40px; }
+.vista__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; max-width: 1100px; margin: 0 auto; }
+.vista__grid--camis { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.escudo-item, .camiseta-item { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; cursor: pointer; font: inherit; color: var(--ink); text-align: center; transition: transform .15s, border-color .15s; }
+.escudo-item:hover, .camiseta-item:hover { transform: translateY(-2px); border-color: var(--amber); }
+.escudo-item__img, .camiseta-item__img { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+.escudo-item__img img, .camiseta-item__img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.escudo-item__img img.es-camiseta { opacity: .85; }
+.escudo-item__img svg { width: 70%; }
+.escudo-item small, .camiseta-item small { color: var(--muted); }
+.camiseta-item__img { aspect-ratio: 4 / 5; }
+.escudo-item__img { padding: 8px; box-sizing: border-box; }

@@ -153,7 +153,7 @@ const LIGAS = [
       { id: 'br-gremio', nombre: 'Grêmio', c1: '#0033A0', c2: '#1A1A1A', imgLocal: 'img/equipos/brasileirao/br-gremio.jpg' },
       { id: 'br-internacional', nombre: 'Internacional', c1: '#C60C30', c2: '#FFFFFF', imgLocal: 'img/equipos/brasileirao/br-internacional.jpg' },
       { id: 'br-fluminense', nombre: 'Fluminense', c1: '#7A1E3C', c2: '#006437', imgLocal: 'img/equipos/brasileirao/br-fluminense.jpg' },
-      { id: 'br-cruzeiro', nombre: 'Cruzeiro', c1: '#003DA5', c2: '#FFFFFF', imgLocal: 'img/equipos/brasileirao/br-cruzeiro.jpg' },
+      { id: 'br-cruzeiro', nombre: 'Cruzeiro', c1: '#003DA5', c2: '#FFFFFF', imgLocal: 'img/equipos/brasileirao/br-cruzeiro.png' },
       { id: 'br-botafogo', nombre: 'Botafogo', c1: '#1A1A1A', c2: '#FFFFFF', imgLocal: 'img/equipos/brasileirao/br-botafogo.jpg' },
     ],
   },
@@ -280,9 +280,8 @@ const LIGAS = [
     id: 'mas',
     nombre: 'Más',
     equipos: [
-      { id: 'mas-olympiacos', nombre: 'Olympiacos', c1: '#D2001C', c2: '#FFFFFF', imgLocal: 'img/equipos/mas/mas-olympiacos.jpg' },
-      { id: 'mas-fenerbahce', nombre: 'Fenerbahçe', c1: '#FFE100', c2: '#0A2240', imgLocal: 'img/equipos/mas/mas-fenerbahce.jpg' },
-      { id: 'mas-besiktas', nombre: 'Beşiktaş', c1: '#1A1A1A', c2: '#FFFFFF', imgLocal: 'img/equipos/mas/mas-besiktas.jpg' },
+      { id: 'mas-olympiacos', nombre: 'Olympiacos', c1: '#D2001C', c2: '#FFFFFF', imgLocal: 'img/equipos/mas/olympiacos.jpg' },
+      { id: 'mas-besiktas', nombre: 'Beşiktaş', c1: '#1A1A1A', c2: '#FFFFFF', imgLocal: 'img/equipos/mas/besiktas.jpeg'},
       { id: 'mas-galatasaray', nombre: 'Galatasaray', c1: '#E8792D', c2: '#A6192E', imgLocal: 'img/equipos/mas/mas-galatasaray.jpg' },
     ],
   },
@@ -507,8 +506,8 @@ function limitarNumeroTelefono(id) {
   });
 }
 
-const PRECIO_ACTUAL = 25;
-const PRECIO_RETRO = 30;
+const PRECIO_ACTUAL = 22.99;
+const PRECIO_RETRO = 27.99;
 
 /* =========================================================
    OFERTAS POR CANTIDAD
@@ -517,9 +516,9 @@ const PRECIO_RETRO = 30;
    cantidades intermedias/mayores combinando lotes (p. ej. 21 = 15+6).
 ========================================================= */
 const OFERTAS_CANTIDAD = [
-  { cantidad: 6, normal: 135, retro: 150 },
-  { cantidad: 10, normal: 200, retro: 225 },
-  { cantidad: 15, normal: 250, retro: 275 },
+  { cantidad: 6, normal: 130, retro: 150 },
+  { cantidad: 10, normal: 200, retro: 240 },
+  { cantidad: 15, normal: 330, retro: 400 },
 ];
 
 function calcularPrecioPorTipo(cantidad, tipo) {
@@ -535,7 +534,7 @@ function calcularPrecioPorTipo(cantidad, tipo) {
         mejor = Math.min(mejor, costes[n - oferta.cantidad] + precioLote);
       }
     });
-    costes[n] = mejor;
+    costes[n] = Math.round(mejor * 100) / 100;
   }
   return costes[cantidad];
 }
@@ -547,10 +546,11 @@ function calcularSubtotalConOfertas(items) {
   items.forEach(it => {
     unidadesPorTipo[it.tipo] = (unidadesPorTipo[it.tipo] || 0) + it.cantidad;
   });
-  return Object.keys(unidadesPorTipo).reduce(
-    (total, tipo) => total + calcularPrecioPorTipo(unidadesPorTipo[tipo], tipo),
+  const total = Object.keys(unidadesPorTipo).reduce(
+    (suma, tipo) => suma + calcularPrecioPorTipo(unidadesPorTipo[tipo], tipo),
     0
   );
+  return Math.round(total * 100) / 100;
 }
 
 
@@ -947,13 +947,10 @@ function svgCamiseta(c1, c2, claseExtra) {
    ESTADO
 ========================================================= */
 let carrito = JSON.parse(localStorage.getItem('carritoFutbol') || '[]');
-// Saneado defensivo: si algún artículo quedó guardado con un precio inválido
-// (p. ej. de una versión anterior con recargo por nombre/dorsal), se recalcula
-// con el precio base actual para que el carrito y los totales sean correctos.
+// Saneado: los artículos guardados en el navegador (de visitas anteriores, con precios
+// antiguos) se actualizan siempre al precio base vigente para que los totales cuadren.
 carrito = carrito.map(it => {
-  if (typeof it.precioUnidad !== 'number' || Number.isNaN(it.precioUnidad) || it.precioUnidad <= 0) {
-    it.precioUnidad = it.tipo === 'retro' ? PRECIO_RETRO : PRECIO_ACTUAL;
-  }
+  it.precioUnidad = it.tipo === 'retro' ? PRECIO_RETRO : PRECIO_ACTUAL;
   return it;
 });
 localStorage.setItem('carritoFutbol', JSON.stringify(carrito));
@@ -1084,10 +1081,10 @@ const ESCUDOS = {
   "ar-river": "img/escudos/argentina/river.jpg",
   "sau-alhilal": "img/escudos/saudi/al_hilal.png",
   "sau-alnassr": "img/escudos/saudi/al_nassr.png",
-  "mas-olympiacos": "img/escudos/mas/olympiacos.jpg",
-  "mas-fenerbahce": "img/escudos/mas/fenerbache.jpg",
-  "mas-besiktas": "img/escudos/mas/besiktas.jpeg",
-  "mas-galatasaray": "img/escudos/mas/galatasaray.jpg",
+  "mas-olympiacos": "img/equipos/mas/olympiacos.png",
+  //"mas-fenerbahce": "img/equipos/mas/fenerbache.jpg",
+  "mas-besiktas": "img/equipos/mas/besiktas.png",
+  "mas-galatasaray": "img/equipos/mas/galatasaray.png",
   "ch-sunderland": "img/escudos/efl-championship/sunderland.jpg",
   "sb-parma": "img/escudos/serie-b/parma.jpg",
   "sb-venezia": "img/escudos/serie-b/venezia.jpg",
@@ -1152,39 +1149,152 @@ function renderGrid(lista, contenedorId, categoria) {
 /* =========================================================
    MUNDIAL · ESCUDOS + CAMISETAS
 ========================================================= */
-const seleccionesConEscudo = SELECCIONES.filter(p => escudoSrc(p));
-renderTeamCards(seleccionesConEscudo, 'gridSelecciones', 'Selección', true);
-
 /* =========================================================
-   LIGAS · LOGO DE LIGA + EQUIPOS
+   NAVEGACIÓN: Inicio → Mundiales / Ligas → Escudos → Camisetas
+   Mundiales: escudos de selecciones → todas sus camisetas.
+   Ligas: logos de liga → escudos de sus equipos → todas sus camisetas.
 ========================================================= */
-function renderLigasTabs() {
-  const cont = document.getElementById('ligasTabs');
-  cont.innerHTML = LIGAS.map(l => `
-    <button type="button" class="liga-card ${l.id === ligaActiva ? 'activo' : ''}" data-id="${l.id}">
-      <img src="img/escudos/ligas-${l.id}.svg" alt="Logo de ${l.nombre}" loading="lazy">
-      <span>${l.nombre}</span>
-      <small>${l.equipos.length} equipos en catálogo</small>
-    </button>
-  `).join('');
+const R = 'img/escudos/rest/';
+const N = ''; // escudos nuevos: están en la raíz de /public (chile.png, botafogo.png...)
+Object.assign(ESCUDOS, {
+  'sco-aberdeen': R+'aberdeen.png', 'nl-ajax': R+'ajax.png', 'l2-albacete': R+'albacete.png',
+  'mas-alahly': R+'al_ahly.png', 'sau-alshabab': R+'al_shabab.webp', 'mx-america': R+'america.png',
+  'sco-celtic': R+'celtic.png', 'sb-cremonese': R+'cremonese.png', 'nl-feyenoord': R+'feyenoord.png',
+  'b2-dusseldorf': R+'dusseldorf.png', 'sco-hearts': R+'heart_of_midlothian.png', 'b2-hertha': R+'hertha.png',
+  'py-olimpia': R+'olimpia.png', 'sb-palermo': R+'palermo.png', 'uy-penarol': R+'penarol.png',
+  'ch-portsmouth': R+'portsmouth.png', 'nl-psv': R+'psv.png', 'sco-rangers': R+'rangers.png',
+  'sb-sampdoria': R+'sampdoria.png', 'pe-sportingcristal': R+'sportingcristal.png',
+  'b2-stpauli': R+'stpauli.png', 'mx-tijuana': R+'tijuana.png',
+  'br-botafogo': N+'botafogo.png', 'br-corinthians': N+'corinthians.png', 'br-palmeiras': N+'palmeiras.png',
+  'br-gremio': N+'gremio.png', 'br-flamengo': N+'flamengo.png', 'br-internacional': N+'internacional.png',
+  'br-fluminense': N+'fluminense.png', 'br-santos': N+'santos.png', 'br-saopaulo': N+'saopaulo.png',
+  'b2-nuremberg': N+'nurnberg.png', 'sau-alittihad': N+'al_ittihad.jpg',
+  'mundial-islandia': N+'islandia.png', 'mundial-venezuela': N+'venezuela.png', 'mundial-ucrania': N+'ucrania.png',
+  'mundial-costa-rica': N+'costa_rica.png', 'mundial-gales': N+'gales.png', 'mundial-jamaica': N+'jamaica.svg',
+  'mundial-italia': N+'italia.png', 'mundial-peru': N+'peru.png', 'mundial-hungria': N+'hungria.png',
+  'mundial-chile': N+'chile.png', 'mundial-mali': N+'mali.png'
+});
+// Logos de liga: todos en la raíz de /public
+const LOGOS_LIGA = {
+  'bundesliga': 'alemania.png', 'argentina-lpf': 'argentina.png', 'brasileirao': 'brasil.png', 'scottish-premiership': 'escocia.png',
+  'laliga': 'espana.png', 'ligue-1': 'francia.png', 'premier-league': 'inglaterra.png', 'serie-a': 'italia%20(1).png',
+  'mas': 'mas_equipos.png', 'liga-mx': 'mexico.png', 'eredivisie': 'paisesbajos.png', 'liga-portugal': 'portugal.png',
+  'otras-sudamerica': 'sudamerica.jpg', 'serie-b': 'serieb.png', 'efl-championship': 'efl.png', 'mls': 'mls.png',
+  'laliga2': 'liga2.png', '2-bundesliga': 'bundes2.png', 'saudi-league': 'arabia.png'
+};
+function logoLiga(l) {
+  return LOGOS_LIGA[l.id] || `img/escudos/ligas-${l.id}.svg`;
+}
+// Retro suelto que estaba en la carpeta pero no en el catálogo
+(RETRO_PRODUCTOS['nl-psv'] = RETRO_PRODUCTOS['nl-psv'] || []);
+if (!RETRO_PRODUCTOS['nl-psv'].some(r => r.img.includes('psv-eindhoven-retro-home'))) {
+  RETRO_PRODUCTOS['nl-psv'].push({ nombre: 'PSV Eindhoven retro local', img: 'img/retro/nl-psv/psv-eindhoven-retro-home-jersey-s-xxl.jpg' });
+}
+// Se mantienen por compatibilidad con el buscador (ya no hay pestañas de liga)
+function renderLigasTabs() {}
+function renderEquiposGrid() {}
 
-  cont.querySelectorAll('.liga-card').forEach(btn => {
-    btn.addEventListener('click', () => {
-      ligaActiva = btn.dataset.id;
-      renderLigasTabs();
-      renderEquiposGrid();
-      document.getElementById('gridEquipos').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+const vista = document.getElementById('vistaCat');
+const pilaVistas = [];
+
+function pintarVista() {
+  const v = pilaVistas[pilaVistas.length - 1];
+  document.getElementById('vistaTitulo').textContent = v.titulo;
+  document.getElementById('vistaVolver').style.visibility = pilaVistas.length > 1 ? 'visible' : 'hidden';
+  const body = document.getElementById('vistaBody');
+  v.render(body);
+  body.scrollTop = 0;
+}
+function abrirVista(titulo, render) {
+  pilaVistas.push({ titulo, render });
+  pintarVista();
+  vista.classList.add('abierto');
+  document.body.style.overflow = 'hidden';
+}
+function cerrarVista() {
+  pilaVistas.length = 0;
+  vista.classList.remove('abierto');
+  document.body.style.overflow = '';
+}
+function volverVista() {
+  pilaVistas.pop();
+  if (pilaVistas.length) pintarVista(); else cerrarVista();
+}
+document.getElementById('vistaVolver').addEventListener('click', volverVista);
+document.getElementById('vistaCerrar').addEventListener('click', cerrarVista);
+
+// Todas las camisetas de un equipo: local, visitante y todas las retro.
+function camisetasDe(t) {
+  const lista = [];
+  if (t.imgLocal) lista.push({ nombre: t.nombre + ' · Local', img: t.imgLocal, retro: false });
+  if (t.imgVisitante) lista.push({ nombre: t.nombre + ' · Visitante', img: t.imgVisitante, retro: false });
+  (RETRO_PRODUCTOS[t.id] || []).forEach(r => lista.push({
+    nombre: r.nombre.charAt(0).toUpperCase() + r.nombre.slice(1), img: r.img, retro: true
+  }));
+  return lista;
+}
+
+function itemEscudo(img, nombre, sub, alt) {
+  return `<button type="button" class="escudo-item"><span class="escudo-item__img">${img}</span><strong>${nombre}</strong><small>${sub}</small></button>`;
+}
+
+function gridEscudos(body, equipos, categoria) {
+  body.innerHTML = '<div class="vista__grid">' + equipos.map(t => {
+    const s = escudoSrc(t), f = t.imgLocal || t.imgVisitante, n = camisetasDe(t).length;
+    const img = s ? `<img src="${s}" alt="Escudo de ${t.nombre}" loading="lazy">`
+      : (f ? `<img class="es-camiseta" src="${f}" alt="${t.nombre}" loading="lazy">` : svgCamiseta(t.c1 || '#1f5c3a', t.c2 || '#fff', 'mini-camiseta'));
+    return itemEscudo(img, t.nombre, n ? `${n} camiseta${n > 1 ? 's' : ''}` : 'Próximamente');
+  }).join('') + '</div>';
+  body.querySelectorAll('.escudo-item').forEach((b, i) => b.addEventListener('click', () => abrirCamisetasEquipo(equipos[i], categoria)));
+}
+
+function abrirCamisetasEquipo(t, categoria) {
+  abrirVista(t.nombre, body => {
+    const lista = camisetasDe(t);
+    if (!lista.length) { body.innerHTML = '<p class="catalogo-vacio">Las camisetas de este equipo llegarán pronto.</p>'; return; }
+    body.innerHTML = '<div class="vista__grid vista__grid--camis">' + lista.map(c => `
+      <button type="button" class="camiseta-item">
+        <span class="camiseta-item__img"><img src="${c.img}" alt="${c.nombre}" loading="lazy"></span>
+        <strong>${c.nombre}</strong><small>${c.retro ? PRECIO_RETRO : PRECIO_ACTUAL} €</small>
+      </button>`).join('') + '</div>';
+    body.querySelectorAll('.camiseta-item').forEach((b, i) => b.addEventListener('click', () => comprarCamiseta(t, categoria, lista[i], i)));
   });
 }
 
-function renderEquiposGrid() {
-  const liga = LIGAS.find(l => l.id === ligaActiva);
-  renderTeamCards(liga.equipos, 'gridEquipos', liga.nombre, false);
+// Abre la ficha de compra de UNA camiseta concreta, sin selector Actual/Retro:
+// el tipo (y el precio) lo marca la propia camiseta elegida.
+function comprarCamiseta(t, categoria, c, i) {
+  abrirModalProducto({ id: t.id + '__' + i, nombre: c.nombre, c1: t.c1 || '#1f5c3a', c2: t.c2 || '#ffffff', imgLocal: c.img, imgVisitante: null }, categoria);
+  tipoActivo = c.retro ? 'retro' : 'actual';
+  document.querySelectorAll('#prodTipo button').forEach(b => b.classList.toggle('activo', b.dataset.tipo === tipoActivo));
+  document.getElementById('prodTipo').parentElement.style.display = 'none';
+  actualizarPrecioModal();
 }
 
-renderLigasTabs();
-renderEquiposGrid();
+function abrirMundiales() {
+  abrirVista('🌍 Mundiales', body => gridEscudos(body, SELECCIONES, 'Selección'));
+}
+function abrirLigas() {
+  abrirVista('🏆 Ligas', body => {
+    body.innerHTML = '<div class="vista__grid">' + LIGAS.map(l =>
+      itemEscudo(`<img src="${logoLiga(l)}" alt="Logo de ${l.nombre}" loading="lazy">`, l.nombre, `${l.equipos.length} equipos`)
+    ).join('') + '</div>';
+    body.querySelectorAll('.escudo-item').forEach((b, i) => b.addEventListener('click', () => {
+      const liga = LIGAS[i];
+      abrirVista(liga.nombre, cuerpo => gridEscudos(cuerpo, liga.equipos, liga.nombre));
+    }));
+  });
+}
+
+document.getElementById('hubMundiales').addEventListener('click', abrirMundiales);
+document.getElementById('hubLigas').addEventListener('click', abrirLigas);
+document.getElementById('hubNumMundial').textContent = SELECCIONES.length + ' selecciones';
+document.getElementById('hubNumLigas').textContent = LIGAS.length + ' ligas · ' + LIGAS.reduce((n, l) => n + l.equipos.length, 0) + ' equipos';
+document.getElementById('hubLogosMundial').innerHTML = ['espana', 'argentina', 'francia', 'brasil'].map(n => `<img src="img/escudos/mundial/${n}.jpg" alt="">`).join('');
+document.getElementById('hubLogosLigas').innerHTML = ['inglaterra', 'espana', 'italia', 'alemania'].map(n => `<img src="img/escudos/ligas/${n}.png" alt="">`).join('');
+// Los enlaces antiguos "Ver selecciones" / "Ver equipos" abren directamente estas pantallas
+document.querySelectorAll('a[href="#selecciones"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); abrirMundiales(); }));
+document.querySelectorAll('a[href="#equipos"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); abrirLigas(); }));
 
 // Selector de prefijo + restricción numérica en el teléfono del checkout
 poblarSelectorPrefijos('clienteTelefonoPrefijo', '+34');
@@ -1306,6 +1416,7 @@ function actualizarSelectorRetro() {
 }
 
 function abrirModalProducto(producto, categoria) {
+  document.getElementById('prodTipo').parentElement.style.display = '';
   productoActivo = producto;
   tipoActivo = 'actual';
   retroIndiceActivo = 0;
@@ -1397,7 +1508,15 @@ function actualizarPrecioModal() {
   }
 }
 
+function limitarDorsal(e) {
+  // Solo dígitos, máximo 2 cifras (dorsal entre 0 y 99)
+  let v = e.target.value.replace(/\D/g, '').slice(0, 2);
+  if (v !== '' && parseInt(v, 10) > 99) v = '99';
+  e.target.value = v;
+}
+
 document.getElementById('prodNombreTexto').addEventListener('input', actualizarPrecioModal);
+document.getElementById('prodDorsal').addEventListener('input', limitarDorsal);
 document.getElementById('prodDorsal').addEventListener('input', actualizarPrecioModal);
 
 document.getElementById('btnAnadirCarrito').addEventListener('click', () => {
@@ -1428,7 +1547,7 @@ document.getElementById('btnAnadirCarrito').addEventListener('click', () => {
     imgSrc,
     tipo: tipoActivo,
     nombreCamiseta: document.getElementById('prodNombreTexto').value.trim().toUpperCase(),
-    dorsal: document.getElementById('prodDorsal').value,
+    dorsal: document.getElementById('prodDorsal').value.replace(/\D/g, '').slice(0, 2),
     talla: document.getElementById('prodTalla').value,
     parches: obtenerParchesSeleccionados(),
     cantidad,
@@ -1460,6 +1579,112 @@ function actualizarContadorCarrito() {
 /* Gastos de envío: 5 € para pedidos de menos de 6 camisetas.
    A partir de 6 camisetas (inclusive), el envío es gratis.
    (No se aplica al amigo invisible.) */
+/* =========================================================
+   CÓDIGOS DE DESCUENTO
+   El servidor valida el código (al aplicarlo y otra vez al enviar el
+   pedido). Aquí solo se guarda el código aplicado y se calcula el importe.
+========================================================= */
+var cuponCarrito = null;
+var cuponAmigo = null;
+
+/* Pedido mínimo: 2 camisetas (el servidor también lo comprueba). */
+const MIN_CAMISETAS_PEDIDO = 2;
+
+function contarCamisetas(items) {
+  return items.reduce((s, it) => s + (Number(it.cantidad) || 0), 0);
+}
+
+function avisarMinimoCamisetas(estado) {
+  const texto = `El pedido mínimo es de ${MIN_CAMISETAS_PEDIDO} camisetas. Añade al menos otra camiseta para poder enviarlo.`;
+  estado.className = 'form-envio__estado error';
+  estado.textContent = texto;
+  alert(texto);
+}
+
+function crearGestorCupon({ inputId, btnId, estadoId, getSubtotal, getUnidades, onChange }) {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  const estado = document.getElementById(estadoId);
+  let aplicado = null;
+
+  function mensaje(texto, tipo) {
+    estado.className = 'form-envio__estado' + (tipo ? ' ' + tipo : '');
+    estado.textContent = texto;
+  }
+
+  function quitar() {
+    aplicado = null;
+    input.disabled = false;
+    input.value = '';
+    btn.textContent = 'Aplicar';
+    mensaje('');
+    onChange();
+  }
+
+  async function aplicar() {
+    if (aplicado) return quitar();
+
+    const codigo = input.value.trim();
+    if (!codigo) return mensaje('Escribe un código de descuento.', 'error');
+
+    const subtotal = getSubtotal();
+    if (subtotal <= 0) return mensaje('Añade camisetas antes de aplicar un código.', 'error');
+
+    btn.disabled = true;
+    mensaje('Comprobando código...');
+    try {
+      const resp = await fetch('/api/descuento/validar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo, subtotal, unidades: getUnidades() })
+      });
+      const data = await resp.json();
+
+      if (data.ok) {
+        aplicado = { codigo: data.codigo, tipo: data.tipo, valor: data.valor, minCamisetas: Number(data.minCamisetas) || 0 };
+        input.value = data.codigo;
+        input.disabled = true;
+        btn.textContent = 'Quitar';
+        mensaje(`Código ${data.codigo} aplicado (${data.tipo === 'porcentaje' ? data.valor + '%' : Number(data.valor).toFixed(2) + ' €'} de descuento).`, 'ok');
+      } else {
+        mensaje(data.error || 'No se pudo comprobar el código.', 'error');
+      }
+    } catch (err) {
+      mensaje('Error de conexión. Inténtalo de nuevo.', 'error');
+    } finally {
+      btn.disabled = false;
+      onChange();
+    }
+  }
+
+  /* Si el cliente quita camisetas y se queda por debajo del mínimo del código, se retira. */
+  function revisarMinimo() {
+    if (!aplicado || !aplicado.minCamisetas) return;
+    const unidades = getUnidades();
+    if (unidades >= aplicado.minCamisetas) return;
+    const codigo = aplicado.codigo;
+    const min = aplicado.minCamisetas;
+    quitar();
+    mensaje(`Se ha quitado el código ${codigo}: requiere un mínimo de ${min} camisetas y ahora tienes ${unidades}.`, 'error');
+  }
+
+  btn.addEventListener('click', aplicar);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); aplicar(); }
+  });
+
+  return {
+    get: () => aplicado,
+    reset: quitar,
+    revisarMinimo,
+    importe(subtotal) {
+      if (!aplicado) return 0;
+      const bruto = aplicado.tipo === 'porcentaje' ? subtotal * aplicado.valor / 100 : aplicado.valor;
+      return Math.round(Math.min(Math.max(0, bruto), subtotal) * 100) / 100;
+    }
+  };
+}
+
 const ENVIO_COSTE = 5;
 const ENVIO_UNIDADES_GRATIS = 6;
 
@@ -1469,9 +1694,11 @@ function calcularEnvio(items) {
   return unidades < ENVIO_UNIDADES_GRATIS ? ENVIO_COSTE : 0;
 }
 
+const NODO_CARRITO_VACIO = document.getElementById('carritoVacioMsg');
+
 function renderCarrito() {
   const lista = document.getElementById('listaCarrito');
-  const vacio = document.getElementById('carritoVacioMsg');
+  const vacio = NODO_CARRITO_VACIO;
 
   if (carrito.length === 0) {
     lista.innerHTML = '';
@@ -1499,6 +1726,8 @@ function renderCarrito() {
     });
   }
 
+  if (cuponCarrito) cuponCarrito.revisarMinimo();
+
   const sinDescuento = carrito.reduce((s, it) => s + it.precioUnidad * it.cantidad, 0);
   const subtotal = calcularSubtotalConOfertas(carrito);
   const descuento = sinDescuento - subtotal;
@@ -1512,9 +1741,19 @@ function renderCarrito() {
     filaDescuento.style.display = 'none';
   }
 
+  const importeCupon = cuponCarrito ? cuponCarrito.importe(subtotal) : 0;
+  const filaCupon = document.getElementById('resCuponWrap');
+  if (importeCupon > 0) {
+    filaCupon.style.display = '';
+    document.getElementById('resCuponLabel').textContent = 'Código ' + cuponCarrito.get().codigo;
+    document.getElementById('resCupon').textContent = '-' + importeCupon.toFixed(2) + ' €';
+  } else {
+    filaCupon.style.display = 'none';
+  }
+
   document.getElementById('resSubtotal').textContent = subtotal.toFixed(2) + ' €';
   document.getElementById('resEnvio').textContent = envio > 0 ? envio.toFixed(2) + ' €' : 'Gratis';
-  document.getElementById('resTotal').textContent = (subtotal + envio).toFixed(2) + ' €';
+  document.getElementById('resTotal').textContent = (subtotal - importeCupon + envio).toFixed(2) + ' €';
 
   actualizarContadorCarrito();
 }
@@ -1525,6 +1764,86 @@ document.getElementById('btnIrEnvio').addEventListener('click', () => {
   document.getElementById('btnIrEnvio').style.display = 'none';
 });
 
+/* Texto de confirmación tras enviar el pedido, con el descuento aplicado. */
+function mensajePedidoEnviado(data) {
+  let txt = `¡Pedido #${data.pedidoId} enviado!`;
+  const r = data.resumen;
+
+  if (r) {
+    const partes = [];
+    if (r.descuentoCantidad > 0.004) {
+      partes.push(`oferta por cantidad -${Number(r.descuentoCantidad).toFixed(2)} €`);
+    }
+    if (r.descuentoCodigo) {
+      const dc = r.descuentoCodigo;
+      const valor = dc.tipo === 'porcentaje' ? `-${Number(dc.valor)}%` : `-${Number(dc.valor).toFixed(2)} €`;
+      partes.push(`código ${dc.codigo} (${valor}) -${Number(dc.importe).toFixed(2)} €`);
+    }
+    if (partes.length) txt += ` Descuentos aplicados: ${partes.join(' y ')}.`;
+    txt += ` Total a pagar: ${Number(r.total).toFixed(2)} €.`;
+  }
+
+  return txt + ' Recuerda enviar el pago por PayPal a trakeballer@gmail.com (sin poner concepto) y mandarnos el comprobante y el número de pedido a ese mismo correo.';
+}
+
+/* Envío del pedido al servidor.
+   - Cada envío lleva un idCliente: si hay un corte de conexión se reintenta solo y el
+     servidor NO duplica el pedido.
+   - Si falla, el mensaje incluye el motivo técnico para poder diagnosticarlo. */
+async function enviarPedidoAlServidor(pedido) {
+  pedido.idCliente = (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : 'p' + Date.now() + Math.random().toString(36).slice(2, 10);
+
+  const MAX_INTENTOS = 3;
+  let ultimo = { status: 0, error: '', detalle: '' };
+
+  for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
+    const control = new AbortController();
+    const temporizador = setTimeout(() => control.abort(), 45000);
+
+    try {
+      const resp = await fetch('/api/pedido', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pedido),
+        signal: control.signal
+      });
+      clearTimeout(temporizador);
+
+      let data = null;
+      try { data = await resp.json(); } catch (_) { /* respuesta que no es JSON (p. ej. 502) */ }
+
+      if (data && data.ok) return data;
+      // Error de validación real (falta un dato, código inválido...): no se reintenta.
+      if (data && resp.status >= 400 && resp.status < 500) return data;
+
+      ultimo = { status: resp.status, error: (data && data.error) || '', detalle: (data && data.detalle) || '' };
+    } catch (err) {
+      clearTimeout(temporizador);
+      ultimo = { status: 0, error: '', detalle: err.name === 'AbortError' ? 'tiempo de espera agotado' : 'sin conexión con el servidor' };
+    }
+
+    console.error(`[pedido] Intento ${intento}/${MAX_INTENTOS} fallido:`, ultimo);
+
+    if (intento < MAX_INTENTOS) {
+      await new Promise(r => setTimeout(r, 1500 * intento));
+    }
+  }
+
+  const tecnico = [ultimo.status ? `HTTP ${ultimo.status}` : '', ultimo.detalle].filter(Boolean).join(' - ');
+
+  // El servidor respondió con un error suyo (ya sabemos que NO se registró)
+  if (ultimo.status === 500 && ultimo.error) {
+    return { ok: false, error: `${ultimo.error}${tecnico ? ` (${tecnico})` : ''}` };
+  }
+
+  return {
+    ok: false,
+    error: `No hemos podido confirmar si tu pedido se envió${tecnico ? ` (${tecnico})` : ''}. Antes de repetirlo, revisa tu correo o escríbenos a trakeballer@gmail.com con tu nombre.`
+  };
+}
+
 /* Envío del pedido */
 document.getElementById('formEnvio').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -1532,9 +1851,15 @@ document.getElementById('formEnvio').addEventListener('submit', async (e) => {
   const estado = document.getElementById('estadoPedido');
   const boton = document.getElementById('btnEnviarPedido');
 
+  if (contarCamisetas(carrito) < MIN_CAMISETAS_PEDIDO) {
+    avisarMinimoCamisetas(estado);
+    return;
+  }
+
   const subtotal = calcularSubtotalConOfertas(carrito);
   const envio = calcularEnvio(carrito);
-  const total = subtotal + envio;
+  const importeCupon = cuponCarrito ? cuponCarrito.importe(subtotal) : 0;
+  const total = Math.round((subtotal - importeCupon + envio) * 100) / 100;
 
   const prefijoTelefono = document.getElementById('clienteTelefonoPrefijo').value;
   const numeroTelefono = document.getElementById('clienteTelefono').value.trim();
@@ -1544,6 +1869,7 @@ document.getElementById('formEnvio').addEventListener('submit', async (e) => {
     subtotal,
     envio,
     total,
+    codigoDescuento: cuponCarrito && cuponCarrito.get() ? cuponCarrito.get().codigo : '',
     cliente: {
       nombre: document.getElementById('clienteNombre').value.trim(),
       direccion: document.getElementById('clienteDireccion').value.trim(),
@@ -1556,33 +1882,36 @@ document.getElementById('formEnvio').addEventListener('submit', async (e) => {
   estado.className = 'form-envio__estado';
   estado.textContent = 'Enviando pedido...';
 
+  let enviadoOk = false;
+
   try {
-    const resp = await fetch('/api/pedido', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(pedido)
-    });
-    const data = await resp.json();
+    const data = await enviarPedidoAlServidor(pedido);
 
     if (data.ok) {
+      enviadoOk = true;
       estado.className = 'form-envio__estado ok';
-      estado.textContent = `¡Pedido #${data.pedidoId} enviado! Recuerda enviar el pago por PayPal a trakeballer@gmail.com (sin poner concepto) y mandarnos el comprobante y el número de pedido a ese mismo correo.`;
+      estado.textContent = mensajePedidoEnviado(data);
       carrito = [];
       guardarCarrito();
+      try { if (cuponCarrito) cuponCarrito.reset(); } catch (e) { console.error(e); }
       document.getElementById('formEnvio').reset();
       setTimeout(() => {
         document.getElementById('formEnvio').classList.remove('mostrar');
         document.getElementById('btnIrEnvio').style.display = 'block';
         overlayCarrito.classList.remove('abierto');
         estado.textContent = '';
-      }, 8000);
+      }, 20000);
     } else {
       estado.className = 'form-envio__estado error';
       estado.textContent = data.error || 'No se pudo enviar el pedido.';
     }
   } catch (err) {
-    estado.className = 'form-envio__estado error';
-    estado.textContent = 'Error de conexión. Inténtalo de nuevo.';
+    console.error('[pedido] Error tras enviar:', err);
+    // Si el pedido ya se envió, un fallo al limpiar el formulario NO debe mostrarse como error.
+    if (!enviadoOk) {
+      estado.className = 'form-envio__estado error';
+      estado.textContent = 'Error de conexión. Inténtalo de nuevo.';
+    }
   } finally {
     boton.disabled = false;
     renderCarrito();
@@ -1611,6 +1940,53 @@ const TALLAS_AMIGO = [
   { input: 'amigoCantidadNino12', talla: 'Niño 12' }
 ];
 
+/* Resumen (subtotal / código / total) del amigo invisible */
+function itemsAmigoActuales() {
+  return TALLAS_AMIGO
+    .map(t => ({ tipo: 'actual', cantidad: Math.max(0, parseInt(document.getElementById(t.input).value, 10) || 0) }))
+    .filter(t => t.cantidad > 0);
+}
+
+function actualizarResumenAmigo() {
+  if (cuponAmigo) cuponAmigo.revisarMinimo();
+  const subtotal = calcularSubtotalConOfertas(itemsAmigoActuales());
+  const importe = cuponAmigo ? cuponAmigo.importe(subtotal) : 0;
+  const fila = document.getElementById('amigoResCuponWrap');
+
+  if (importe > 0) {
+    fila.style.display = '';
+    document.getElementById('amigoResCuponLabel').textContent = 'Código ' + cuponAmigo.get().codigo;
+    document.getElementById('amigoResCupon').textContent = '-' + importe.toFixed(2) + ' €';
+  } else {
+    fila.style.display = 'none';
+  }
+  document.getElementById('amigoResSubtotal').textContent = subtotal.toFixed(2) + ' €';
+  document.getElementById('amigoResTotal').textContent = (subtotal - importe).toFixed(2) + ' €';
+}
+
+cuponCarrito = crearGestorCupon({
+  inputId: 'cuponCarritoInput',
+  btnId: 'cuponCarritoBtn',
+  estadoId: 'cuponCarritoEstado',
+  getSubtotal: () => calcularSubtotalConOfertas(carrito),
+  getUnidades: () => contarCamisetas(carrito),
+  onChange: renderCarrito
+});
+
+cuponAmigo = crearGestorCupon({
+  inputId: 'cuponAmigoInput',
+  btnId: 'cuponAmigoBtn',
+  estadoId: 'cuponAmigoEstado',
+  getSubtotal: () => calcularSubtotalConOfertas(itemsAmigoActuales()),
+  getUnidades: () => contarCamisetas(itemsAmigoActuales()),
+  onChange: actualizarResumenAmigo
+});
+
+TALLAS_AMIGO.forEach(t => {
+  document.getElementById(t.input).addEventListener('input', actualizarResumenAmigo);
+});
+actualizarResumenAmigo();
+
 /* Enviar el pedido del amigo invisible (dispara el email al correo general) */
 document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async () => {
   const estado = document.getElementById('amigoEstadoPedido');
@@ -1620,8 +1996,9 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
   const observaciones = document.getElementById('amigoObservaciones').value.trim();
   const nombreComprador = document.getElementById('amigoCompradorNombre').value.trim();
   const contacto = document.getElementById('amigoCompradorContacto').value.trim();
+  const direccion = document.getElementById('amigoDireccion').value.trim();
 
-  const precioUnidad = 25;
+  const precioUnidad = PRECIO_ACTUAL;
   const items = TALLAS_AMIGO
     .map(t => ({
       talla: t.talla,
@@ -1649,18 +2026,32 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
     estado.textContent = 'Indica tu nombre y un teléfono o email de contacto.';
     return;
   }
+  if (!direccion) {
+    estado.className = 'form-envio__estado error';
+    estado.textContent = 'Indica la dirección de envío.';
+    return;
+  }
 
-  const total = calcularSubtotalConOfertas(items);
+  if (contarCamisetas(items) < MIN_CAMISETAS_PEDIDO) {
+    avisarMinimoCamisetas(estado);
+    return;
+  }
+
+  const subtotal = calcularSubtotalConOfertas(items);
+  const importeCupon = cuponAmigo ? cuponAmigo.importe(subtotal) : 0;
+  const total = Math.round((subtotal - importeCupon) * 100) / 100;
   const esEmail = contacto.includes('@');
 
   const pedido = {
     tipo: 'amigo-invisible',
     notas: `Pedido del amigo invisible para ${numPersonas} persona(s). Las camisetas se eligen al azar (sin equipo, nombre ni dorsal).${observaciones ? ` Observaciones del cliente: ${observaciones}` : ''}`,
     items,
+    subtotal,
     total,
+    codigoDescuento: cuponAmigo && cuponAmigo.get() ? cuponAmigo.get().codigo : '',
     cliente: {
       nombre: nombreComprador,
-      direccion: 'Pedido de amigo invisible (sin envío individual, coordinar entrega en grupo)',
+      direccion,
       telefono: esEmail ? '' : contacto,
       email: esEmail ? contacto : ''
     }
@@ -1670,29 +2061,32 @@ document.getElementById('btnAmigoEnviarPedido').addEventListener('click', async 
   estado.className = 'form-envio__estado';
   estado.textContent = 'Enviando pedido...';
 
+  let enviadoOk = false;
+
   try {
-    const resp = await fetch('/api/pedido', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(pedido)
-    });
-    const data = await resp.json();
+    const data = await enviarPedidoAlServidor(pedido);
 
     if (data.ok) {
+      enviadoOk = true;
       estado.className = 'form-envio__estado ok';
-      estado.textContent = `¡Pedido #${data.pedidoId} enviado! Recuerda enviar el pago por PayPal a trakeballer@gmail.com (sin poner concepto) y mandarnos el comprobante y el número de pedido a ese mismo correo.`;
+      estado.textContent = mensajePedidoEnviado(data);
       TALLAS_AMIGO.forEach(t => { document.getElementById(t.input).value = 0; });
       document.getElementById('amigoNumPersonas').value = 1;
       document.getElementById('amigoObservaciones').value = '';
       document.getElementById('amigoCompradorNombre').value = '';
       document.getElementById('amigoCompradorContacto').value = '';
+      document.getElementById('amigoDireccion').value = '';
+      try { if (cuponAmigo) cuponAmigo.reset(); actualizarResumenAmigo(); } catch (e) { console.error(e); }
     } else {
       estado.className = 'form-envio__estado error';
       estado.textContent = data.error || 'No se pudo enviar el pedido.';
     }
   } catch (err) {
-    estado.className = 'form-envio__estado error';
-    estado.textContent = 'Error de conexión. Inténtalo de nuevo.';
+    console.error('[pedido] Error tras enviar:', err);
+    if (!enviadoOk) {
+      estado.className = 'form-envio__estado error';
+      estado.textContent = 'Error de conexión. Inténtalo de nuevo.';
+    }
   } finally {
     boton.disabled = false;
   }
