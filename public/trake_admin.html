@@ -131,6 +131,12 @@
 
     <div class="caja">
       <h2>3. Fotos</h2>
+      <div id="cEscudoWrap" class="campo" style="background:#222;border:1px solid #333;border-radius:8px;padding:10px;">
+        <label>🛡️ Escudo del equipo (opcional): sale igual que los demás escudos de la lista de equipos. Si ya tenía, se sustituye.</label>
+        <input id="cEscudoInput" type="file" accept="image/*" onchange="elegirEscudo(this.files)">
+        <div id="cEscudoPrev"></div>
+      </div>
+      <label id="cFotosLabel" style="display:block;font-size:0.85rem;color:#aaa;margin:10px 0 4px;">Camisetas</label>
       <input id="cFotos" type="file" accept="image/*" multiple onchange="añadirFotos(this.files)">
       <div id="cFilas"></div>
       <button id="cSubir" class="btn-verde" style="margin-top:8px;" onclick="subirTodas()" disabled>Subir camisetas</button>
@@ -264,6 +270,7 @@ const CATALOGO = JSON.parse(document.getElementById('catalogoBase').textContent)
 let SUBIDAS = [];
 let PRECIOS = { normal: 22.99, retro: 27.99 };
 let FOTOS = []; // {file, url, estado}
+let ESCUDO = null; // {file, url, estado, clase} (escudo opcional que se sube junto a las camisetas)
 let SUBIENDO = false;
 let CAMIS_CARGADAS = false;
 
@@ -419,10 +426,39 @@ function pintarFilas() {
       <span class="estado-fila ${f.clase || ''}">${esc(f.estado)}</span>
       <button class="btn-gris" onclick="quitarFoto(${i})" ${SUBIENDO ? 'disabled' : ''}>✕</button>
     </div>`).join('');
-  const pendientes = FOTOS.filter(f => f.clase !== 'ok').length;
+  const esTipoEscudo = tipoElegido() === 'escudo';
+  // El escudo opcional solo se ofrece al subir camisetas (si el tipo ya es "Escudo", las fotos de abajo SON el escudo).
+  document.getElementById('cEscudoWrap').style.display = esTipoEscudo ? 'none' : 'block';
+  document.getElementById('cFotosLabel').textContent = esTipoEscudo ? 'Foto del escudo' : 'Camisetas';
+  document.getElementById('cEscudoPrev').innerHTML = (ESCUDO && !esTipoEscudo) ? `
+    <div class="fila-sub" style="margin-top:8px;">
+      <img src="${ESCUDO.url}" alt="">
+      <span style="flex:1;color:#aaa;font-size:0.85rem;">Escudo de ${esc(equipoElegido().nombre || '…')}</span>
+      <span class="estado-fila ${ESCUDO.clase || ''}">${esc(ESCUDO.estado)}</span>
+      <button class="btn-gris" onclick="quitarEscudo()" ${SUBIENDO ? 'disabled' : ''}>✕</button>
+    </div>` : '';
+  const nF = FOTOS.filter(f => f.clase !== 'ok').length;
+  const hayEsc = !!(ESCUDO && ESCUDO.clase !== 'ok' && !esTipoEscudo);
   const btn = document.getElementById('cSubir');
-  btn.disabled = SUBIENDO || pendientes === 0;
-  btn.textContent = pendientes ? `Subir ${pendientes} camiseta${pendientes > 1 ? 's' : ''}` : 'Subir camisetas';
+  btn.disabled = SUBIENDO || (nF === 0 && !hayEsc);
+  const palabra = esTipoEscudo ? 'escudo' : `camiseta${nF > 1 ? 's' : ''}`;
+  btn.textContent = (nF || hayEsc)
+    ? 'Subir ' + [nF ? `${nF} ${palabra}` : '', hayEsc ? 'escudo' : ''].filter(Boolean).join(' + ')
+    : 'Subir camisetas';
+}
+
+function elegirEscudo(archivos) {
+  const file = archivos && archivos[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  if (ESCUDO) URL.revokeObjectURL(ESCUDO.url);
+  ESCUDO = { file, url: URL.createObjectURL(file), estado: '', clase: '' };
+  document.getElementById('cEscudoInput').value = '';
+  pintarFilas();
+}
+function quitarEscudo() {
+  if (ESCUDO) URL.revokeObjectURL(ESCUDO.url);
+  ESCUDO = null;
+  pintarFilas();
 }
 
 function quitarFoto(i) { URL.revokeObjectURL(FOTOS[i].url); FOTOS.splice(i, 1); pintarFilas(); }
@@ -476,6 +512,7 @@ async function subirTodas() {
   if (meta.tipo === 'escudo' && FOTOS.filter(f => f.clase !== 'ok').length > 1) { alert('Solo se sube un escudo por equipo. Quita las fotos que sobren.'); return; }
   if (meta.tipo === 'retro' && FOTOS.some(f => f.clase !== 'ok' && !f.nombre.trim())) { alert('Ponle nombre a cada camiseta retro (ej: Barcelona 08-09 local).'); return; }
 
+  if (!FOTOS.some(f => f.clase !== 'ok') && !(ESCUDO && meta.tipo !== 'escudo')) { alert('Añade al menos una foto.'); return; }
   SUBIENDO = true; pintarFilas();
   const global = document.getElementById('cEstadoGlobal');
   let ok = 0, fallos = 0;
@@ -486,8 +523,15 @@ async function subirTodas() {
     catch (e) { f.estado = e.message; f.clase = 'err'; fallos++; }
     pintarFilas();
   }
+  if (ESCUDO && meta.tipo !== 'escudo' && ESCUDO.clase !== 'ok') {
+    ESCUDO.estado = 'Subiendo…'; ESCUDO.clase = ''; pintarFilas();
+    try { await subirUna({ file: ESCUDO.file, variante: '', nombre: '' }, { ...meta, tipo: 'escudo' }); ESCUDO.estado = '✔ Subido'; ESCUDO.clase = 'ok'; ok++; }
+    catch (e) { ESCUDO.estado = e.message; ESCUDO.clase = 'err'; fallos++; }
+    pintarFilas();
+  }
   try { await apiAdmin('/api/admin/camisetas/confirmar', { method: 'POST', body: '{}' }); } catch (_) {}
   SUBIENDO = false;
+  if (ESCUDO && ESCUDO.clase === 'ok') { URL.revokeObjectURL(ESCUDO.url); ESCUDO = null; }
   global.textContent = fallos ? `${ok} subidas, ${fallos} con error (reintenta con el botón).` : `✔ ${ok} subida${ok > 1 ? 's' : ''}. Ya aparecen en la tienda.`;
   FOTOS = FOTOS.filter(f => f.clase !== 'ok');
   pintarFilas();
