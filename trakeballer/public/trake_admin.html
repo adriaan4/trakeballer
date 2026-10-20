@@ -579,6 +579,12 @@ async function hacerEscudo(id) {
   try {
     await apiAdmin('/api/admin/camisetas/tipo', { method: 'POST', body: JSON.stringify({ id, tipo: 'escudo' }) });
     await cargarSubidas();
+    const c = SUBIDAS.find(x => x.id === id);
+    if (c && c.tipo === 'escudo') {
+      alert('✔ Hecho: esa foto ya está guardada como ESCUDO.\n\nSi en la tienda sigue saliendo como camiseta, la tienda tiene un app.js viejo: sube el nuevo, espera al deploy y recarga con Ctrl+F5.');
+    } else {
+      alert('⚠️ Cloudinary NO ha guardado el cambio: la foto sigue como camiseta normal.\n\nSi ves este aviso, el server.js de Render es el viejo o hay un fallo con Cloudinary. Sube el server.js nuevo y mira los logs de Render.');
+    }
   } catch (e) { alert(e.message); }
 }
 

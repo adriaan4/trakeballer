@@ -1460,6 +1460,9 @@ app.post('/api/admin/camisetas/tipo', async (req, res) => {
     );
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) throw new Error(data?.error?.message || `Cloudinary respondió ${resp.status}`);
+    if (Array.isArray(data.public_ids) && !data.public_ids.includes(id)) {
+      throw new Error('Cloudinary no encontró esa foto, así que no se cambió nada.');
+    }
     cacheCamisetasAdmin = { t: 0, datos: null };
     res.json({ ok: true });
   } catch (error) {
