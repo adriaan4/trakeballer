@@ -1239,11 +1239,21 @@ function itemEscudo(img, nombre, sub, alt) {
   return `<button type="button" class="escudo-item"><span class="escudo-item__img">${img}</span><strong>${nombre}</strong><small>${sub}</small></button>`;
 }
 
+// Escudo "vacío" (para equipos a los que todavía no se les ha subido el escudo).
+function svgEscudoVacio(t) {
+  const ini = String(t.nombre || '?').replace(/[^A-Za-zÀ-ÿ0-9 ]/g, '').split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
+  return `<svg viewBox="0 0 100 120" role="img" aria-label="Escudo de ${t.nombre}" style="width:100%;height:100%;max-width:100%;max-height:100%">
+    <path d="M50 4 L92 18 V58 C92 86 72 106 50 116 C28 106 8 86 8 58 V18 Z" fill="#1f5c3a" stroke="#d9d9d9" stroke-width="4"/>
+    <text x="50" y="72" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#ffffff">${ini}</text>
+  </svg>`;
+}
+
 function gridEscudos(body, equipos, categoria) {
   body.innerHTML = '<div class="vista__grid">' + equipos.map(t => {
-    const s = escudoSrc(t), f = t.imgLocal || t.imgVisitante || (t.extras && t.extras[0] && t.extras[0].img) || ((RETRO_PRODUCTOS[t.id] || [])[0] || {}).img, n = camisetasDe(t).length;
-    const img = s ? `<img src="${s}" alt="Escudo de ${t.nombre}" loading="lazy">`
-      : (f ? `<img class="es-camiseta" src="${f}" alt="${t.nombre}" loading="lazy">` : svgCamiseta(t.c1 || '#1f5c3a', t.c2 || '#fff', 'mini-camiseta'));
+    // Aquí solo van ESCUDOS. Las camisetas se ven al pinchar en el equipo.
+    // Si el equipo aún no tiene escudo, se muestra un escudo vacío con sus iniciales.
+    const s = escudoSrc(t), n = camisetasDe(t).length;
+    const img = s ? `<img src="${s}" alt="Escudo de ${t.nombre}" loading="lazy">` : svgEscudoVacio(t);
     return itemEscudo(img, t.nombre, n ? `${n} camiseta${n > 1 ? 's' : ''}` : 'Próximamente');
   }).join('') + '</div>';
   body.querySelectorAll('.escudo-item').forEach((b, i) => b.addEventListener('click', () => abrirCamisetasEquipo(equipos[i], categoria)));
@@ -1333,7 +1343,7 @@ function aplicarCamisetasAdmin(camisetas) {
     if (!equipo) return;
     ADMIN_CAMISETAS_APLICADAS.add(c.id);
 
-    if (c.tipo === 'escudo') { ESCUDOS[equipo.id] = c.img; return; } // el último escudo subido manda
+    if (c.tipo === 'escudo') { ESCUDOS[equipo.id] = c.thumb || c.img; return; } // va a la lista de escudos (versión ligera); el último subido manda
     if (c.tipo === 'retro') {
       (RETRO_PRODUCTOS[equipo.id] = RETRO_PRODUCTOS[equipo.id] || []).push({
         nombre: c.nombre || (equipo.nombre + ' retro'), img: c.img
