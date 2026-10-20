@@ -27,6 +27,39 @@
   .filtros { margin-bottom:16px; }
   .filtros button { background:#222; color:#ccc; border:1px solid #444; margin-right:8px; padding:6px 12px; }
   .filtros button.activo { background:#4ade80; color:#111; border-color:#4ade80; }
+  .tabs { display:flex; gap:8px; margin-bottom:18px; border-bottom:1px solid #333; }
+  .tabs button { background:transparent; color:#aaa; border-radius:8px 8px 0 0; padding:10px 18px; font-size:0.95rem; }
+  .tabs button.activo { background:#4ade80; color:#111; }
+  .caja { background:#1c1c1c; border:1px solid #333; border-radius:10px; padding:14px 16px; margin-bottom:18px; }
+  .caja h2 { margin:0 0 12px; font-size:1.05rem; color:#4ade80; }
+  .campo { margin-bottom:12px; }
+  .campo > label { display:block; font-size:0.85rem; color:#aaa; margin-bottom:4px; }
+  select { padding:8px; width:100%; box-sizing:border-box; border-radius:6px; border:1px solid #444; background:#222; color:#eee; }
+  .opciones { display:flex; gap:10px; flex-wrap:wrap; }
+  .opcion { flex:1; min-width:150px; border:1px solid #444; border-radius:8px; padding:10px; cursor:pointer; background:#222; font-size:0.9rem; }
+  .opcion input { width:auto; margin:0 6px 0 0; }
+  .opcion.sel { border-color:#4ade80; background:#173324; }
+  .opcion small { display:block; color:#4ade80; margin-top:2px; }
+  .fila-sub { display:flex; gap:10px; align-items:center; background:#222; border:1px solid #333; border-radius:8px; padding:8px; margin-bottom:8px; flex-wrap:wrap; }
+  .fila-sub img { width:64px; height:64px; object-fit:contain; background:#111; border-radius:6px; }
+  .fila-sub .datos { flex:1; min-width:180px; display:flex; gap:8px; flex-wrap:wrap; }
+  .fila-sub .datos input { margin:0; flex:2; min-width:150px; }
+  .fila-sub .datos select { flex:1; min-width:110px; }
+  .fila-sub .estado-fila { font-size:0.8rem; min-width:80px; color:#aaa; }
+  .fila-sub .estado-fila.ok { color:#4ade80; }
+  .fila-sub .estado-fila.err { color:#f87171; }
+  .btn-verde { background:#4ade80; color:#111; }
+  .btn-verde:disabled { opacity:0.5; cursor:not-allowed; }
+  .btn-rojo { background:#3b1d1d; color:#fecaca; border:1px solid #f87171; }
+  .btn-gris { background:#333; color:#eee; }
+  .grid-camis { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:12px; }
+  .camis { background:#222; border:1px solid #333; border-radius:10px; padding:8px; font-size:0.82rem; }
+  .camis img { width:100%; height:150px; object-fit:contain; background:#111; border-radius:6px; }
+  .camis strong { display:block; margin-top:6px; color:#fff; }
+  .camis .etq { color:#aaa; }
+  .camis .etq b { color:#facc15; }
+  .camis button { width:100%; margin-top:6px; padding:5px; }
+  #avisoCld { display:none; background:#3b1d1d; border:1px solid #f87171; color:#fecaca; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:0.88rem; }
 </style>
 </head>
 <body>
@@ -45,6 +78,12 @@
 </div>
 
 <div id="panel" style="display:none;">
+  <div class="tabs">
+    <button id="tabBtnPedidos" class="activo" onclick="verTab('pedidos')">📦 Pedidos</button>
+    <button id="tabBtnCamisetas" onclick="verTab('camisetas')">👕 Subir camisetas</button>
+  </div>
+
+  <div id="tabPedidos">
   <h1>Pedidos recibidos</h1>
   <div id="avisoDisco" style="display:none;background:#3b1d1d;border:1px solid #f87171;color:#fecaca;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:0.88rem;">
     ⚠️ El servidor no tiene un disco persistente: estos pedidos se borrarán la próxima vez que se reinicie o redesplegue la web. Añade un Disk en Render (Mount Path <code>/var/data</code>).
@@ -54,7 +93,58 @@
     <button id="fTodos" onclick="setFiltro('todos')">Todos</button>
   </div>
   <div id="lista"></div>
+  </div>
+
+  <div id="tabCamisetas" style="display:none;">
+    <h1>Subir camisetas</h1>
+    <div id="avisoCld"></div>
+
+    <div class="caja">
+      <h2>1. ¿Dónde va?</h2>
+      <div class="campo">
+        <label>Sección</label>
+        <select id="cSeccion" onchange="cambiarSeccion()">
+          <option value="mundial">🌍 Mundiales (selecciones)</option>
+          <option value="liga">🏆 Ligas (equipos)</option>
+        </select>
+      </div>
+      <div class="campo" id="cLigaWrap" style="display:none;">
+        <label>Liga</label>
+        <select id="cLiga" onchange="cargarEquipos()"></select>
+      </div>
+      <div class="campo">
+        <label id="cEquipoLabel">Selección</label>
+        <select id="cEquipo" onchange="cambiarEquipo()"></select>
+        <input id="cEquipoNuevo" type="text" maxlength="60" placeholder="Nombre del equipo / selección nueva" style="display:none;margin-top:8px;margin-bottom:0;">
+      </div>
+    </div>
+
+    <div class="caja">
+      <h2>2. ¿Normal o retro?</h2>
+      <div class="opciones">
+        <label class="opcion sel" id="opNormal"><input type="radio" name="cTipo" value="normal" checked onchange="cambiarTipo()"> Normal <small id="precioNormal"></small></label>
+        <label class="opcion" id="opRetro"><input type="radio" name="cTipo" value="retro" onchange="cambiarTipo()"> Retro <small id="precioRetro"></small></label>
+      </div>
+      <p style="font-size:0.8rem;color:#888;margin:8px 0 0;">El precio sale solo del tipo, igual que en el resto de camisetas de la web.</p>
+    </div>
+
+    <div class="caja">
+      <h2>3. Fotos</h2>
+      <input id="cFotos" type="file" accept="image/*" multiple onchange="añadirFotos(this.files)">
+      <div id="cFilas"></div>
+      <button id="cSubir" class="btn-verde" style="margin-top:8px;" onclick="subirTodas()" disabled>Subir camisetas</button>
+      <span id="cEstadoGlobal" style="font-size:0.85rem;margin-left:10px;color:#aaa;"></span>
+    </div>
+
+    <div class="caja">
+      <h2>Camisetas subidas <span id="cContador" style="color:#888;font-weight:normal;font-size:0.85rem;"></span></h2>
+      <div class="campo"><select id="cFiltro" onchange="pintarSubidas()"></select></div>
+      <div id="cLista" class="grid-camis"></div>
+    </div>
+  </div>
 </div>
+
+<script id="catalogoBase" type="application/json">{"mundial":[{"id":"mundial-alemania","nombre":"Alemania"},{"id":"mundial-arabia-saudi","nombre":"Arabia Saudí"},{"id":"mundial-argelia","nombre":"Argelia"},{"id":"mundial-argentina","nombre":"Argentina"},{"id":"mundial-austria","nombre":"Austria"},{"id":"mundial-belgica","nombre":"Bélgica"},{"id":"mundial-brasil","nombre":"Brasil"},{"id":"mundial-cabo-verde","nombre":"Cabo Verde"},{"id":"mundial-canada","nombre":"Canadá"},{"id":"mundial-chequia","nombre":"Chequia"},{"id":"mundial-chile","nombre":"Chile"},{"id":"mundial-colombia","nombre":"Colombia"},{"id":"mundial-corea-del-sur","nombre":"Corea del Sur"},{"id":"mundial-costa-rica","nombre":"Costa Rica"},{"id":"mundial-croacia","nombre":"Croacia"},{"id":"mundial-curazao","nombre":"Curazao"},{"id":"mundial-egipto","nombre":"Egipto"},{"id":"mundial-escocia","nombre":"Escocia"},{"id":"mundial-espana","nombre":"España"},{"id":"mundial-estados-unidos","nombre":"Estados Unidos"},{"id":"mundial-francia","nombre":"Francia"},{"id":"mundial-gales","nombre":"Gales"},{"id":"mundial-ghana","nombre":"Ghana"},{"id":"mundial-hungria","nombre":"Hungría"},{"id":"mundial-inglaterra","nombre":"Inglaterra"},{"id":"mundial-islandia","nombre":"Islandia"},{"id":"mundial-italia","nombre":"Italia"},{"id":"mundial-jamaica","nombre":"Jamaica"},{"id":"mundial-japon","nombre":"Japón"},{"id":"mundial-jordania","nombre":"Jordania"},{"id":"mundial-mali","nombre":"Malí"},{"id":"mundial-marruecos","nombre":"Marruecos"},{"id":"mundial-mexico","nombre":"México"},{"id":"mundial-noruega","nombre":"Noruega"},{"id":"mundial-paises-bajos","nombre":"Países Bajos"},{"id":"mundial-paraguay","nombre":"Paraguay"},{"id":"mundial-peru","nombre":"Perú"},{"id":"mundial-portugal","nombre":"Portugal"},{"id":"mundial-qatar","nombre":"Qatar"},{"id":"mundial-senegal","nombre":"Senegal"},{"id":"mundial-sudafrica","nombre":"Sudáfrica"},{"id":"mundial-suecia","nombre":"Suecia"},{"id":"mundial-suiza","nombre":"Suiza"},{"id":"mundial-tunez","nombre":"Túnez"},{"id":"mundial-turquia","nombre":"Turquía"},{"id":"mundial-ucrania","nombre":"Ucrania"},{"id":"mundial-uruguay","nombre":"Uruguay"},{"id":"mundial-venezuela","nombre":"Venezuela"}],"ligas":[{"id":"premier-league","nombre":"Premier League","equipos":[{"id":"pl-manutd","nombre":"Manchester United"},{"id":"pl-mancity","nombre":"Manchester City"},{"id":"pl-liverpool","nombre":"Liverpool"},{"id":"pl-chelsea","nombre":"Chelsea"},{"id":"pl-arsenal","nombre":"Arsenal"},{"id":"pl-tottenham","nombre":"Tottenham Hotspur"},{"id":"pl-newcastle","nombre":"Newcastle United"},{"id":"pl-astonvilla","nombre":"Aston Villa"}]},{"id":"laliga","nombre":"Spanish La Liga","equipos":[{"id":"ll-realmadrid","nombre":"Real Madrid"},{"id":"ll-barcelona","nombre":"FC Barcelona"},{"id":"ll-atletico","nombre":"Atlético de Madrid"},{"id":"ll-sevilla","nombre":"Sevilla FC"},{"id":"ll-espanyol","nombre":"RCD Espanyol"},{"id":"ll-realsociedad","nombre":"Real Sociedad"},{"id":"ll-betis","nombre":"Real Betis"},{"id":"ll-athletic","nombre":"Athletic Club"},{"id":"ll-valencia","nombre":"Valencia CF"},{"id":"ll-alaves","nombre":"Deportivo Alavés"},{"id":"ll-celta","nombre":"RC Celta de Vigo"},{"id":"ll-deportivo","nombre":"Deportivo de La Coruña"},{"id":"ll-getafe","nombre":"Getafe CF"},{"id":"ll-levante","nombre":"Levante UD"},{"id":"ll-malaga","nombre":"Málaga CF"},{"id":"ll-osasuna","nombre":"CA Osasuna"},{"id":"ll-villarreal","nombre":"Villarreal CF"},{"id":"ll-elche","nombre":"Elche CF"}]},{"id":"serie-a","nombre":"Serie A","equipos":[{"id":"sa-juventus","nombre":"Juventus"},{"id":"sa-milan","nombre":"AC Milan"},{"id":"sa-inter","nombre":"Inter de Milán"},{"id":"sa-napoli","nombre":"Napoli"},{"id":"sa-roma","nombre":"AS Roma"},{"id":"sa-lazio","nombre":"Lazio"},{"id":"sa-fiorentina","nombre":"Fiorentina"},{"id":"sa-torino","nombre":"Torino FC"},{"id":"sa-cagliari","nombre":"Cagliari Calcio"},{"id":"sa-bologna","nombre":"Bologna FC"},{"id":"sa-atalanta","nombre":"Atalanta"}]},{"id":"bundesliga","nombre":"Bundesliga","equipos":[{"id":"bl-bayern","nombre":"Bayern de Múnich"},{"id":"bl-dortmund","nombre":"Borussia Dortmund"},{"id":"bl-leipzig","nombre":"RB Leipzig"},{"id":"bl-leverkusen","nombre":"Bayer Leverkusen"},{"id":"bl-frankfurt","nombre":"Eintracht Frankfurt"},{"id":"bl-gladbach","nombre":"Borussia Mönchengladbach"},{"id":"bl-stuttgart","nombre":"VfB Stuttgart"},{"id":"bl-koln","nombre":"1. FC Köln"}]},{"id":"ligue-1","nombre":"Ligue 1","equipos":[{"id":"l1-psg","nombre":"Paris Saint-Germain"},{"id":"l1-marsella","nombre":"Olympique de Marsella"},{"id":"l1-lyon","nombre":"Olympique de Lyon"},{"id":"l1-monaco","nombre":"AS Mónaco"},{"id":"l1-lille","nombre":"LOSC Lille"},{"id":"l1-nice","nombre":"OGC Nice"},{"id":"l1-rennes","nombre":"Stade Rennais"},{"id":"l1-lens","nombre":"RC Lens"}]},{"id":"brasileirao","nombre":"Campeonato Brasileiro Série A","equipos":[{"id":"br-flamengo","nombre":"Flamengo"},{"id":"br-palmeiras","nombre":"Palmeiras"},{"id":"br-corinthians","nombre":"Corinthians"},{"id":"br-saopaulo","nombre":"São Paulo"},{"id":"br-santos","nombre":"Santos"},{"id":"br-gremio","nombre":"Grêmio"},{"id":"br-internacional","nombre":"Internacional"},{"id":"br-fluminense","nombre":"Fluminense"},{"id":"br-cruzeiro","nombre":"Cruzeiro"},{"id":"br-botafogo","nombre":"Botafogo"}]},{"id":"efl-championship","nombre":"EFL Championship","equipos":[{"id":"ch-sunderland","nombre":"Sunderland"},{"id":"ch-portsmouth","nombre":"Portsmouth"}]},{"id":"scottish-premiership","nombre":"Scottish Premiership","equipos":[{"id":"sco-celtic","nombre":"Celtic FC"},{"id":"sco-rangers","nombre":"Rangers FC"},{"id":"sco-hearts","nombre":"Heart of Midlothian"},{"id":"sco-aberdeen","nombre":"Aberdeen FC"}]},{"id":"laliga2","nombre":"La Liga 2","equipos":[{"id":"l2-racing","nombre":"Racing de Santander"},{"id":"l2-zaragoza","nombre":"Real Zaragoza"},{"id":"l2-sporting","nombre":"Sporting de Gijón"},{"id":"l2-eibar","nombre":"SD Eibar"},{"id":"l2-albacete","nombre":"Albacete Balompié"},{"id":"l2-tenerife","nombre":"CD Tenerife"},{"id":"l2-granada","nombre":"Granada CF"},{"id":"l2-valladolid","nombre":"Real Valladolid"}]},{"id":"mls","nombre":"MLS","equipos":[{"id":"mls-lagalaxy","nombre":"LA Galaxy"},{"id":"mls-lafc","nombre":"LAFC"},{"id":"mls-nycfc","nombre":"New York City FC"},{"id":"mls-montreal","nombre":"CF Montréal"},{"id":"mls-toronto","nombre":"Toronto FC"}]},{"id":"otras-sudamerica","nombre":"Otras Ligas de Sudamérica","equipos":[{"id":"uy-penarol","nombre":"Club Atlético Peñarol"},{"id":"py-olimpia","nombre":"Club Olimpia"},{"id":"pe-sportingcristal","nombre":"Sporting Cristal"}]},{"id":"liga-mx","nombre":"Liga MX","equipos":[{"id":"mx-america","nombre":"Club América"},{"id":"mx-tijuana","nombre":"Club Tijuana"}]},{"id":"argentina-lpf","nombre":"Argentina LPF League","equipos":[{"id":"ar-boca","nombre":"Boca Juniors"},{"id":"ar-river","nombre":"River Plate"}]},{"id":"liga-portugal","nombre":"Liga Portugal","equipos":[{"id":"pt-benfica","nombre":"Benfica"},{"id":"pt-porto","nombre":"FC Porto"},{"id":"pt-sporting","nombre":"Sporting CP"},{"id":"pt-braga","nombre":"SC Braga"}]},{"id":"eredivisie","nombre":"Dutch Eredivisie","equipos":[{"id":"nl-ajax","nombre":"Ajax"},{"id":"nl-psv","nombre":"PSV Eindhoven"},{"id":"nl-feyenoord","nombre":"Feyenoord"}]},{"id":"saudi-league","nombre":"Saudi Arabian League","equipos":[{"id":"sau-alhilal","nombre":"Al Hilal"},{"id":"sau-alnassr","nombre":"Al Nassr"},{"id":"sau-alittihad","nombre":"Al Ittihad"},{"id":"sau-alshabab","nombre":"Al Shabab"}]},{"id":"serie-b","nombre":"Serie B","equipos":[{"id":"sb-parma","nombre":"Parma"},{"id":"sb-palermo","nombre":"Palermo"},{"id":"sb-sampdoria","nombre":"Sampdoria"},{"id":"sb-venezia","nombre":"Venezia"},{"id":"sb-cremonese","nombre":"Cremonese"}]},{"id":"2-bundesliga","nombre":"2. Bundesliga","equipos":[{"id":"b2-hamburgo","nombre":"Hamburger SV"},{"id":"b2-dusseldorf","nombre":"Fortuna Düsseldorf"},{"id":"b2-nuremberg","nombre":"FC Nürnberg"},{"id":"b2-hertha","nombre":"Hertha BSC"},{"id":"b2-stpauli","nombre":"FC St. Pauli"}]},{"id":"mas","nombre":"Más","equipos":[{"id":"mas-olympiacos","nombre":"Olympiacos"},{"id":"mas-besiktas","nombre":"Beşiktaş"},{"id":"mas-galatasaray","nombre":"Galatasaray"}]}]}</script>
 
 <script>
 let CLAVE = '';
@@ -164,6 +254,274 @@ function pintarPedidos() {
       <p class="total">TOTAL: ${Number(p.total || 0).toFixed(2)}€</p>
     </div>
   `).join('');
+}
+
+/* =========================================================
+   PESTAÑA: SUBIR CAMISETAS (Cloudinary)
+========================================================= */
+const CATALOGO = JSON.parse(document.getElementById('catalogoBase').textContent);
+let SUBIDAS = [];
+let PRECIOS = { normal: 22.99, retro: 27.99 };
+let FOTOS = []; // {file, url, estado}
+let SUBIENDO = false;
+let CAMIS_CARGADAS = false;
+
+const fmtPrecio = n => Number(n).toFixed(2).replace('.', ',') + ' €';
+const normTxt = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const slugEquipo = t => 'adm-' + normTxt(t).replace(/ /g, '-');
+
+function verTab(t) {
+  document.getElementById('tabPedidos').style.display = t === 'pedidos' ? 'block' : 'none';
+  document.getElementById('tabCamisetas').style.display = t === 'camisetas' ? 'block' : 'none';
+  document.getElementById('tabBtnPedidos').classList.toggle('activo', t === 'pedidos');
+  document.getElementById('tabBtnCamisetas').classList.toggle('activo', t === 'camisetas');
+  if (t === 'camisetas' && !CAMIS_CARGADAS) iniciarCamisetas();
+}
+
+async function apiAdmin(ruta, opciones = {}) {
+  const resp = await fetch(ruta, {
+    ...opciones,
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': CLAVE, ...(opciones.headers || {}) }
+  });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok || data.ok === false) throw new Error(data.error || ('Error ' + resp.status));
+  return data;
+}
+
+async function iniciarCamisetas() {
+  CAMIS_CARGADAS = true;
+  const ligaSel = document.getElementById('cLiga');
+  ligaSel.innerHTML = CATALOGO.ligas.map(l => `<option value="${esc(l.id)}">${esc(l.nombre)}</option>`).join('');
+  cambiarSeccion();
+  document.getElementById('precioNormal').textContent = fmtPrecio(PRECIOS.normal);
+  document.getElementById('precioRetro').textContent = fmtPrecio(PRECIOS.retro);
+  await cargarSubidas();
+}
+
+async function cargarSubidas() {
+  const aviso = document.getElementById('avisoCld');
+  try {
+    const data = await apiAdmin('/api/admin/camisetas');
+    SUBIDAS = data.camisetas || [];
+    if (data.precios) PRECIOS = data.precios;
+    document.getElementById('precioNormal').textContent = fmtPrecio(PRECIOS.normal);
+    document.getElementById('precioRetro').textContent = fmtPrecio(PRECIOS.retro);
+    aviso.style.display = 'none';
+  } catch (e) {
+    aviso.textContent = '⚠️ ' + e.message;
+    aviso.style.display = 'block';
+    SUBIDAS = [];
+  }
+  cargarEquipos(); // por si hay equipos creados desde el admin
+  pintarSubidas();
+}
+
+function cambiarSeccion() {
+  const esLiga = document.getElementById('cSeccion').value === 'liga';
+  document.getElementById('cLigaWrap').style.display = esLiga ? 'block' : 'none';
+  document.getElementById('cEquipoLabel').textContent = esLiga ? 'Equipo' : 'Selección';
+  cargarEquipos();
+}
+
+function equiposDisponibles() {
+  const esLiga = document.getElementById('cSeccion').value === 'liga';
+  const ligaId = document.getElementById('cLiga').value;
+  const base = esLiga
+    ? ((CATALOGO.ligas.find(l => l.id === ligaId) || {}).equipos || [])
+    : CATALOGO.mundial;
+  const lista = base.map(t => ({ id: t.id, nombre: t.nombre }));
+  // equipos creados antes desde el admin (que no estén ya en la lista)
+  SUBIDAS.filter(c => c.categoria === (esLiga ? 'liga' : 'mundial') && (!esLiga || c.ligaId === ligaId)).forEach(c => {
+    if (!lista.some(t => normTxt(t.nombre) === normTxt(c.equipoNombre))) lista.push({ id: c.equipoId || slugEquipo(c.equipoNombre), nombre: c.equipoNombre });
+  });
+  return lista;
+}
+
+function cargarEquipos() {
+  const sel = document.getElementById('cEquipo');
+  const previo = sel.value;
+  const lista = equiposDisponibles();
+  sel.innerHTML = lista.map(t => `<option value="${esc(t.id)}" data-nombre="${esc(t.nombre)}">${esc(t.nombre)}</option>`).join('')
+    + '<option value="__nuevo__">➕ Equipo nuevo (no está en la lista)…</option>';
+  if (previo && [...sel.options].some(o => o.value === previo)) sel.value = previo;
+  cambiarEquipo();
+  rellenarFiltro();
+}
+
+function cambiarEquipo() {
+  const nuevo = document.getElementById('cEquipo').value === '__nuevo__';
+  document.getElementById('cEquipoNuevo').style.display = nuevo ? 'block' : 'none';
+  prerrellenarNombres();
+}
+
+function equipoElegido() {
+  const sel = document.getElementById('cEquipo');
+  if (sel.value === '__nuevo__') {
+    const nombre = document.getElementById('cEquipoNuevo').value.trim();
+    return { id: '', nombre };
+  }
+  const op = sel.options[sel.selectedIndex];
+  return op ? { id: sel.value, nombre: op.dataset.nombre } : { id: '', nombre: '' };
+}
+
+function tipoElegido() {
+  return document.querySelector('input[name="cTipo"]:checked').value;
+}
+
+function cambiarTipo() {
+  const t = tipoElegido();
+  document.getElementById('opNormal').classList.toggle('sel', t === 'normal');
+  document.getElementById('opRetro').classList.toggle('sel', t === 'retro');
+  pintarFilas();
+}
+
+document.addEventListener('input', e => { if (e.target && e.target.id === 'cEquipoNuevo') prerrellenarNombres(); });
+
+function etiquetaVariante(v) { return { local: 'Local', visitante: 'Visitante' }[v] || 'Camiseta'; }
+
+function nombreSugerido(f) {
+  const eq = equipoElegido().nombre || 'Equipo';
+  return tipoElegido() === 'retro' ? eq + ' retro' : eq + ' · ' + etiquetaVariante(f.variante);
+}
+
+function prerrellenarNombres() {
+  FOTOS.forEach(f => { if (!f.nombreEditado) f.nombre = nombreSugerido(f); });
+  pintarFilas();
+}
+
+function añadirFotos(archivos) {
+  [...archivos].forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+    const f = { file, url: URL.createObjectURL(file), estado: '', variante: FOTOS.length === 0 ? 'local' : (FOTOS.length === 1 ? 'visitante' : 'otra'), nombre: '', nombreEditado: false };
+    f.nombre = nombreSugerido(f);
+    FOTOS.push(f);
+  });
+  document.getElementById('cFotos').value = '';
+  pintarFilas();
+}
+
+function pintarFilas() {
+  const retro = tipoElegido() === 'retro';
+  document.getElementById('cFilas').innerHTML = FOTOS.map((f, i) => `
+    <div class="fila-sub">
+      <img src="${f.url}" alt="">
+      <div class="datos">
+        <input type="text" maxlength="80" value="${esc(f.nombre)}" placeholder="${retro ? 'Ej: Barcelona 08-09 local' : 'Nombre (opcional)'}" oninput="FOTOS[${i}].nombre=this.value;FOTOS[${i}].nombreEditado=true">
+        ${retro ? '' : `<select onchange="FOTOS[${i}].variante=this.value;if(!FOTOS[${i}].nombreEditado){FOTOS[${i}].nombre=nombreSugerido(FOTOS[${i}]);pintarFilas();}">
+          ${['local','visitante','otra'].map(v => `<option value="${v}" ${f.variante === v ? 'selected' : ''}>${v === 'otra' ? 'Otra (3ª, especial…)' : etiquetaVariante(v)}</option>`).join('')}
+        </select>`}
+      </div>
+      <span class="estado-fila ${f.clase || ''}">${esc(f.estado)}</span>
+      <button class="btn-gris" onclick="quitarFoto(${i})" ${SUBIENDO ? 'disabled' : ''}>✕</button>
+    </div>`).join('');
+  const pendientes = FOTOS.filter(f => f.clase !== 'ok').length;
+  const btn = document.getElementById('cSubir');
+  btn.disabled = SUBIENDO || pendientes === 0;
+  btn.textContent = pendientes ? `Subir ${pendientes} camiseta${pendientes > 1 ? 's' : ''}` : 'Subir camisetas';
+}
+
+function quitarFoto(i) { URL.revokeObjectURL(FOTOS[i].url); FOTOS.splice(i, 1); pintarFilas(); }
+
+// Reduce fotos enormes del móvil antes de subirlas (mantiene PNG si era PNG).
+async function prepararImagen(file) {
+  const MAX = 1600;
+  try {
+    const bmp = await createImageBitmap(file);
+    const escala = Math.min(1, MAX / Math.max(bmp.width, bmp.height));
+    if (escala === 1 && file.size < 2.5 * 1024 * 1024) return file;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bmp.width * escala);
+    canvas.height = Math.round(bmp.height * escala);
+    canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    const png = file.type === 'image/png';
+    const blob = await new Promise(r => canvas.toBlob(r, png ? 'image/png' : 'image/jpeg', 0.9));
+    return blob && blob.size < file.size ? blob : file;
+  } catch (_) {
+    return file;
+  }
+}
+
+async function subirUna(f, meta) {
+  const firma = await apiAdmin('/api/admin/camisetas/firma', { method: 'POST', body: JSON.stringify({ ...meta, variante: f.variante, nombre: f.nombre.trim() }) });
+  const blob = await prepararImagen(f.file);
+  if (blob.size > 10 * 1024 * 1024) throw new Error('Pesa más de 10 MB');
+  const fd = new FormData();
+  fd.append('file', blob, f.file.name);
+  fd.append('api_key', firma.apiKey);
+  fd.append('timestamp', firma.timestamp);
+  fd.append('signature', firma.signature);
+  fd.append('folder', firma.folder);
+  fd.append('tags', firma.tags);
+  fd.append('context', firma.context);
+  const resp = await fetch(`https://api.cloudinary.com/v1_1/${firma.cloudName}/image/upload`, { method: 'POST', body: fd });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error((data.error && data.error.message) || 'Error al subir a Cloudinary');
+}
+
+async function subirTodas() {
+  const eq = equipoElegido();
+  if (!eq.nombre) { alert('Elige el equipo o escribe el nombre del nuevo.'); return; }
+  const meta = {
+    categoria: document.getElementById('cSeccion').value,
+    ligaId: document.getElementById('cLiga').value,
+    equipoId: eq.id || slugEquipo(eq.nombre),
+    equipoNombre: eq.nombre,
+    tipo: tipoElegido()
+  };
+  if (meta.tipo === 'retro' && FOTOS.some(f => f.clase !== 'ok' && !f.nombre.trim())) { alert('Ponle nombre a cada camiseta retro (ej: Barcelona 08-09 local).'); return; }
+
+  SUBIENDO = true; pintarFilas();
+  const global = document.getElementById('cEstadoGlobal');
+  let ok = 0, fallos = 0;
+  for (const f of FOTOS) {
+    if (f.clase === 'ok') continue;
+    f.estado = 'Subiendo…'; f.clase = ''; pintarFilas();
+    try { await subirUna(f, meta); f.estado = '✔ Subida'; f.clase = 'ok'; ok++; }
+    catch (e) { f.estado = e.message; f.clase = 'err'; fallos++; }
+    pintarFilas();
+  }
+  try { await apiAdmin('/api/admin/camisetas/confirmar', { method: 'POST', body: '{}' }); } catch (_) {}
+  SUBIENDO = false;
+  global.textContent = fallos ? `${ok} subidas, ${fallos} con error (reintenta con el botón).` : `✔ ${ok} subida${ok > 1 ? 's' : ''}. Ya aparecen en la tienda.`;
+  FOTOS = FOTOS.filter(f => f.clase !== 'ok');
+  pintarFilas();
+  await cargarSubidas();
+}
+
+function rellenarFiltro() {
+  const sel = document.getElementById('cFiltro');
+  const previo = sel.value;
+  const opciones = [['todas', 'Todas']];
+  if (SUBIDAS.some(c => c.categoria === 'mundial')) opciones.push(['mundial', '🌍 Mundiales']);
+  CATALOGO.ligas.forEach(l => { if (SUBIDAS.some(c => c.categoria === 'liga' && c.ligaId === l.id)) opciones.push(['liga:' + l.id, '🏆 ' + l.nombre]); });
+  sel.innerHTML = opciones.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join('');
+  if (opciones.some(o => o[0] === previo)) sel.value = previo;
+}
+
+function nombreLiga(id) { return (CATALOGO.ligas.find(l => l.id === id) || {}).nombre || id; }
+
+function pintarSubidas() {
+  rellenarFiltro();
+  const filtro = document.getElementById('cFiltro').value;
+  const lista = SUBIDAS.filter(c => filtro === 'todas' || (filtro === 'mundial' ? c.categoria === 'mundial' : filtro === 'liga:' + c.ligaId));
+  document.getElementById('cContador').textContent = `(${SUBIDAS.length} en total)`;
+  document.getElementById('cLista').innerHTML = lista.length ? lista.slice().reverse().map(c => `
+    <div class="camis">
+      <img src="${esc(c.thumb)}" alt="" loading="lazy">
+      <strong>${esc(c.equipoNombre)}</strong>
+      <div class="etq">${c.categoria === 'mundial' ? '🌍 Mundial' : '🏆 ' + esc(nombreLiga(c.ligaId))}</div>
+      <div class="etq"><b>${c.tipo === 'retro' ? 'Retro · ' + fmtPrecio(PRECIOS.retro) : 'Normal · ' + fmtPrecio(PRECIOS.normal)}</b>${c.variante ? ' · ' + esc(etiquetaVariante(c.variante)) : ''}</div>
+      ${c.nombre ? `<div class="etq">${esc(c.nombre)}</div>` : ''}
+      <button class="btn-rojo" onclick="borrarSubida('${esc(c.id)}')">🗑 Borrar</button>
+    </div>`).join('') : '<p style="color:#888;">Todavía no hay camisetas subidas aquí.</p>';
+}
+
+async function borrarSubida(id) {
+  if (!confirm('¿Borrar esta camiseta de la tienda? No se puede deshacer.')) return;
+  try {
+    await apiAdmin('/api/admin/camisetas/borrar', { method: 'POST', body: JSON.stringify({ id }) });
+    await cargarSubidas();
+  } catch (e) { alert(e.message); }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
