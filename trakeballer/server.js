@@ -1440,6 +1440,34 @@ app.post('/api/admin/camisetas/confirmar', (req, res) => {
   res.json({ ok: true });
 });
 
+// Admin: convertir en ESCUDO una foto que se subió por error como camiseta (sin volver a subirla).
+app.post('/api/admin/camisetas/tipo', async (req, res) => {
+  if (!comprobarAdmin(req, res)) return;
+  const cfg = exigirCloudinary(res);
+  if (!cfg) return;
+
+  const id = String(req.body?.id || '');
+  if (!id.startsWith(CLD_CARPETA + '/') || id.includes('..') || req.body?.tipo !== 'escudo') {
+    return res.status(400).json({ ok: false, error: 'Petición no válida.' });
+  }
+
+  try {
+    const params = { command: 'add', context: 'tipo=escudo', public_ids: id, timestamp: Math.floor(Date.now() / 1000) };
+    const body = new URLSearchParams({ ...params, api_key: cfg.apiKey, signature: firmarCloudinary(params, cfg.apiSecret) });
+    const resp = await fetch(
+      `https://api.cloudinary.com/v1_1/${encodeURIComponent(cfg.cloudName)}/image/context`,
+      { method: 'POST', body, signal: AbortSignal.timeout(15000) }
+    );
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data?.error?.message || `Cloudinary respondió ${resp.status}`);
+    cacheCamisetasAdmin = { t: 0, datos: null };
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('[admin/camisetas/tipo] Error:', error.message);
+    res.status(502).json({ ok: false, error: 'No se pudo cambiar: ' + error.message });
+  }
+});
+
 // Admin: borrar una camiseta subida.
 app.post('/api/admin/camisetas/borrar', async (req, res) => {
   if (!comprobarAdmin(req, res)) return;
