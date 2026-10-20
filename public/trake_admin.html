@@ -120,12 +120,13 @@
     </div>
 
     <div class="caja">
-      <h2>2. ¿Normal o retro?</h2>
+      <h2>2. ¿Normal, retro o escudo?</h2>
       <div class="opciones">
         <label class="opcion sel" id="opNormal"><input type="radio" name="cTipo" value="normal" checked onchange="cambiarTipo()"> Normal <small id="precioNormal"></small></label>
         <label class="opcion" id="opRetro"><input type="radio" name="cTipo" value="retro" onchange="cambiarTipo()"> Retro <small id="precioRetro"></small></label>
+        <label class="opcion" id="opEscudo"><input type="radio" name="cTipo" value="escudo" onchange="cambiarTipo()"> Escudo <small>sin precio · 1 por equipo</small></label>
       </div>
-      <p style="font-size:0.8rem;color:#888;margin:8px 0 0;">El precio sale solo del tipo, igual que en el resto de camisetas de la web.</p>
+      <p style="font-size:0.8rem;color:#888;margin:8px 0 0;">El precio sale solo del tipo, igual que en el resto de camisetas de la web. El escudo es la imagen redonda/cuadrada del equipo en la lista de equipos (si ya tenía, se sustituye por la nueva).</p>
     </div>
 
     <div class="caja">
@@ -372,6 +373,8 @@ function cambiarTipo() {
   const t = tipoElegido();
   document.getElementById('opNormal').classList.toggle('sel', t === 'normal');
   document.getElementById('opRetro').classList.toggle('sel', t === 'retro');
+  document.getElementById('opEscudo').classList.toggle('sel', t === 'escudo');
+  prerrellenarNombres();
   pintarFilas();
 }
 
@@ -380,6 +383,7 @@ document.addEventListener('input', e => { if (e.target && e.target.id === 'cEqui
 function etiquetaVariante(v) { return { local: 'Local', visitante: 'Visitante' }[v] || 'Camiseta'; }
 
 function nombreSugerido(f) {
+  if (tipoElegido() === 'escudo') return '';
   const eq = equipoElegido().nombre || 'Equipo';
   return tipoElegido() === 'retro' ? eq + ' retro' : eq + ' · ' + etiquetaVariante(f.variante);
 }
@@ -402,12 +406,13 @@ function añadirFotos(archivos) {
 
 function pintarFilas() {
   const retro = tipoElegido() === 'retro';
+  const escudo = tipoElegido() === 'escudo';
   document.getElementById('cFilas').innerHTML = FOTOS.map((f, i) => `
     <div class="fila-sub">
       <img src="${f.url}" alt="">
       <div class="datos">
-        <input type="text" maxlength="80" value="${esc(f.nombre)}" placeholder="${retro ? 'Ej: Barcelona 08-09 local' : 'Nombre (opcional)'}" oninput="FOTOS[${i}].nombre=this.value;FOTOS[${i}].nombreEditado=true">
-        ${retro ? '' : `<select onchange="FOTOS[${i}].variante=this.value;if(!FOTOS[${i}].nombreEditado){FOTOS[${i}].nombre=nombreSugerido(FOTOS[${i}]);pintarFilas();}">
+        ${escudo ? '<span style="color:#aaa;font-size:0.85rem;">Escudo de ' + esc(equipoElegido().nombre || '…') + '</span>' : `<input type="text" maxlength="80" value="${esc(f.nombre)}" placeholder="${retro ? 'Ej: Barcelona 08-09 local' : 'Nombre (opcional)'}" oninput="FOTOS[${i}].nombre=this.value;FOTOS[${i}].nombreEditado=true">`}
+        ${(retro || escudo) ? '' : `<select onchange="FOTOS[${i}].variante=this.value;if(!FOTOS[${i}].nombreEditado){FOTOS[${i}].nombre=nombreSugerido(FOTOS[${i}]);pintarFilas();}">
           ${['local','visitante','otra'].map(v => `<option value="${v}" ${f.variante === v ? 'selected' : ''}>${v === 'otra' ? 'Otra (3ª, especial…)' : etiquetaVariante(v)}</option>`).join('')}
         </select>`}
       </div>
@@ -468,6 +473,7 @@ async function subirTodas() {
     equipoNombre: eq.nombre,
     tipo: tipoElegido()
   };
+  if (meta.tipo === 'escudo' && FOTOS.filter(f => f.clase !== 'ok').length > 1) { alert('Solo se sube un escudo por equipo. Quita las fotos que sobren.'); return; }
   if (meta.tipo === 'retro' && FOTOS.some(f => f.clase !== 'ok' && !f.nombre.trim())) { alert('Ponle nombre a cada camiseta retro (ej: Barcelona 08-09 local).'); return; }
 
   SUBIENDO = true; pintarFilas();
@@ -510,7 +516,7 @@ function pintarSubidas() {
       <img src="${esc(c.thumb)}" alt="" loading="lazy">
       <strong>${esc(c.equipoNombre)}</strong>
       <div class="etq">${c.categoria === 'mundial' ? '🌍 Mundial' : '🏆 ' + esc(nombreLiga(c.ligaId))}</div>
-      <div class="etq"><b>${c.tipo === 'retro' ? 'Retro · ' + fmtPrecio(PRECIOS.retro) : 'Normal · ' + fmtPrecio(PRECIOS.normal)}</b>${c.variante ? ' · ' + esc(etiquetaVariante(c.variante)) : ''}</div>
+      <div class="etq"><b>${c.tipo === 'escudo' ? 'Escudo' : c.tipo === 'retro' ? 'Retro · ' + fmtPrecio(PRECIOS.retro) : 'Normal · ' + fmtPrecio(PRECIOS.normal)}</b>${c.variante ? ' · ' + esc(etiquetaVariante(c.variante)) : ''}</div>
       ${c.nombre ? `<div class="etq">${esc(c.nombre)}</div>` : ''}
       <button class="btn-rojo" onclick="borrarSubida('${esc(c.id)}')">🗑 Borrar</button>
     </div>`).join('') : '<p style="color:#888;">Todavía no hay camisetas subidas aquí.</p>';

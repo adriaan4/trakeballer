@@ -1255,7 +1255,7 @@ app.post('/api/pedidos/:id/listo', (req, res) => {
 const CLD_CARPETA = 'trakeballer/camisetas';
 const CLD_TAG = 'trk-camiseta';
 const CLD_CATEGORIAS = ['mundial', 'liga'];
-const CLD_TIPOS = ['normal', 'retro'];
+const CLD_TIPOS = ['normal', 'retro', 'escudo'];
 const CLD_VARIANTES = ['local', 'visitante', 'otra'];
 
 function leerConfigCloudinary() {
@@ -1340,7 +1340,7 @@ async function listarCamisetasCloudinary(cfg, { fresco = false } = {}) {
         ligaId: decodificar(c.liga),
         equipoId: decodificar(c.eqid),
         equipoNombre: decodificar(c.eq),
-        tipo: decodificar(c.tipo) === 'retro' ? 'retro' : 'normal',
+        tipo: ['retro', 'escudo'].includes(decodificar(c.tipo)) ? decodificar(c.tipo) : 'normal',
         variante: decodificar(c.var),
         nombre: decodificar(c.nom),
         img: urlConTransformacion(r.secure_url, 'f_auto,q_auto,w_900'),
@@ -1395,7 +1395,7 @@ app.post('/api/admin/camisetas/firma', (req, res) => {
   const categoria = String(b.categoria || '');
   const tipo = String(b.tipo || '');
   if (!CLD_CATEGORIAS.includes(categoria)) return res.status(400).json({ ok: false, error: 'Elige la sección (Mundial o Liga).' });
-  if (!CLD_TIPOS.includes(tipo)) return res.status(400).json({ ok: false, error: 'Elige si es camiseta normal o retro.' });
+  if (!CLD_TIPOS.includes(tipo)) return res.status(400).json({ ok: false, error: 'Elige si es camiseta normal, retro o escudo.' });
 
   const ligaId = categoria === 'liga' ? String(b.ligaId || '').toLowerCase() : '';
   if (categoria === 'liga' && !/^[a-z0-9-]{1,40}$/.test(ligaId)) {
@@ -1409,7 +1409,7 @@ app.post('/api/admin/camisetas/firma', (req, res) => {
   const variante = tipo === 'normal'
     ? (CLD_VARIANTES.includes(String(b.variante)) ? String(b.variante) : 'otra')
     : '';
-  const nombre = limpiarTextoCloudinary(b.nombre, 80);
+  const nombre = tipo === 'escudo' ? '' : limpiarTextoCloudinary(b.nombre, 80);
 
   const pares = { cat: categoria, liga: ligaId, eqid: equipoId, eq: equipoNombre, tipo, var: variante, nom: nombre };
   const context = Object.entries(pares)

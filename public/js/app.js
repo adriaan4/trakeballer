@@ -1333,6 +1333,7 @@ function aplicarCamisetasAdmin(camisetas) {
     if (!equipo) return;
     ADMIN_CAMISETAS_APLICADAS.add(c.id);
 
+    if (c.tipo === 'escudo') { ESCUDOS[equipo.id] = c.img; return; } // el último escudo subido manda
     if (c.tipo === 'retro') {
       (RETRO_PRODUCTOS[equipo.id] = RETRO_PRODUCTOS[equipo.id] || []).push({
         nombre: c.nombre || (equipo.nombre + ' retro'), img: c.img
