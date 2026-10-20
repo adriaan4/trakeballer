@@ -98,6 +98,9 @@
   <div id="tabCamisetas" style="display:none;">
     <h1>Subir camisetas</h1>
     <div id="avisoCld"></div>
+    <div id="avisoApp" style="display:none;background:#3b2d12;border:1px solid #facc15;color:#fde68a;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:0.88rem;">
+      ⚠️ La tienda todavía tiene el <b>app.js antiguo</b>: por eso los escudos salen como si fueran camisetas. Sube el app.js nuevo (<code>public/js/app.js</code>), espera al deploy de Render y recarga la tienda con Ctrl+F5.
+    </div>
 
     <div class="caja">
       <h2>1. ¿Dónde va?</h2>
@@ -298,6 +301,10 @@ async function apiAdmin(ruta, opciones = {}) {
 
 async function iniciarCamisetas() {
   CAMIS_CARGADAS = true;
+  // Aviso si la web pública aún no tiene el código que sabe pintar escudos.
+  fetch('/js/app.js', { cache: 'no-store' }).then(r => r.text()).then(t => {
+    document.getElementById('avisoApp').style.display = t.includes("c.tipo === 'escudo'") ? 'none' : 'block';
+  }).catch(() => {});
   const ligaSel = document.getElementById('cLiga');
   ligaSel.innerHTML = CATALOGO.ligas.map(l => `<option value="${esc(l.id)}">${esc(l.nombre)}</option>`).join('');
   cambiarSeccion();
@@ -562,8 +569,17 @@ function pintarSubidas() {
       <div class="etq">${c.categoria === 'mundial' ? '🌍 Mundial' : '🏆 ' + esc(nombreLiga(c.ligaId))}</div>
       <div class="etq"><b>${c.tipo === 'escudo' ? 'Escudo' : c.tipo === 'retro' ? 'Retro · ' + fmtPrecio(PRECIOS.retro) : 'Normal · ' + fmtPrecio(PRECIOS.normal)}</b>${c.variante ? ' · ' + esc(etiquetaVariante(c.variante)) : ''}</div>
       ${c.nombre ? `<div class="etq">${esc(c.nombre)}</div>` : ''}
+      ${c.tipo !== 'escudo' ? `<button class="btn-gris" onclick="hacerEscudo('${esc(c.id)}')">🛡️ Esto es el escudo</button>` : ''}
       <button class="btn-rojo" onclick="borrarSubida('${esc(c.id)}')">🗑 Borrar</button>
     </div>`).join('') : '<p style="color:#888;">Todavía no hay camisetas subidas aquí.</p>';
+}
+
+async function hacerEscudo(id) {
+  if (!confirm('¿Esta foto es el ESCUDO del equipo? Dejará de salir como camiseta y saldrá como escudo en la lista de equipos.')) return;
+  try {
+    await apiAdmin('/api/admin/camisetas/tipo', { method: 'POST', body: JSON.stringify({ id, tipo: 'escudo' }) });
+    await cargarSubidas();
+  } catch (e) { alert(e.message); }
 }
 
 async function borrarSubida(id) {
