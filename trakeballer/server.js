@@ -255,8 +255,8 @@ function formatearProductosTexto(pedido) {
 // DESGLOSE DE DESCUENTOS
 // ============================================================
 
-const PRECIO_ACTUAL_BASE = 25;
-const PRECIO_RETRO_BASE = 30;
+const PRECIO_ACTUAL_BASE = 22.99;
+const PRECIO_RETRO_BASE = 27.99;
 
 // Precio de los artículos SIN ningún descuento (usa el precio de cada línea; si una línea
 // no lo trae, como en el amigo invisible, usa el precio base según sea actual o retro).
@@ -1246,6 +1246,230 @@ app.post('/api/pedidos/:id/listo', (req, res) => {
 });
 
 // ============================================================
+// ADMIN: SUBIR CAMISETAS A CLOUDINARY
+// Las fotos Y sus datos (sección, liga, equipo, normal/retro, nombre) se guardan
+// en Cloudinary (tag + contexto), así NO se pierden al redesplegar en Render.
+// Variable necesaria en Render: CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+// ============================================================
+
+const CLD_CARPETA = 'trakeballer/camisetas';
+const CLD_TAG = 'trk-camiseta';
+const CLD_CATEGORIAS = ['mundial', 'liga'];
+const CLD_TIPOS = ['normal', 'retro'];
+const CLD_VARIANTES = ['local', 'visitante', 'otra'];
+
+function leerConfigCloudinary() {
+  const url = String(process.env.CLOUDINARY_URL || '').trim();
+  const m = url.match(/^cloudinary:\/\/([^:@\/]+):([^@\/]+)@([^\/?#]+)/);
+  if (m) return { apiKey: m[1], apiSecret: m[2], cloudName: m[3] };
+  const { CLOUDINARY_API_KEY: apiKey, CLOUDINARY_API_SECRET: apiSecret, CLOUDINARY_CLOUD_NAME: cloudName } = process.env;
+  if (apiKey && apiSecret && cloudName) return { apiKey, apiSecret, cloudName };
+  return null;
+}
+
+function exigirCloudinary(res) {
+  const cfg = leerConfigCloudinary();
+  if (!cfg) {
+    res.status(503).json({
+      ok: false,
+      error: 'Cloudinary no está configurado. En Render añade la variable CLOUDINARY_URL (cloudinary://API_KEY:API_SECRET@CLOUD_NAME) y redespliega.'
+    });
+    return null;
+  }
+  return cfg;
+}
+
+function firmarCloudinary(params, apiSecret) {
+  const base = Object.keys(params)
+    .filter(k => params[k] !== undefined && params[k] !== null && params[k] !== '')
+    .sort()
+    .map(k => `${k}=${params[k]}`)
+    .join('&');
+  return crypto.createHash('sha1').update(base + apiSecret).digest('hex');
+}
+
+function limpiarTextoCloudinary(valor, max = 80) {
+  return String(valor ?? '')
+    .replace(/[\u0000-\u001f|=\\]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max);
+}
+
+function authCloudinary(cfg) {
+  return 'Basic ' + Buffer.from(`${cfg.apiKey}:${cfg.apiSecret}`).toString('base64');
+}
+
+function urlConTransformacion(url, transformacion) {
+  return String(url || '').replace('/image/upload/', `/image/upload/${transformacion}/`);
+}
+
+let cacheCamisetasAdmin = { t: 0, datos: null };
+
+async function listarCamisetasCloudinary(cfg, { fresco = false } = {}) {
+  if (!fresco && cacheCamisetasAdmin.datos && Date.now() - cacheCamisetasAdmin.t < 60 * 1000) {
+    return cacheCamisetasAdmin.datos;
+  }
+
+  const recursos = [];
+  let cursor = '';
+  for (let pagina = 0; pagina < 10; pagina++) {
+    const qs = new URLSearchParams({ context: 'true', max_results: '500' });
+    if (cursor) qs.set('next_cursor', cursor);
+    const resp = await fetch(
+      `https://api.cloudinary.com/v1_1/${encodeURIComponent(cfg.cloudName)}/resources/image/tags/${CLD_TAG}?${qs}`,
+      { headers: { Authorization: authCloudinary(cfg) }, signal: AbortSignal.timeout(15000) }
+    );
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data?.error?.message || `Cloudinary respondió ${resp.status}`);
+    recursos.push(...(data.resources || []));
+    cursor = data.next_cursor || '';
+    if (!cursor) break;
+  }
+
+  const decodificar = v => {
+    try { return decodeURIComponent(v ?? ''); } catch (_) { return String(v ?? ''); }
+  };
+
+  const camisetas = recursos
+    .map(r => {
+      const c = (r.context && r.context.custom) || {};
+      return {
+        id: r.public_id,
+        categoria: decodificar(c.cat),
+        ligaId: decodificar(c.liga),
+        equipoId: decodificar(c.eqid),
+        equipoNombre: decodificar(c.eq),
+        tipo: decodificar(c.tipo) === 'retro' ? 'retro' : 'normal',
+        variante: decodificar(c.var),
+        nombre: decodificar(c.nom),
+        img: urlConTransformacion(r.secure_url, 'f_auto,q_auto,w_900'),
+        thumb: urlConTransformacion(r.secure_url, 'f_auto,q_auto,w_300,h_300,c_fit'),
+        creado: r.created_at || ''
+      };
+    })
+    .filter(c => CLD_CATEGORIAS.includes(c.categoria) && c.equipoNombre)
+    .sort((a, b) => String(a.creado).localeCompare(String(b.creado)));
+
+  cacheCamisetasAdmin = { t: Date.now(), datos: camisetas };
+  return camisetas;
+}
+
+// Público: la web lo usa para añadir las camisetas subidas al catálogo.
+app.get('/api/camisetas-admin', async (req, res) => {
+  const cfg = leerConfigCloudinary();
+  if (!cfg) return res.json({ ok: true, camisetas: [] });
+  try {
+    const camisetas = await listarCamisetasCloudinary(cfg);
+    res.set('Cache-Control', 'public, max-age=30');
+    res.json({ ok: true, camisetas });
+  } catch (error) {
+    console.error('[camisetas-admin] Error listando:', error.message);
+    // Si Cloudinary falla, se sirve la última lista buena (si la hay) para no romper la tienda.
+    res.json({ ok: true, camisetas: (cacheCamisetasAdmin.datos || []) });
+  }
+});
+
+// Admin: lista fresca (con los precios vigentes para enseñarlos en el panel).
+app.get('/api/admin/camisetas', async (req, res) => {
+  if (!comprobarAdmin(req, res)) return;
+  const cfg = exigirCloudinary(res);
+  if (!cfg) return;
+  try {
+    const camisetas = await listarCamisetasCloudinary(cfg, { fresco: true });
+    res.json({ ok: true, camisetas, precios: { normal: PRECIO_ACTUAL_BASE, retro: PRECIO_RETRO_BASE } });
+  } catch (error) {
+    console.error('[admin/camisetas] Error:', error.message);
+    res.status(502).json({ ok: false, error: 'No se pudo leer Cloudinary: ' + error.message });
+  }
+});
+
+// Admin: valida los datos y devuelve la firma para subir UNA foto directamente a Cloudinary
+// (el secreto nunca sale del servidor y las fotos no pasan por Render).
+app.post('/api/admin/camisetas/firma', (req, res) => {
+  if (!comprobarAdmin(req, res)) return;
+  const cfg = exigirCloudinary(res);
+  if (!cfg) return;
+
+  const b = req.body || {};
+  const categoria = String(b.categoria || '');
+  const tipo = String(b.tipo || '');
+  if (!CLD_CATEGORIAS.includes(categoria)) return res.status(400).json({ ok: false, error: 'Elige la sección (Mundial o Liga).' });
+  if (!CLD_TIPOS.includes(tipo)) return res.status(400).json({ ok: false, error: 'Elige si es camiseta normal o retro.' });
+
+  const ligaId = categoria === 'liga' ? String(b.ligaId || '').toLowerCase() : '';
+  if (categoria === 'liga' && !/^[a-z0-9-]{1,40}$/.test(ligaId)) {
+    return res.status(400).json({ ok: false, error: 'Elige la liga.' });
+  }
+
+  const equipoNombre = limpiarTextoCloudinary(b.equipoNombre, 60);
+  if (!equipoNombre) return res.status(400).json({ ok: false, error: 'Falta el equipo o selección.' });
+
+  const equipoId = /^[a-z0-9-]{1,60}$/i.test(String(b.equipoId || '')) ? String(b.equipoId) : '';
+  const variante = tipo === 'normal'
+    ? (CLD_VARIANTES.includes(String(b.variante)) ? String(b.variante) : 'otra')
+    : '';
+  const nombre = limpiarTextoCloudinary(b.nombre, 80);
+
+  const pares = { cat: categoria, liga: ligaId, eqid: equipoId, eq: equipoNombre, tipo, var: variante, nom: nombre };
+  const context = Object.entries(pares)
+    .filter(([, v]) => v)
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .join('|');
+
+  const timestamp = Math.floor(Date.now() / 1000);
+  const parametros = { context, folder: CLD_CARPETA, tags: CLD_TAG, timestamp };
+  const signature = firmarCloudinary(parametros, cfg.apiSecret);
+
+  res.json({
+    ok: true,
+    cloudName: cfg.cloudName,
+    apiKey: cfg.apiKey,
+    timestamp,
+    signature,
+    folder: CLD_CARPETA,
+    tags: CLD_TAG,
+    context
+  });
+});
+
+// Admin: avisa de que ya se subieron fotos (refresca la lista de la tienda al momento).
+app.post('/api/admin/camisetas/confirmar', (req, res) => {
+  if (!comprobarAdmin(req, res)) return;
+  cacheCamisetasAdmin = { t: 0, datos: null };
+  res.json({ ok: true });
+});
+
+// Admin: borrar una camiseta subida.
+app.post('/api/admin/camisetas/borrar', async (req, res) => {
+  if (!comprobarAdmin(req, res)) return;
+  const cfg = exigirCloudinary(res);
+  if (!cfg) return;
+
+  const id = String(req.body?.id || '');
+  if (!id.startsWith(CLD_CARPETA + '/') || id.includes('..')) {
+    return res.status(400).json({ ok: false, error: 'Identificador no válido.' });
+  }
+
+  try {
+    const qs = new URLSearchParams();
+    qs.append('public_ids[]', id);
+    qs.set('invalidate', 'true');
+    const resp = await fetch(
+      `https://api.cloudinary.com/v1_1/${encodeURIComponent(cfg.cloudName)}/resources/image/upload?${qs}`,
+      { method: 'DELETE', headers: { Authorization: authCloudinary(cfg) }, signal: AbortSignal.timeout(15000) }
+    );
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data?.error?.message || `Cloudinary respondió ${resp.status}`);
+    cacheCamisetasAdmin = { t: 0, datos: null };
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('[admin/camisetas/borrar] Error:', error.message);
+    res.status(502).json({ ok: false, error: 'No se pudo borrar: ' + error.message });
+  }
+});
+
+// ============================================================
 // SALUD Y SEO
 // ============================================================
 
@@ -1355,7 +1579,7 @@ el mundo (Premier League, La Liga, Serie A, Bundesliga, Ligue 1, MLS, Liga MX,
 Brasileirao, Liga Portugal, Eredivisie, liga saudí, J1 League, etc.).
 
 PRODUCTO Y PERSONALIZACIÓN
-- Camiseta versión actual: 25€. Versión retro: 30€.
+- Camiseta versión actual: 22,99€. Versión retro: 27,99€.
 - Se puede elegir versión local, visitante o modelo retro.
 - Incluye personalización con nombre y dorsal sin coste extra.
 - Se pueden añadir parches opcionales, también sin coste extra.
@@ -1370,9 +1594,9 @@ ENVÍO
   torneos como Mundial/Eurocopa/Copa América) puede llegar hasta 20-25 días.
 
 OFERTAS POR CANTIDAD
-- 6 camisetas: 135€ normales / 150€ retro (envío gratis incluido).
-- 10 camisetas: 200€ normales / 225€ retro.
-- 15 camisetas: 250€ normales / 275€ retro.
+- 6 camisetas: 130€ normales / 150€ retro (envío gratis incluido).
+- 10 camisetas: 200€ normales / 240€ retro.
+- 15 camisetas: 330€ normales / 400€ retro.
 
 AMIGO INVISIBLE FUTBOLERO
 - Se puede organizar un "amigo invisible" de camisetas para grupos: el

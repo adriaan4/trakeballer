@@ -1228,6 +1228,7 @@ function camisetasDe(t) {
   const lista = [];
   if (t.imgLocal) lista.push({ nombre: t.nombre + ' · Local', img: t.imgLocal, retro: false });
   if (t.imgVisitante) lista.push({ nombre: t.nombre + ' · Visitante', img: t.imgVisitante, retro: false });
+  (t.extras || []).forEach(x => lista.push({ nombre: x.nombre, img: x.img, retro: false }));
   (RETRO_PRODUCTOS[t.id] || []).forEach(r => lista.push({
     nombre: r.nombre.charAt(0).toUpperCase() + r.nombre.slice(1), img: r.img, retro: true
   }));
@@ -1240,7 +1241,7 @@ function itemEscudo(img, nombre, sub, alt) {
 
 function gridEscudos(body, equipos, categoria) {
   body.innerHTML = '<div class="vista__grid">' + equipos.map(t => {
-    const s = escudoSrc(t), f = t.imgLocal || t.imgVisitante, n = camisetasDe(t).length;
+    const s = escudoSrc(t), f = t.imgLocal || t.imgVisitante || (t.extras && t.extras[0] && t.extras[0].img) || ((RETRO_PRODUCTOS[t.id] || [])[0] || {}).img, n = camisetasDe(t).length;
     const img = s ? `<img src="${s}" alt="Escudo de ${t.nombre}" loading="lazy">`
       : (f ? `<img class="es-camiseta" src="${f}" alt="${t.nombre}" loading="lazy">` : svgCamiseta(t.c1 || '#1f5c3a', t.c2 || '#fff', 'mini-camiseta'));
     return itemEscudo(img, t.nombre, n ? `${n} camiseta${n > 1 ? 's' : ''}` : 'Próximamente');
@@ -1288,8 +1289,72 @@ function abrirLigas() {
 
 document.getElementById('hubMundiales').addEventListener('click', abrirMundiales);
 document.getElementById('hubLigas').addEventListener('click', abrirLigas);
-document.getElementById('hubNumMundial').textContent = SELECCIONES.length + ' selecciones';
-document.getElementById('hubNumLigas').textContent = LIGAS.length + ' ligas · ' + LIGAS.reduce((n, l) => n + l.equipos.length, 0) + ' equipos';
+function actualizarContadoresHub() {
+  document.getElementById('hubNumMundial').textContent = SELECCIONES.length + ' selecciones';
+  document.getElementById('hubNumLigas').textContent = LIGAS.length + ' ligas · ' + LIGAS.reduce((n, l) => n + l.equipos.length, 0) + ' equipos';
+}
+actualizarContadoresHub();
+
+/* =========================================================
+   CAMISETAS SUBIDAS DESDE EL PANEL DE ADMIN (Cloudinary)
+   Se piden al servidor y se mezclan con el catálogo como si estuvieran
+   escritas a mano: normales -> local/visitante/extras (precio actual),
+   retro -> RETRO_PRODUCTOS (precio retro). El precio sale del tipo,
+   igual que en el resto de camisetas.
+========================================================= */
+const ADMIN_CAMISETAS_APLICADAS = new Set();
+function normalizarNombreEquipo(s) {
+  return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+function buscarOCrearEquipoAdmin(c) {
+  const norm = normalizarNombreEquipo(c.equipoNombre);
+  const idNuevo = 'adm-' + norm.replace(/ /g, '-');
+  let lista, liga = null;
+  if (c.categoria === 'mundial') {
+    lista = SELECCIONES;
+  } else {
+    liga = LIGAS.find(l => l.id === c.ligaId);
+    if (!liga) return null;
+    lista = liga.equipos;
+  }
+  let equipo = (c.equipoId && lista.find(t => t.id === c.equipoId))
+    || lista.find(t => normalizarNombreEquipo(t.nombre) === norm);
+  if (!equipo) {
+    equipo = { id: idNuevo, nombre: c.equipoNombre, c1: '#1f5c3a', c2: '#ffffff', imgLocal: null, imgVisitante: null };
+    lista.push(equipo);
+    if (c.categoria === 'mundial') lista.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  }
+  return equipo;
+}
+function aplicarCamisetasAdmin(camisetas) {
+  camisetas.forEach(c => {
+    if (!c || !c.img || ADMIN_CAMISETAS_APLICADAS.has(c.id)) return;
+    const equipo = buscarOCrearEquipoAdmin(c);
+    if (!equipo) return;
+    ADMIN_CAMISETAS_APLICADAS.add(c.id);
+
+    if (c.tipo === 'retro') {
+      (RETRO_PRODUCTOS[equipo.id] = RETRO_PRODUCTOS[equipo.id] || []).push({
+        nombre: c.nombre || (equipo.nombre + ' retro'), img: c.img
+      });
+      return;
+    }
+    if (c.variante === 'local' && !equipo.imgLocal) { equipo.imgLocal = c.img; return; }
+    if (c.variante === 'visitante' && !equipo.imgVisitante) { equipo.imgVisitante = c.img; return; }
+    const etiqueta = { local: 'Local', visitante: 'Visitante' }[c.variante] || 'Camiseta';
+    (equipo.extras = equipo.extras || []).push({ nombre: c.nombre || (equipo.nombre + ' · ' + etiqueta), img: c.img });
+  });
+}
+fetch('/api/camisetas-admin')
+  .then(r => r.json())
+  .then(d => {
+    if (!d || !d.ok || !Array.isArray(d.camisetas) || !d.camisetas.length) return;
+    aplicarCamisetasAdmin(d.camisetas);
+    actualizarContadoresHub();
+    if (typeof window.reconstruirIndiceBuscador === 'function') window.reconstruirIndiceBuscador();
+    if (pilaVistas.length) pintarVista(); // por si abrieron una pantalla antes de que llegaran
+  })
+  .catch(() => { /* sin conexión con el servidor: se queda el catálogo normal */ });
 document.getElementById('hubLogosMundial').innerHTML = ['espana', 'argentina', 'francia', 'brasil'].map(n => `<img src="img/escudos/mundial/${n}.jpg" alt="">`).join('');
 document.getElementById('hubLogosLigas').innerHTML = ['inglaterra', 'espana', 'italia', 'alemania'].map(n => `<img src="img/escudos/ligas/${n}.png" alt="">`).join('');
 // Los enlaces antiguos "Ver selecciones" / "Ver equipos" abren directamente estas pantallas
@@ -2155,7 +2220,9 @@ if (formSugerencia) {
   const resultados = document.getElementById('searchResultados');
   if (!btnAbrir || !searchBar) return;
 
-  const indice = [
+  let indice = [];
+  function construirIndice() {
+    indice = [
     ...SELECCIONES.map(p => ({ producto: p, categoria: 'Selección' })),
     ...LIGAS.flatMap(l => l.equipos.map(p => ({ producto: p, categoria: l.nombre }))),
     // Modelos retro reales: se indexan aparte para poder encontrarlos también
@@ -2172,7 +2239,10 @@ if (formSugerencia) {
         nombreBusqueda: `${p.nombre} ${r.nombre} Retro`, retro: r,
       }))
     ),
-  ];
+    ];
+  }
+  construirIndice();
+  window.reconstruirIndiceBuscador = construirIndice;
 
   function abrirBuscador() {
     searchBar.classList.add('abierto');
