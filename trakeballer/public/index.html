@@ -988,25 +988,20 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
        (reutilizando LIGAS/ligaActiva/renderLigasTabs/renderEquiposGrid de
        app.js, ya cargado antes de este script) y se abre directamente su
        modal de personalización con abrirModalProducto. No se toca app.js. */
-    /* Delegación de eventos: funciona también con los botones que se añaden
-       después (equipos subidos desde el admin de Cloudinary). */
     document.getElementById('drawerMenu').addEventListener('click', function (ev) {
       var btn = ev.target.closest('.btn-equipo-menu');
       if (!btn) return;
-      var ligaId = btn.dataset.liga;
-      var equipoId = btn.dataset.equipo;
-      var liga = LIGAS.find(function (l) { return l.id === ligaId; });
+      var liga = LIGAS.find(function (l) { return l.id === btn.dataset.liga; });
       if (!liga) return;
-      var equipo = liga.equipos.find(function (e) { return e.id === equipoId; });
+      var equipo = liga.equipos.find(function (e) { return e.id === btn.dataset.equipo; });
       if (!equipo) return;
 
       cerrarMenu();
       abrirCamisetasEquipo(equipo, liga.nombre);
     });
 
-    /* Añade al menú lateral los equipos que existen en LIGAS pero no están
-       escritos en el HTML (los que se crean al subir fotos desde el admin).
-       app.js lo llama cuando llegan las camisetas de Cloudinary. */
+    /* Equipos subidos desde el admin (Cloudinary): se añaden al menú, en su liga,
+       con el mismo botón que el resto. app.js lo llama cuando llegan las camisetas. */
     window.sincronizarMenuEquipos = function () {
       LIGAS.forEach(function (liga) {
         var primer = document.querySelector('.btn-equipo-menu[data-liga="' + liga.id + '"]');
@@ -1014,7 +1009,6 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
         if (primer) {
           ul = primer.closest('ul');
         } else {
-          /* La liga existe en LIGAS pero no tiene apartado en el menú: se crea. */
           var contenedor = document.querySelector('#menuLigas .submenu-ligas');
           if (!contenedor || !liga.equipos.length) return;
           var det = document.createElement('details');

@@ -1380,7 +1380,7 @@ fetch('/api/camisetas-admin')
     if (!d || !d.ok || !Array.isArray(d.camisetas) || !d.camisetas.length) return;
     aplicarCamisetasAdmin(d.camisetas);
     actualizarContadoresHub();
-    if (typeof window.sincronizarMenuEquipos === 'function') window.sincronizarMenuEquipos(); // equipos nuevos -> menú lateral
+    if (typeof window.sincronizarMenuEquipos === 'function') window.sincronizarMenuEquipos();
     if (typeof window.reconstruirIndiceBuscador === 'function') window.reconstruirIndiceBuscador();
     if (pilaVistas.length) pintarVista(); // por si abrieron una pantalla antes de que llegaran
   })
