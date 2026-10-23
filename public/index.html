@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Trakeballer — Tienda de Camisetas de Fútbol</title>
 <meta name="description" content="Camisetas de fútbol actuales y retro de clubes y selecciones, personalizadas con nombre y dorsal. Pide la tuya en Trakeballer.">
-<link rel="canonical" href="https://kzgklji1u038-production-0phliq16.europe-west1.suga.run/">
+<link rel="canonical" href="https://trakeballer-ut6z.onrender.com/">
 <meta name="theme-color" content="#0d2618">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://kzgklji1u038-production-0phliq16.europe-west1.suga.run/">
+<meta property="og:url" content="https://trakeballer-ut6z.onrender.com/">
 <meta property="og:site_name" content="Trakeballer">
 <meta property="og:title" content="Trakeballer — Tienda de Camisetas de Fútbol">
 <meta property="og:description" content="Camisetas de fútbol actuales y retro de clubes y selecciones, personalizadas con nombre y dorsal.">
-<meta property="og:image" content="https://kzgklji1u038-production-0phliq16.europe-west1.suga.run/img/marca/logo-trakeballer.png">
+<meta property="og:image" content="https://trakeballer-ut6z.onrender.com/img/marca/logo-trakeballer.png">
 <link rel="icon" type="image/png" href="img/marca/logo-trakeballer-header.png">
 <script type="application/ld+json">
 {
@@ -20,7 +20,7 @@
   "@type": "WebSite",
   "name": "Trakeballer",
   "alternateName": "Trakeballer Tienda de Camisetas de Fútbol",
-  "url": "https://kzgklji1u038-production-0phliq16.europe-west1.suga.run/"
+  "url": "https://trakeballer-ut6z.onrender.com/"
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -988,19 +988,49 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
        (reutilizando LIGAS/ligaActiva/renderLigasTabs/renderEquiposGrid de
        app.js, ya cargado antes de este script) y se abre directamente su
        modal de personalización con abrirModalProducto. No se toca app.js. */
-    document.querySelectorAll('.btn-equipo-menu').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var ligaId = btn.dataset.liga;
-        var equipoId = btn.dataset.equipo;
-        var liga = LIGAS.find(function (l) { return l.id === ligaId; });
-        if (!liga) return;
-        var equipo = liga.equipos.find(function (e) { return e.id === equipoId; });
-        if (!equipo) return;
+    /* Delegación de eventos: funciona también con los botones que se añaden
+       después (equipos subidos desde el admin de Cloudinary). */
+    document.getElementById('drawerMenu').addEventListener('click', function (ev) {
+      var btn = ev.target.closest('.btn-equipo-menu');
+      if (!btn) return;
+      var ligaId = btn.dataset.liga;
+      var equipoId = btn.dataset.equipo;
+      var liga = LIGAS.find(function (l) { return l.id === ligaId; });
+      if (!liga) return;
+      var equipo = liga.equipos.find(function (e) { return e.id === equipoId; });
+      if (!equipo) return;
 
-        cerrarMenu();
-        abrirCamisetasEquipo(equipo, liga.nombre);
-      });
+      cerrarMenu();
+      abrirCamisetasEquipo(equipo, liga.nombre);
     });
+
+    /* Añade al menú lateral los equipos que existen en LIGAS pero no están
+       escritos en el HTML (los que se crean al subir fotos desde el admin).
+       app.js lo llama cuando llegan las camisetas de Cloudinary. */
+    window.sincronizarMenuEquipos = function () {
+      LIGAS.forEach(function (liga) {
+        var primer = document.querySelector('.btn-equipo-menu[data-liga="' + liga.id + '"]');
+        if (!primer) return;
+        var ul = primer.closest('ul');
+        liga.equipos.forEach(function (equipo) {
+          var existe = Array.prototype.some.call(
+            ul.querySelectorAll('.btn-equipo-menu'),
+            function (b) { return b.dataset.equipo === equipo.id; }
+          );
+          if (existe) return;
+          var li = document.createElement('li');
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'btn-equipo-menu';
+          b.dataset.liga = liga.id;
+          b.dataset.equipo = equipo.id;
+          b.textContent = equipo.nombre;
+          li.appendChild(b);
+          ul.appendChild(li);
+        });
+      });
+    };
+    window.sincronizarMenuEquipos();
   })();
 
   /* Modal de información legal (aviso legal, privacidad, cookies,
