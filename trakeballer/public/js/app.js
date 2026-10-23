@@ -1356,16 +1356,34 @@ function aplicarCamisetasAdmin(camisetas) {
     (equipo.extras = equipo.extras || []).push({ nombre: c.nombre || (equipo.nombre + ' · ' + etiqueta), img: c.img });
   });
 }
+// Diagnóstico: abre la tienda con ?debug al final de la dirección (ej: tuweb.com/?debug) y sale un recuadro
+// con lo que la tienda ha recibido de Cloudinary (equipo, tipo y dónde lo ha puesto).
+function panelDebugEscudos(titulo, lineas) {
+  if (!/[?&]debug/.test(location.search)) return;
+  let box = document.getElementById('debugEscudos');
+  if (!box) {
+    box = document.createElement('pre');
+    box.id = 'debugEscudos';
+    box.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;max-height:45vh;overflow:auto;z-index:99999;margin:0;padding:10px;background:#000;color:#7CFC9A;font:12px/1.4 monospace;border:2px solid #7CFC9A;border-radius:8px;white-space:pre-wrap;';
+    document.body.appendChild(box);
+  }
+  box.textContent = titulo + '\n' + lineas.join('\n');
+}
+panelDebugEscudos('app.js NUEVO cargado (escudos v3). Esperando datos de /api/camisetas-admin…', []);
 fetch('/api/camisetas-admin')
   .then(r => r.json())
   .then(d => {
+    panelDebugEscudos(
+      'app.js NUEVO cargado (escudos v3). Fotos recibidas: ' + ((d && d.camisetas && d.camisetas.length) || 0),
+      ((d && d.camisetas) || []).map(c => `${c.equipoNombre} | tipo=${c.tipo} | ${c.variante || '-'} | ${c.tipo === 'escudo' ? '-> LISTA DE ESCUDOS' : c.tipo === 'retro' ? '-> dentro del equipo (retro)' : '-> dentro del equipo (camiseta)'}`)
+    );
     if (!d || !d.ok || !Array.isArray(d.camisetas) || !d.camisetas.length) return;
     aplicarCamisetasAdmin(d.camisetas);
     actualizarContadoresHub();
     if (typeof window.reconstruirIndiceBuscador === 'function') window.reconstruirIndiceBuscador();
     if (pilaVistas.length) pintarVista(); // por si abrieron una pantalla antes de que llegaran
   })
-  .catch(() => { /* sin conexión con el servidor: se queda el catálogo normal */ });
+  .catch(e => { panelDebugEscudos('app.js NUEVO cargado, pero /api/camisetas-admin falló', [String(e)]); /* sin conexión con el servidor: se queda el catálogo normal */ });
 document.getElementById('hubLogosMundial').innerHTML = ['espana', 'argentina', 'francia', 'brasil'].map(n => `<img src="img/escudos/mundial/${n}.jpg" alt="">`).join('');
 document.getElementById('hubLogosLigas').innerHTML = ['inglaterra', 'espana', 'italia', 'alemania'].map(n => `<img src="img/escudos/ligas/${n}.png" alt="">`).join('');
 // Los enlaces antiguos "Ver selecciones" / "Ver equipos" abren directamente estas pantallas
