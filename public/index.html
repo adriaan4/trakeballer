@@ -957,7 +957,7 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
   </div>
 </div>
 
-<script src="js/app.js?v=escudos3"></script>
+<script src="js/app.js?v=escudos4"></script>
 <script>
   /* Menú lateral (hamburguesa). Independiente de app.js: solo abre/cierra
      el drawer de navegación, no interviene en carrito ni en pedidos. */
@@ -988,19 +988,64 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
        (reutilizando LIGAS/ligaActiva/renderLigasTabs/renderEquiposGrid de
        app.js, ya cargado antes de este script) y se abre directamente su
        modal de personalización con abrirModalProducto. No se toca app.js. */
-    document.querySelectorAll('.btn-equipo-menu').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var ligaId = btn.dataset.liga;
-        var equipoId = btn.dataset.equipo;
-        var liga = LIGAS.find(function (l) { return l.id === ligaId; });
-        if (!liga) return;
-        var equipo = liga.equipos.find(function (e) { return e.id === equipoId; });
-        if (!equipo) return;
+    /* Delegación de eventos: funciona también con los botones que se añaden
+       después (equipos subidos desde el admin de Cloudinary). */
+    document.getElementById('drawerMenu').addEventListener('click', function (ev) {
+      var btn = ev.target.closest('.btn-equipo-menu');
+      if (!btn) return;
+      var ligaId = btn.dataset.liga;
+      var equipoId = btn.dataset.equipo;
+      var liga = LIGAS.find(function (l) { return l.id === ligaId; });
+      if (!liga) return;
+      var equipo = liga.equipos.find(function (e) { return e.id === equipoId; });
+      if (!equipo) return;
 
-        cerrarMenu();
-        abrirCamisetasEquipo(equipo, liga.nombre);
-      });
+      cerrarMenu();
+      abrirCamisetasEquipo(equipo, liga.nombre);
     });
+
+    /* Añade al menú lateral los equipos que existen en LIGAS pero no están
+       escritos en el HTML (los que se crean al subir fotos desde el admin).
+       app.js lo llama cuando llegan las camisetas de Cloudinary. */
+    window.sincronizarMenuEquipos = function () {
+      LIGAS.forEach(function (liga) {
+        var primer = document.querySelector('.btn-equipo-menu[data-liga="' + liga.id + '"]');
+        var ul;
+        if (primer) {
+          ul = primer.closest('ul');
+        } else {
+          /* La liga existe en LIGAS pero no tiene apartado en el menú: se crea. */
+          var contenedor = document.querySelector('#menuLigas .submenu-ligas');
+          if (!contenedor || !liga.equipos.length) return;
+          var det = document.createElement('details');
+          det.className = 'submenu-liga';
+          var sum = document.createElement('summary');
+          sum.textContent = liga.nombre;
+          ul = document.createElement('ul');
+          ul.className = 'submenu-equipos';
+          det.appendChild(sum);
+          det.appendChild(ul);
+          contenedor.appendChild(det);
+        }
+        liga.equipos.forEach(function (equipo) {
+          var existe = Array.prototype.some.call(
+            ul.querySelectorAll('.btn-equipo-menu'),
+            function (b) { return b.dataset.equipo === equipo.id; }
+          );
+          if (existe) return;
+          var li = document.createElement('li');
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'btn-equipo-menu';
+          b.dataset.liga = liga.id;
+          b.dataset.equipo = equipo.id;
+          b.textContent = equipo.nombre;
+          li.appendChild(b);
+          ul.appendChild(li);
+        });
+      });
+    };
+    window.sincronizarMenuEquipos();
   })();
 
   /* Modal de información legal (aviso legal, privacidad, cookies,
