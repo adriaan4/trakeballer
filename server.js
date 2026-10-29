@@ -82,6 +82,7 @@ inicializarArchivo(RESENAS_FILE);
 inicializarArchivo(DESCUENTOS_FILE);
 
 console.log(`[datos] Carpeta de datos: ${DATA_DIR} (${ALMACENAMIENTO_PERSISTENTE ? 'persistente' : 'NO persistente: se borra al redesplegar'})`);
+// (los pedidos van a Upstash si están las variables UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN)
 
 // ============================================================
 // FUNCIONES ARCHIVOS
@@ -146,32 +147,161 @@ function guardarJSONSeguro(archivo, datos) {
   fs.renameSync(tmp, archivo);
 }
 
+// ============================================================
+// PEDIDOS EN UPSTASH REDIS (base de datos externa: no se borran al redesplegar)
+// Variables necesarias (en Render > Environment):
+//   UPSTASH_REDIS_REST_URL   = https://xxxx.upstash.io
+//   UPSTASH_REDIS_REST_TOKEN = el token REST de la base de datos
+// Si no están puestas, se sigue usando orders.json como antes.
+// ============================================================
+
+const UPSTASH_URL = String(process.env.UPSTASH_REDIS_REST_URL || '').trim().replace(/\/+$/, '');
+const UPSTASH_TOKEN = String(process.env.UPSTASH_REDIS_REST_TOKEN || '').trim();
+const USA_REDIS = !!(UPSTASH_URL && UPSTASH_TOKEN);
+const REDIS_PEDIDOS = 'trakeballer:pedidos'; // hash: campo = id del pedido, valor = pedido en JSON
+const REDIS_SUGERENCIAS = 'trakeballer:sugerencias'; // campo = id
+const REDIS_RESENAS = 'trakeballer:resenas'; // campo = id
+const REDIS_DESCUENTOS = 'trakeballer:descuentos'; // campo = código
+
+// Ejecuta UN comando de Redis por la API REST de Upstash. Lanza error si falla.
+async function redis(comando) {
+  const resp = await fetch(UPSTASH_URL, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(comando),
+    signal: AbortSignal.timeout(10000)
+  });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok || data.error) {
+    throw new Error(`Upstash: ${data.error || resp.status}`);
+  }
+  return data.result;
+}
+
+function parsearPedidosRedis(plano) {
+  // HGETALL devuelve [campo1, valor1, campo2, valor2, ...]
+  const pedidos = [];
+  for (let i = 1; i < (plano || []).length; i += 2) {
+    try { pedidos.push(JSON.parse(plano[i])); } catch (e) { console.error('[redis] Pedido ilegible:', plano[i - 1]); }
+  }
+  return pedidos;
+}
+
+async function leerPedidos() {
+  if (!USA_REDIS) return leerJSONSeguro(ORDERS_FILE);
+  return parsearPedidosRedis(await redis(['HGETALL', REDIS_PEDIDOS]));
+}
+
 // Guarda el pedido y comprueba que quedó escrito. Lanza error si no se pudo guardar.
-function guardarPedido(pedido) {
-  const pedidos = leerJSONSeguro(ORDERS_FILE);
+async function guardarPedido(pedido) {
+  if (!USA_REDIS) {
+    const pedidos = leerJSONSeguro(ORDERS_FILE);
 
+    let id = Date.now();
+    while (pedidos.some(p => p.id === id)) id += 1;
+    pedido.id = id;
+
+    pedidos.push(pedido);
+    guardarJSONSeguro(ORDERS_FILE, pedidos);
+
+    if (!leerJSONSeguro(ORDERS_FILE).some(p => p.id === id)) {
+      throw new Error('El pedido no quedó guardado en disco');
+    }
+    return;
+  }
+
+  // HSETNX solo escribe si ese id no existe: dos pedidos a la vez nunca se pisan.
   let id = Date.now();
-  while (pedidos.some(p => p.id === id)) id += 1;
-  pedido.id = id;
+  for (let intento = 0; intento < 20; intento++, id += 1) {
+    pedido.id = id;
+    const creado = await redis(['HSETNX', REDIS_PEDIDOS, String(id), JSON.stringify(pedido)]);
+    if (creado === 1) {
+      if (!(await redis(['HEXISTS', REDIS_PEDIDOS, String(id)]))) {
+        throw new Error('El pedido no quedó guardado en Upstash');
+      }
+      return;
+    }
+  }
+  throw new Error('No se pudo generar un id libre para el pedido');
+}
 
-  pedidos.push(pedido);
-  guardarJSONSeguro(ORDERS_FILE, pedidos);
+// Marca un pedido como listo / no listo. Devuelve el pedido o null si no existe.
+async function marcarPedidoListo(id, listo) {
+  if (!USA_REDIS) {
+    const pedidos = leerJSONSeguro(ORDERS_FILE);
+    const pedido = pedidos.find(p => p.id === id);
+    if (!pedido) return null;
+    pedido.listo = listo;
+    guardarJSONSeguro(ORDERS_FILE, pedidos);
+    return pedido;
+  }
 
-  if (!leerJSONSeguro(ORDERS_FILE).some(p => p.id === id)) {
-    throw new Error('El pedido no quedó guardado en disco');
+  const texto = await redis(['HGET', REDIS_PEDIDOS, String(id)]);
+  if (!texto) return null;
+  const pedido = JSON.parse(texto);
+  pedido.listo = listo;
+  await redis(['HSET', REDIS_PEDIDOS, String(id), JSON.stringify(pedido)]);
+  return pedido;
+}
+
+// Al arrancar: si una colección está vacía en Redis y existe su archivo .json antiguo,
+// se copian sus datos (una sola vez).
+async function migrarARedis() {
+  if (!USA_REDIS) return;
+  const colecciones = [
+    { clave: REDIS_PEDIDOS, archivo: ORDERS_FILE, campo: x => x.id, nombre: 'pedidos' },
+    { clave: REDIS_SUGERENCIAS, archivo: SUGERENCIAS_FILE, campo: x => x.id, nombre: 'sugerencias' },
+    { clave: REDIS_RESENAS, archivo: RESENAS_FILE, campo: x => x.id, nombre: 'reseñas' },
+    { clave: REDIS_DESCUENTOS, archivo: DESCUENTOS_FILE, campo: x => x.codigo, nombre: 'códigos de descuento' }
+  ];
+
+  for (const c of colecciones) {
+    try {
+      if ((await redis(['HLEN', c.clave])) > 0) continue;
+      const viejos = fs.existsSync(c.archivo) ? leerJSONSeguro(c.archivo) : [];
+      if (viejos.length === 0) continue;
+      const args = ['HSET', c.clave];
+      viejos.forEach(x => args.push(String(c.campo(x)), JSON.stringify(x)));
+      await redis(args);
+      console.log(`[redis] Migrados ${viejos.length} ${c.nombre} del archivo a Upstash`);
+    } catch (error) {
+      console.error(`[redis] No se pudieron migrar ${c.nombre}:`, error.message);
+    }
   }
 }
 
-function guardarSugerencia(sugerencia) {
+// Si Upstash falla, NO se corta el envío: el aviso por email sigue saliendo.
+async function guardarSugerencia(sugerencia) {
+  if (USA_REDIS) {
+    try {
+      await redis(['HSET', REDIS_SUGERENCIAS, String(sugerencia.id), JSON.stringify(sugerencia)]);
+    } catch (error) {
+      console.error('[sugerencia] No se pudo guardar en Upstash:', error.message);
+    }
+    return;
+  }
   const sugerencias = leerJSON(SUGERENCIAS_FILE);
   sugerencias.push(sugerencia);
   guardarJSON(SUGERENCIAS_FILE, sugerencias);
 }
 
-function guardarResena(resena) {
+async function guardarResena(resena) {
+  if (USA_REDIS) {
+    try {
+      await redis(['HSET', REDIS_RESENAS, String(resena.id), JSON.stringify(resena)]);
+    } catch (error) {
+      console.error('[resena] No se pudo guardar en Upstash:', error.message);
+    }
+    return;
+  }
   const resenas = leerJSON(RESENAS_FILE);
   resenas.push(resena);
   guardarJSON(RESENAS_FILE, resenas);
+}
+
+async function leerResenas() {
+  if (!USA_REDIS) return leerJSON(RESENAS_FILE);
+  return parsearPedidosRedis(await redis(['HGETALL', REDIS_RESENAS]));
 }
 
 // ============================================================
@@ -340,21 +470,80 @@ function redondear2(n) {
 }
 
 // Para consultar (validar código) es tolerante; para modificar (estricto=true) lanza
-// error si el archivo no se puede leer, para no borrar los códigos existentes.
-function leerDescuentos(estricto = false) {
-  if (estricto) return leerJSONSeguro(DESCUENTOS_FILE);
+// error si no se puede leer, para no borrar los códigos existentes.
+async function leerDescuentos(estricto = false) {
   try {
+    if (USA_REDIS) {
+      return parsearPedidosRedis(await redis(['HGETALL', REDIS_DESCUENTOS]))
+        .sort((x, y) => (x.creadoTs || 0) - (y.creadoTs || 0));
+    }
     return leerJSONSeguro(DESCUENTOS_FILE);
   } catch (error) {
+    if (estricto) throw error;
     console.error('[descuentos] No se pudo leer:', error.message);
     return [];
   }
 }
 
-function buscarDescuentoActivo(codigo) {
+async function buscarDescuentoActivo(codigo) {
   const cod = normalizarCodigo(codigo);
   if (!cod) return null;
-  return leerDescuentos().find(d => d.codigo === cod && d.activo !== false) || null;
+  return (await leerDescuentos()).find(d => d.codigo === cod && d.activo !== false) || null;
+}
+
+// Devuelve false si el código ya existía.
+async function crearDescuento(nuevo) {
+  if (USA_REDIS) {
+    return (await redis(['HSETNX', REDIS_DESCUENTOS, nuevo.codigo, JSON.stringify(nuevo)])) === 1;
+  }
+  const lista = leerJSONSeguro(DESCUENTOS_FILE);
+  if (lista.some(d => d.codigo === nuevo.codigo)) return false;
+  lista.push(nuevo);
+  guardarJSONSeguro(DESCUENTOS_FILE, lista);
+  return true;
+}
+
+// Cambia campos de un código. Devuelve el código actualizado o null si no existe.
+async function actualizarDescuento(codigo, cambios) {
+  if (USA_REDIS) {
+    const texto = await redis(['HGET', REDIS_DESCUENTOS, codigo]);
+    if (!texto) return null;
+    const d = Object.assign(JSON.parse(texto), cambios);
+    await redis(['HSET', REDIS_DESCUENTOS, codigo, JSON.stringify(d)]);
+    return d;
+  }
+  const lista = leerJSONSeguro(DESCUENTOS_FILE);
+  const d = lista.find(x => x.codigo === codigo);
+  if (!d) return null;
+  Object.assign(d, cambios);
+  guardarJSONSeguro(DESCUENTOS_FILE, lista);
+  return d;
+}
+
+async function borrarDescuento(codigo) {
+  if (USA_REDIS) return (await redis(['HDEL', REDIS_DESCUENTOS, codigo])) === 1;
+  const lista = leerJSONSeguro(DESCUENTOS_FILE);
+  const resto = lista.filter(d => d.codigo !== codigo);
+  if (resto.length === lista.length) return false;
+  guardarJSONSeguro(DESCUENTOS_FILE, resto);
+  return true;
+}
+
+async function sumarUsoDescuento(codigo) {
+  if (USA_REDIS) {
+    const texto = await redis(['HGET', REDIS_DESCUENTOS, codigo]);
+    if (!texto) return;
+    const d = JSON.parse(texto);
+    d.usos = (d.usos || 0) + 1;
+    await redis(['HSET', REDIS_DESCUENTOS, codigo, JSON.stringify(d)]);
+    return;
+  }
+  const lista = leerJSONSeguro(DESCUENTOS_FILE);
+  const d = lista.find(x => x.codigo === codigo);
+  if (d) {
+    d.usos = (d.usos || 0) + 1;
+    guardarJSONSeguro(DESCUENTOS_FILE, lista);
+  }
 }
 
 // Mínimo de camisetas para poder hacer un pedido (si hay menos, no se guarda ni se envía nada).
@@ -457,12 +646,12 @@ app.post('/api/admin/login', (req, res) => {
   res.json({ ok: true, token });
 });
 
-app.get('/api/admin/descuentos', (req, res) => {
+app.get('/api/admin/descuentos', async (req, res) => {
   if (!comprobarSesionAdmin(req, res)) return;
-  res.json({ ok: true, descuentos: leerDescuentos(), almacenamientoPersistente: ALMACENAMIENTO_PERSISTENTE });
+  res.json({ ok: true, descuentos: await leerDescuentos(), almacenamientoPersistente: USA_REDIS || ALMACENAMIENTO_PERSISTENTE });
 });
 
-app.post('/api/admin/descuentos', (req, res) => {
+app.post('/api/admin/descuentos', async (req, res) => {
   try {
     if (!comprobarSesionAdmin(req, res)) return;
 
@@ -493,11 +682,6 @@ app.post('/api/admin/descuentos', (req, res) => {
       return res.status(400).json({ ok: false, error: 'El mínimo de camisetas debe ser un número entero (0 = sin mínimo).' });
     }
 
-    const lista = leerDescuentos(true);
-    if (lista.some(d => d.codigo === codigo)) {
-      return res.status(409).json({ ok: false, error: 'Ese código ya existe. Elimínalo antes si quieres cambiarlo.' });
-    }
-
     const nuevo = {
       codigo,
       tipo,
@@ -505,10 +689,13 @@ app.post('/api/admin/descuentos', (req, res) => {
       minCamisetas,
       activo: true,
       usos: 0,
-      creado: new Date().toLocaleString('es-ES')
+      creado: new Date().toLocaleString('es-ES'),
+      creadoTs: Date.now()
     };
-    lista.push(nuevo);
-    guardarJSONSeguro(DESCUENTOS_FILE, lista);
+
+    if (!(await crearDescuento(nuevo))) {
+      return res.status(409).json({ ok: false, error: 'Ese código ya existe. Elimínalo antes si quieres cambiarlo.' });
+    }
     res.json({ ok: true, descuento: nuevo });
   } catch (error) {
     console.error('[descuentos] Error creando:', error);
@@ -516,16 +703,13 @@ app.post('/api/admin/descuentos', (req, res) => {
   }
 });
 
-app.patch('/api/admin/descuentos/:codigo', (req, res) => {
+app.patch('/api/admin/descuentos/:codigo', async (req, res) => {
   try {
     if (!comprobarSesionAdmin(req, res)) return;
 
-    const lista = leerDescuentos(true);
-    const d = lista.find(x => x.codigo === normalizarCodigo(req.params.codigo));
+    const d = await actualizarDescuento(normalizarCodigo(req.params.codigo), { activo: !!req.body?.activo });
     if (!d) return res.status(404).json({ ok: false, error: 'Código no encontrado.' });
 
-    d.activo = !!req.body?.activo;
-    guardarJSONSeguro(DESCUENTOS_FILE, lista);
     res.json({ ok: true, descuento: d });
   } catch (error) {
     console.error('[descuentos] Error actualizando:', error);
@@ -533,17 +717,13 @@ app.patch('/api/admin/descuentos/:codigo', (req, res) => {
   }
 });
 
-app.delete('/api/admin/descuentos/:codigo', (req, res) => {
+app.delete('/api/admin/descuentos/:codigo', async (req, res) => {
   try {
     if (!comprobarSesionAdmin(req, res)) return;
 
-    const codigo = normalizarCodigo(req.params.codigo);
-    const lista = leerDescuentos(true);
-    const resto = lista.filter(d => d.codigo !== codigo);
-    if (resto.length === lista.length) {
+    if (!(await borrarDescuento(normalizarCodigo(req.params.codigo)))) {
       return res.status(404).json({ ok: false, error: 'Código no encontrado.' });
     }
-    guardarJSONSeguro(DESCUENTOS_FILE, resto);
     res.json({ ok: true });
   } catch (error) {
     console.error('[descuentos] Error eliminando:', error);
@@ -552,13 +732,13 @@ app.delete('/api/admin/descuentos/:codigo', (req, res) => {
 });
 
 // Público: la web comprueba un código antes de enviar el pedido.
-app.post('/api/descuento/validar', (req, res) => {
+app.post('/api/descuento/validar', async (req, res) => {
   if (superaLimite('validar:' + req.ip, 40, 10 * 60 * 1000)) {
     return res.status(429).json({ ok: false, error: 'Demasiados intentos. Espera unos minutos.' });
   }
 
   try {
-    const d = buscarDescuentoActivo(req.body?.codigo);
+    const d = await buscarDescuentoActivo(req.body?.codigo);
     if (!d) {
       return res.status(404).json({ ok: false, error: 'Ese código de descuento no es válido.' });
     }
@@ -982,7 +1162,7 @@ app.post('/api/pedido', async (req, res) => {
       : '';
 
     if (idCliente) {
-      const existente = leerJSONSeguro(ORDERS_FILE).find(p => p.idCliente === idCliente);
+      const existente = (await leerPedidos()).find(p => p.idCliente === idCliente);
       if (existente) {
         return res.json({ ok: true, pedidoId: existente.id, repetido: true, resumen: resumenPedido(existente) });
       }
@@ -997,7 +1177,7 @@ app.post('/api/pedido', async (req, res) => {
     let descuentoUsado = null;
 
     if (codigoRecibido) {
-      descuentoUsado = buscarDescuentoActivo(codigoRecibido);
+      descuentoUsado = await buscarDescuentoActivo(codigoRecibido);
       if (!descuentoUsado) {
         return res.status(400).json({ ok: false, error: 'El código de descuento no es válido. Quítalo o revísalo e inténtalo de nuevo.' });
       }
@@ -1036,9 +1216,9 @@ app.post('/api/pedido', async (req, res) => {
   //    Si el disco falla, el pedido NO se pierde: se manda igualmente por email a la tienda
   //    (con un aviso) y solo se da error al cliente si tampoco se puede enviar ese email.
   try {
-    guardarPedido(pedido);
+    await guardarPedido(pedido);
   } catch (error) {
-    console.error('[pedido] NO SE PUDO GUARDAR EN DISCO:', error);
+    console.error('[pedido] NO SE PUDO GUARDAR:', error);
     pedido.id = pedido.id || Date.now();
     pedido.noGuardadoEnPanel = true;
 
@@ -1058,12 +1238,7 @@ app.post('/api/pedido', async (req, res) => {
   // 2) Contar el uso del código (si falla no afecta al pedido, que ya está guardado)
   try {
     if (pedido.descuentoCodigo) {
-      const lista = leerDescuentos(true);
-      const d = lista.find(x => x.codigo === pedido.descuentoCodigo.codigo);
-      if (d) {
-        d.usos = (d.usos || 0) + 1;
-        guardarJSONSeguro(DESCUENTOS_FILE, lista);
-      }
+      await sumarUsoDescuento(pedido.descuentoCodigo.codigo);
     }
   } catch (error) {
     console.error('[pedido] No se pudo contar el uso del código:', error);
@@ -1096,7 +1271,7 @@ app.post('/api/sugerencia', async (req, res) => {
       email: email?.trim() || ''
     };
 
-    guardarSugerencia(sugerencia);
+    await guardarSugerencia(sugerencia);
 
     const texto = `NUEVA SUGERENCIA DE CAMISETA\n\nFecha:\n${sugerencia.fecha}\n\nNombre:\n${sugerencia.nombre || 'No indicado'}\n\nEmail:\n${sugerencia.email || 'No indicado'}\n\nMensaje:\n${sugerencia.mensaje}`;
 
@@ -1128,9 +1303,9 @@ app.post('/api/sugerencia', async (req, res) => {
 // RESEÑAS
 // ============================================================
 
-app.get('/api/resenas', (req, res) => {
+app.get('/api/resenas', async (req, res) => {
   try {
-    const resenas = leerJSON(RESENAS_FILE)
+    const resenas = (await leerResenas())
       .filter(r => r.aprobada !== false)
       .sort((a, b) => b.id - a.id);
 
@@ -1167,7 +1342,7 @@ app.post('/api/resena', async (req, res) => {
       aprobada: true
     };
 
-    guardarResena(resena);
+    await guardarResena(resena);
 
     const texto = `NUEVA RESEÑA EN TRAKEBALLER\n\nFecha:\n${resena.fecha}\n\nNombre:\n${resena.nombre}\n\nValoración:\n${resena.valoracion} / 5 estrellas\n\nOpinión:\n${resena.mensaje}`;
 
@@ -1210,33 +1385,29 @@ function comprobarAdmin(req, res) {
   return true;
 }
 
-app.get('/api/pedidos', (req, res) => {
+app.get('/api/pedidos', async (req, res) => {
   try {
     if (!comprobarAdmin(req, res)) return;
-    const pedidos = leerJSONSeguro(ORDERS_FILE).sort((a, b) => b.id - a.id);
-    res.json({ ok: true, pedidos, almacenamientoPersistente: ALMACENAMIENTO_PERSISTENTE });
+    const pedidos = (await leerPedidos()).sort((a, b) => b.id - a.id);
+    res.json({ ok: true, pedidos, almacenamientoPersistente: USA_REDIS || ALMACENAMIENTO_PERSISTENTE });
   } catch (error) {
     console.error('[pedidos] Error:', error);
     res.status(500).json({ ok: false, error: 'Error interno al leer los pedidos.' });
   }
 });
 
-app.post('/api/pedidos/:id/listo', (req, res) => {
+app.post('/api/pedidos/:id/listo', async (req, res) => {
   try {
     if (!comprobarAdmin(req, res)) return;
 
     const id = Number(req.params.id);
     const listo = !!(req.body && req.body.listo);
 
-    const pedidos = leerJSONSeguro(ORDERS_FILE);
-    const pedido = pedidos.find(p => p.id === id);
+    const pedido = await marcarPedidoListo(id, listo);
 
     if (!pedido) {
       return res.status(404).json({ ok: false, error: 'Pedido no encontrado.' });
     }
-
-    pedido.listo = listo;
-    guardarJSONSeguro(ORDERS_FILE, pedidos);
 
     res.json({ ok: true, pedido });
   } catch (error) {
@@ -1514,7 +1685,7 @@ app.get('/api/salud', (req, res) => {
   res.json({
     ok: true,
     servicio: 'Trakeballer',
-    datos: { persistente: ALMACENAMIENTO_PERSISTENTE, escribible },
+    datos: { persistente: ALMACENAMIENTO_PERSISTENTE, escribible, datosEnUpstash: USA_REDIS },
     email: { brevo: !!process.env.BREVO_API_KEY, remitente: !!process.env.EMAIL_FROM }
   });
 });
@@ -1733,6 +1904,8 @@ app.get('*', (req, res) => {
 // ============================================================
 
 app.listen(PORT, () => {
+  migrarARedis();
+  console.log(`[datos] Pedidos, sugerencias, reseñas y descuentos: ${USA_REDIS ? 'Upstash Redis' : 'archivo orders.json'}`);
   console.log(`🚀 Trakeballer funcionando en puerto ${PORT}`);
   console.log(`[email] EMAIL_TO: ${process.env.EMAIL_TO || EMAIL_TIENDA}`);
   console.log(`[email] EMAIL_FROM: ${process.env.EMAIL_FROM || 'NO CONFIGURADO'}`);
