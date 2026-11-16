@@ -1878,7 +1878,8 @@ function mensajePedidoEnviado(data) {
     txt += ` Total a pagar: ${Number(r.total).toFixed(2)} €.`;
   }
 
-  return txt + ' Recuerda enviar el pago por PayPal a trakeballer@gmail.com (sin poner concepto) y mandarnos el comprobante y el número de pedido a ese mismo correo.';
+  return txt + ' Puedes pagar por PayPal enviando el importe a trakeballer@gmail.com (sin poner concepto) o por transferencia bancaria: el IBAN te llegará al correo del pedido (si has puesto tu email) y tienes que poner el número de pedido como concepto. '
+    + 'Después, mándanos el comprobante y el número de pedido a trakeballer@gmail.com.';
 }
 
 /* Envío del pedido al servidor.

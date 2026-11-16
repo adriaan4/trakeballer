@@ -10,6 +10,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const EMAIL_TIENDA = 'trakeballer@gmail.com';
+// IBAN para pagos por transferencia (se puede cambiar con la variable IBAN_TIENDA en Render)
+const IBAN_TIENDA = process.env.IBAN_TIENDA || 'ES72 2100 4996 9122 0039 6729';
 
 app.set('trust proxy', 1);
 app.use(cors());
@@ -816,8 +818,9 @@ ${formatearProductosTexto(pedido)}
 ${lineasTotalesTexto(pedido)}
 
 ------------------------------------------
-CÓMO PAGAR (ÚNICAMENTE POR PAYPAL)
+CÓMO PAGAR (PAYPAL O TRANSFERENCIA)
 ------------------------------------------
+OPCIÓN 1: PAYPAL
 1. Envía ${total}€ por PayPal a:
 
    ${EMAIL_TIENDA}
@@ -826,8 +829,15 @@ CÓMO PAGAR (ÚNICAMENTE POR PAYPAL)
 
 3. NO pongas ningún concepto ni mensaje en el pago.
 
-4. Después, manda el comprobante de pago junto con la captura o el número
-   de pedido (#${pedido.id}) a este mismo correo: ${EMAIL_TIENDA}
+OPCIÓN 2: TRANSFERENCIA BANCARIA
+1. Haz una transferencia de ${total}€ al IBAN:
+
+   ${IBAN_TIENDA}
+
+2. En el concepto pon el número de tu pedido: #${pedido.id}
+
+Después, sea cual sea el método, manda el comprobante de pago junto con la
+captura o el número de pedido (#${pedido.id}) a este mismo correo: ${EMAIL_TIENDA}
 
 El pedido no se tramita hasta que recibamos el pago y el comprobante.
 ------------------------------------------
@@ -938,15 +948,26 @@ function crearHTMLPedido(pedido, esCliente = false) {
 
   const bloquePaypal = `
     <div style="margin-top:25px;border:2px solid #0070ba;border-radius:12px;padding:20px;background:#f0f7fd;">
-      <h3 style="margin-top:0;color:#0070ba;">Cómo pagar (únicamente por PayPal)</h3>
-      <ol style="padding-left:20px;line-height:1.7;">
+      <h3 style="margin-top:0;color:#0070ba;">Cómo pagar (PayPal o transferencia)</h3>
+
+      <p style="margin-bottom:4px;"><strong>Opción 1: PayPal</strong></p>
+      <ol style="padding-left:20px;line-height:1.7;margin-top:4px;">
         <li>Envía <strong>${total}€</strong> por PayPal a:<br>
           <strong style="font-size:17px;">${EMAIL_TIENDA}</strong>
         </li>
         <li>Envíalo como <strong>AMIGOS Y FAMILIARES</strong>.</li>
         <li><strong>NO pongas ningún concepto ni mensaje</strong> en el pago.</li>
-        <li>Después, manda el <strong>comprobante de pago</strong> y la captura o el número de pedido (<strong>#${pedido.id}</strong>) a este mismo correo: <strong>${EMAIL_TIENDA}</strong></li>
       </ol>
+
+      <p style="margin-bottom:4px;"><strong>Opción 2: transferencia bancaria</strong></p>
+      <ol style="padding-left:20px;line-height:1.7;margin-top:4px;">
+        <li>Haz una transferencia de <strong>${total}€</strong> al IBAN:<br>
+          <strong style="font-size:17px;letter-spacing:1px;">${escapeHTML(IBAN_TIENDA)}</strong>
+        </li>
+        <li>En el concepto pon el número de tu pedido: <strong>#${pedido.id}</strong></li>
+      </ol>
+
+      <p><strong>Después, con cualquiera de los dos métodos,</strong> manda el <strong>comprobante de pago</strong> y la captura o el número de pedido (<strong>#${pedido.id}</strong>) a este mismo correo: <strong>${EMAIL_TIENDA}</strong></p>
       <p style="margin-bottom:0;">
         <strong>El pedido no se tramita hasta que recibamos el pago y el comprobante.</strong>
       </p>
@@ -1812,10 +1833,15 @@ CÓMO SE COMPRA (proceso en 5 pasos)
 3. Añadir al carrito (se puede repetir para varias camisetas y aprovechar
    descuentos por cantidad).
 4. Confirmar el pedido con los datos de envío y contacto.
-5. Pagar por PayPal (único método de pago) enviando el importe a
-   trakeballer@gmail.com como "Amigos y familiares", SIN poner concepto ni
-   mensaje en el pago, y luego enviar el comprobante de pago y el
-   número/captura del pedido a ese mismo correo para que preparen el envío.
+5. Pagar por PayPal o por transferencia bancaria:
+   - PayPal: enviando el importe a trakeballer@gmail.com como "Amigos y
+     familiares", SIN poner concepto ni mensaje en el pago.
+   - Transferencia bancaria: el IBAN le llega al cliente en el correo del
+     pedido (hay que haber puesto el email al hacer el pedido). No des el
+     IBAN por el chat; indica que lo recibirá en el correo del pedido y
+     que debe poner el número de pedido como concepto.
+   Después, en ambos casos, hay que enviar el comprobante de pago y el
+   número/captura del pedido a trakeballer@gmail.com para que preparen el envío.
 
 DEVOLUCIONES
 - Al ser productos personalizados (nombre y dorsal a elección del cliente),
