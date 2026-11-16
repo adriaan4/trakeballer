@@ -5,9 +5,18 @@ const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
 const crypto = require('crypto');
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: SMTP_PORT,
+  secure: SMTP_PORT === 465, // 465 = SSL directo; 587 = STARTTLS
+  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1005,13 +1014,13 @@ function crearHTMLPedido(pedido, esCliente = false) {
 }
 
 // ============================================================
-// RESEND
+// EMAIL (SMTP con Nodemailer)
 // ============================================================
 
 async function enviarEmail(destino, asunto, texto, nombreDestino = '', html = '') {
-  if (!process.env.RESEND_API_KEY) {
-    console.warn('[email] Falta RESEND_API_KEY');
-    return { ok: false, motivo: 'RESEND_API_KEY no configurada' };
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    console.warn('[email] Falta configuración SMTP (SMTP_HOST, SMTP_USER, SMTP_PASS)');
+    return { ok: false, motivo: 'SMTP no configurado' };
   }
 
   if (!process.env.EMAIL_FROM) {
@@ -1020,21 +1029,16 @@ async function enviarEmail(destino, asunto, texto, nombreDestino = '', html = ''
   }
 
   try {
-    const { data, error } = await resend.emails.send({
+    const info = await transporter.sendMail({
       from: `Trakeballer <${process.env.EMAIL_FROM}>`,
-      to: [destino],
+      to: destino,
       subject: asunto,
       text: texto,
       ...(html ? { html } : {})
     });
 
-    if (error) {
-      console.error('[email] Error Resend:', error);
-      return { ok: false, motivo: error.message || 'Error enviando email con Resend' };
-    }
-
-    console.log(`[email] Enviado a ${destino} - ID: ${data.id}`);
-    return { ok: true, id: data.id };
+    console.log(`[email] Enviado a ${destino} - ID: ${info.messageId}`);
+    return { ok: true, id: info.messageId };
   } catch (error) {
     console.error(`[email] Error enviando email a ${destino}:`, error.message);
     return { ok: false, motivo: error.message };
@@ -1696,7 +1700,7 @@ app.get('/api/salud', (req, res) => {
     ok: true,
     servicio: 'Trakeballer',
     datos: { persistente: ALMACENAMIENTO_PERSISTENTE, escribible, datosEnUpstash: USA_REDIS },
-    email: { resend: !!process.env.RESEND_API_KEY, remitente: !!process.env.EMAIL_FROM }
+    email: { smtp: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS), remitente: !!process.env.EMAIL_FROM }
   });
 });
 
@@ -1924,7 +1928,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Trakeballer funcionando en puerto ${PORT}`);
   console.log(`[email] EMAIL_TO: ${process.env.EMAIL_TO || EMAIL_TIENDA}`);
   console.log(`[email] EMAIL_FROM: ${process.env.EMAIL_FROM || 'NO CONFIGURADO'}`);
-  console.log(`[email] Resend: ${process.env.RESEND_API_KEY ? 'CONFIGURADO' : 'NO CONFIGURADO'}`);
+  console.log(`[email] SMTP: ${process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS ? 'CONFIGURADO (' + process.env.SMTP_HOST + ')' : 'NO CONFIGURADO'}`);
 
   const URL_PUBLICA = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL;
  
