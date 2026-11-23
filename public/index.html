@@ -839,6 +839,81 @@ html { scroll-padding-top: 130px; }
 }
 
 </style>
+<style id="refinamiento-visual-03">
+/* V3: coherencia visual. Solo estilos; sin cambios funcionales. */
+#drawerMenu {
+  width: min(92vw, 390px); max-width: 100%; height: 100%; height: 100dvh;
+  box-sizing: border-box; background: #0b1f3a; color: #f5f7fa;
+  border-right: 1px solid #304961; box-shadow: none;
+}
+#drawerMenu.abierto { box-shadow: 12px 0 45px #0b1f3a55; }
+.overlay-menu { background: #08192c99; backdrop-filter: blur(3px); }
+#drawerMenu .drawer-header {
+  background: linear-gradient(125deg,#0b1f3a,#24466a); color: white;
+  padding: 22px 20px; border-bottom: 1px solid #ffffff24;
+}
+#drawerMenu .drawer-header h4 {
+  font: 800 2rem/1 'Barlow Condensed',sans-serif; letter-spacing: .025em;
+  text-transform: none; color: #fff; padding: 0 0 0 12px; border-left: 4px solid #ff8a4c;
+}
+#drawerMenu .drawer-header button { width: 44px; height: 44px; border-radius: 10px; background: #ffffff10; color: #ffad80; border: 1px solid #ffffff28; }
+#drawerMenu .drawer-header button:hover { background: #ffffff24; }
+#drawerMenu .menu-list { padding: 12px 12px max(24px,env(safe-area-inset-bottom)); min-height: 0; overscroll-behavior: contain; scrollbar-color:#4a6786 transparent; }
+#drawerMenu .menu-list > li { margin: 3px 0; }
+#drawerMenu .menu-list > li > a, #drawerMenu .menu-list > li > button,
+#drawerMenu .menu-ligas > summary {
+  display: flex; align-items:center; gap: 12px; min-height: 48px; padding: 10px 12px;
+  font: 600 .91rem/1.4 'Inter',sans-serif; color: #edf3fa; text-transform: none;
+  letter-spacing: 0; border: 1px solid transparent; border-radius: 9px; background: transparent;
+  transition: background .15s, border-color .15s;
+}
+#drawerMenu .menu-icon { display: inline-flex; align-items:center; justify-content:center; width:30px; height:30px; flex:0 0 30px; border-radius:8px; background:#ffffff0d; font-size:1.05rem; }
+#drawerMenu .menu-list > li > a:hover,#drawerMenu .menu-list > li > button:hover,
+#drawerMenu .menu-ligas > summary:hover,#drawerMenu .menu-ligas[open] > summary { background:#ffffff12; border-color:#ffffff26; color:#ffad80; }
+#drawerMenu .menu-ligas > summary::after,#drawerMenu .submenu-liga > summary::after { content:'›'; margin-left:auto; color:#ffad80; font-size:1.3rem; transform:rotate(90deg); }
+#drawerMenu .menu-ligas[open] > summary::after,#drawerMenu .submenu-liga[open] > summary::after { transform:rotate(-90deg); }
+#drawerMenu .submenu-ligas { padding:8px; margin:4px 0; border:1px solid #ffffff14; border-radius:10px; background:#08192c; max-height:none; overflow:visible; }
+#drawerMenu .submenu-liga > summary { display:flex; align-items:center; gap:8px; min-height:44px; padding:9px 10px; color:#dbe6f3; background:transparent; border-radius:7px; font:600 .84rem/1.4 'Inter',sans-serif; text-transform:none; letter-spacing:0; }
+#drawerMenu .submenu-liga[open] > summary,#drawerMenu .submenu-liga > summary:hover { background:#1b3552; color:#ffad80; }
+#drawerMenu .submenu-equipos { padding:4px 0 4px 10px; margin:0; }
+#drawerMenu .btn-equipo-menu { min-height:44px; padding:9px 10px; border:0; border-left:1px solid #ffffff24; border-radius:0 6px 6px 0; color:#cddaea; background:transparent; font:500 .83rem/1.35 'Inter',sans-serif; overflow-wrap:anywhere; }
+#drawerMenu .btn-equipo-menu:hover { color:#ffad80; background:#ffffff10; border-left-color:#ff8a4c; }
+#drawerMenu .menu-proximamente { min-height:48px; padding:10px 12px; gap:8px; color:#aebed2; font:500 .83rem/1.4 'Inter',sans-serif; text-transform:none; letter-spacing:0; flex-wrap:wrap; }
+#drawerMenu .etiqueta-proximamente { color:#ffad80; background:#ffffff12; border:1px solid #ffffff20; font-size:.64rem; letter-spacing:0; }
+#drawerMenu :focus-visible { outline:2px solid #ffad80; outline-offset:-2px; }
+.topbar .hamburger { background:#0b1f3a; border-color:#0b1f3a; }
+.topbar .hamburger span:nth-child(2) { background:#ff8a4c; }
+/* Ritmo visual: pasos abiertos, bloques con distintas jerarquías, sin modificar la portada. */
+#como-funciona { background:transparent; border:0; box-shadow:none; border-radius:0; padding-top:clamp(22px,3vw,38px); padding-bottom:12px; }
+#como-funciona .paso__num { background:#0b1f3a; color:white; border-radius:10px; }
+#como-funciona .paso:last-child .paso__num { background:#ff8a4c; color:#0b1f3a; }
+#como-funciona .paso h4 { color:#0b1f3a; }
+#como-funciona .paso p { color:#46566b; }
+#selecciones { background:#fff; border-color:#dce4ee; }
+#selecciones .hub__card { border:1px solid #dce4ee; border-top:3px solid #ff8a4c; background:linear-gradient(145deg,#f7f9fc,#eaf0f7); }
+#selecciones .hub__card:nth-child(2) { border-top-color:#0b1f3a; background:linear-gradient(145deg,#f7f9fc,#e4ebf4); }
+#selecciones .hub__card:hover { background:#e0e8f2; }
+#selecciones .hub__card small { color:#46566b; }
+#ofertas { background:transparent; border:0; box-shadow:none; border-radius:0; }
+#ofertas .tabla-scroll table { background:white; }
+#ofertas .oferta-card { box-shadow:none; border-color:#dce4ee; border-left:3px solid #ff8a4c; background:#fff; }
+#ofertas .oferta-card__tag { color:#a54216; }
+#sugerencia { background:#eaf0f7; border-color:#dce4ee; }
+#sugerencia .sugerencia__card h3 { color:#0b1f3a; }
+#sugerencia .sugerencia__card > p { color:#46566b; }
+#resenas { background:transparent; border:0; box-shadow:none; border-radius:0; }
+#resenas .resenas__form-card { background:white; box-shadow:none; }
+#como-funciona .seccion__head h2,#selecciones .seccion__head h2,#ofertas .seccion__head h2,#resenas .seccion__head h2 { border-left:3px solid #ff8a4c; padding-left:12px; }
+@media(max-width:760px) {
+  #drawerMenu .drawer-header { padding:16px 14px; }
+  #drawerMenu .menu-list { padding-inline:9px; }
+  .topbar .hamburger,.topbar .search-btn,.topbar .cart-btn { min-height:44px; }
+  #como-funciona,#ofertas,#resenas { padding-inline:4px; }
+  #como-funciona .paso,#como-funciona .paso:first-child { background:white; border:1px solid #e0e6ee; }
+}
+@media(prefers-reduced-motion:reduce) { #drawerMenu,.overlay-menu { transition:none; } }
+
+</style>
 </head>
 <body>
 
