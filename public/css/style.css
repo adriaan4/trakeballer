@@ -1020,9 +1020,12 @@ h2 { font-weight: 800; text-transform: uppercase; letter-spacing: .5px; font-siz
 .hero__ctas { margin-top: 32px; }
 @media (min-width: 860px) {
   .hero { margin: 0 0 64px; padding: 110px 40px; }
-  .hero__crack--izq-arriba { top: 24px; left: 2%; }
-  .hero__crack--izq-abajo  { bottom: -34px; left: 14%; }
-  .hero__crack--der-arriba { top: 24px; right: 14%; }
+  }
+@media (max-width: 1099px) { .hero__crack { display: none; } }
+@media (min-width: 1100px) {
+  .hero__crack--izq-arriba { top: 24px; left: auto; right: 30%; }
+  .hero__crack--izq-abajo  { top: 310px; bottom: auto; left: auto; right: 19%; }
+  .hero__crack--der-arriba { top: 24px; right: 12%; }
   .hero__crack--der-abajo  { bottom: -34px; right: 2%; }
 }
 @media (max-width: 480px) { .hero { margin: 0 0 16px; padding: 56px 20px; } }
