@@ -952,3 +952,191 @@ a { color: inherit; text-decoration: none; }
 #resCuponWrap strong, #amigoResCuponWrap strong { color: #2f8f47; }
 .amigo-resumen { margin: 4px 0 14px; padding: 0; border: none; }
 .footer__legal a.footer__legal-link { display: inline-block; }
+
+
+/* =========================================================
+   REDISEÑO TIENDA PROFESIONAL
+   Solo estilos visuales: no se cambian clases, ids, textos,
+   enlaces ni lógica de mostrar/ocultar (.abierto, .activo,
+   .mostrar, .visible). Todo lo anterior se conserva arriba.
+========================================================= */
+:root {
+  --chalk: #f7f7f4;
+  --line: #e7e7e1;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(13,38,24,.06), 0 8px 24px rgba(13,38,24,.07);
+  --shadow-hover: 0 2px 4px rgba(13,38,24,.08), 0 18px 38px rgba(13,38,24,.14);
+  --ease: cubic-bezier(.2,.7,.2,1);
+}
+
+body { background: var(--chalk); letter-spacing: -.003em; }
+h1, h2, h3 { letter-spacing: .2px; }
+h2 { font-weight: 800; text-transform: uppercase; letter-spacing: .6px; }
+.seccion__head h2 { position: relative; padding-bottom: 14px; }
+.seccion__head h2::after {
+  content: ""; position: absolute; left: 0; bottom: 0;
+  width: 44px; height: 4px; border-radius: 4px; background: var(--amber);
+}
+
+/* ---- Cabecera ---- */
+.topbar {
+  background: rgba(13,38,24,.96);
+  -webkit-backdrop-filter: saturate(160%) blur(10px);
+  backdrop-filter: saturate(160%) blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 4px 18px rgba(0,0,0,.18);
+}
+.brand__logo { border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,183,3,.9); }
+.brand__texto { font-weight: 800; letter-spacing: 1.5px; }
+.hamburger, .search-btn, .cart-btn { transition: background .2s var(--ease), transform .2s var(--ease); }
+.hamburger:hover { opacity: .85; }
+.search-btn:hover, .cart-btn:hover { transform: translateY(-1px); }
+#cartCount { box-shadow: 0 0 0 2px var(--pitch-950); }
+.search-bar { border-top: 1px solid rgba(255,255,255,.06); }
+.search-bar__inner input { background: rgba(255,255,255,.1); }
+.search-resultado { transition: background .15s, transform .15s; }
+.search-resultado:hover { transform: translateY(-1px); }
+
+/* ---- Menú lateral ---- */
+.drawer { box-shadow: 14px 0 44px rgba(0,0,0,.25); }
+.drawer-header { padding: 18px 14px; border-bottom: 3px solid var(--amber); }
+.drawer-header h4 { text-transform: uppercase; letter-spacing: 1.2px; font-weight: 800; }
+.menu-list li a, .menu-list li button, .menu-list details.menu-ligas > summary { transition: background .15s, padding-left .2s var(--ease); }
+.menu-list li a:hover, .menu-list li button:hover, .menu-list details.menu-ligas > summary:hover {
+  background: #f0f6f2; padding-left: 22px;
+}
+.btn-equipo-menu:hover { color: var(--pitch-600); }
+
+/* ---- Hero ---- */
+.hero {
+  border-radius: 22px;
+  background-color: var(--pitch-950);
+  background-image:
+    radial-gradient(1000px 420px at 85% -10%, rgba(255,183,3,.16), transparent 60%),
+    radial-gradient(700px 400px at -10% 110%, rgba(31,92,58,.7), transparent 60%),
+    repeating-linear-gradient(120deg, rgba(255,255,255,.035) 0 26px, rgba(255,255,255,0) 26px 52px);
+  box-shadow: 0 24px 50px rgba(13,38,24,.28);
+  padding: 64px 40px;
+}
+.hero__kicker {
+  display: inline-block; padding: 5px 14px; border-radius: 999px;
+  background: rgba(255,183,3,.14); border: 1px solid rgba(255,183,3,.45);
+  text-transform: uppercase; letter-spacing: 1.4px; font-size: .82rem;
+}
+.hero__title { font-weight: 800; text-transform: uppercase; letter-spacing: .5px; margin-top: 10px; }
+.hero__sub { font-size: 1.05rem; }
+.hero__crack { border: 3px solid rgba(255,255,255,.9); box-shadow: 0 22px 44px rgba(0,0,0,.38); }
+
+/* ---- Botones ---- */
+.btn {
+  padding: 13px 28px; text-transform: uppercase; letter-spacing: .8px; font-size: .95rem;
+  transition: transform .18s var(--ease), box-shadow .18s var(--ease), background .18s, border-color .18s, color .18s;
+}
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(0); }
+.btn--primary { box-shadow: 0 8px 20px rgba(255,183,3,.35); }
+.btn--primary:hover { box-shadow: 0 12px 26px rgba(255,183,3,.45); }
+.hero .btn--ghost { color: #fff; border-color: rgba(255,255,255,.5); }
+.hero .btn--ghost:hover { background: #fff; color: var(--pitch-950); border-color: #fff; }
+.btn--ghost { border-width: 1.5px; }
+
+/* ---- Franja de precios ---- */
+.franja-precios {
+  background: #fff; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  padding: 16px 24px; text-transform: uppercase; letter-spacing: .6px; font-size: .9rem; font-weight: 600;
+}
+.franja-precios strong { color: var(--pitch-950); background: rgba(255,183,3,.22); padding: 2px 8px; border-radius: 6px; }
+
+/* ---- Secciones ---- */
+.seccion { padding: 64px 22px; }
+.seccion--alt { background: #fff; border-radius: 22px; box-shadow: var(--shadow); }
+@media (max-width: 480px) { .seccion { padding: 40px 16px; } .hero { padding: 40px 22px; } }
+
+/* ---- Tarjetas de producto ---- */
+.tarjeta, .equipo-escudo-card, .liga-card, .hub__card, .escudo-item, .camiseta-item, .paso, .oferta-card, .resena {
+  border: 1px solid var(--line);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .2s, background .2s;
+}
+.tarjeta:hover, .equipo-escudo-card:hover, .liga-card:hover, .hub__card:hover,
+.escudo-item:hover, .camiseta-item:hover {
+  transform: translateY(-5px); box-shadow: var(--shadow-hover); border-color: rgba(31,92,58,.35);
+}
+.tarjeta__visual, .equipo-escudo-card__shield { background: linear-gradient(180deg, #fbfbf8, #f1f1ec); }
+.tarjeta__cuerpo h4 { font-size: 1.08rem; }
+.tarjeta__precio { display: inline-block; margin-top: 2px; padding: 2px 10px; border-radius: 999px; background: #eef6f0; color: var(--pitch-600); }
+.tarjeta__foto, .camiseta-item__img img, .escudo-item__img img { transition: transform .35s var(--ease); }
+.tarjeta:hover .tarjeta__foto, .camiseta-item:hover img, .escudo-item:hover img { transform: scale(1.05); }
+.equipo-mini-camiseta { transition: border-color .15s, transform .15s; }
+.equipo-mini-camiseta:hover { border-color: var(--amber); transform: translateY(-1px); }
+.equipo-escudo-card__cta { text-transform: uppercase; letter-spacing: .6px; }
+.liga-card.activo { background: #eef6f0; border-color: var(--pitch-600); box-shadow: 0 0 0 2px rgba(31,92,58,.18), var(--shadow); }
+.liga-card span { text-transform: uppercase; letter-spacing: .5px; }
+.hub__card { border-width: 1px; padding: 32px 20px; }
+.hub__card strong { font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .8px; font-weight: 800; }
+.hub__card:hover { border-color: var(--amber); }
+
+/* chips de liga */
+.liga-tab { font-weight: 600; letter-spacing: .2px; }
+.liga-tab.activo { box-shadow: 0 6px 16px rgba(13,38,24,.25); }
+
+/* ---- Vistas a pantalla completa ---- */
+.vista__bar { box-shadow: 0 4px 18px rgba(0,0,0,.2); border-bottom: 3px solid var(--amber); }
+.vista__bar h2 { text-transform: uppercase; letter-spacing: 1px; }
+.vista__btn { transition: transform .15s, background .15s; }
+.vista__btn:hover { transform: translateY(-1px); background: var(--amber-dark); }
+
+/* ---- Tabla y ofertas ---- */
+.tabla-scroll table { border: 1px solid var(--line); }
+.tabla-scroll thead th { text-transform: uppercase; letter-spacing: .8px; padding: 14px 16px; }
+.tabla-scroll tbody tr { transition: background .15s; }
+.tabla-scroll tbody tr:hover { background: #eef6f0; }
+.oferta-card, .sugerencia__card, .resenas__form-card { border-left-width: 5px; }
+.oferta-card__tag { text-transform: uppercase; letter-spacing: 1px; }
+
+/* ---- Cómo funciona ---- */
+.paso { padding: 26px 22px; position: relative; overflow: hidden; }
+.paso::before { content: ""; position: absolute; left: 0; top: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--pitch-600), var(--amber)); }
+.paso__num { width: 40px; height: 40px; box-shadow: 0 6px 14px rgba(255,183,3,.4); }
+.paso h4 { font-size: 1.15rem; text-transform: uppercase; letter-spacing: .4px; }
+
+/* ---- Reseñas ---- */
+.resena__estrellas { color: var(--amber); }
+.resena-estrella.activa { color: var(--amber); }
+
+/* ---- Modales, carrito y formularios ---- */
+.overlay { -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.modal { border-radius: 20px; box-shadow: 0 30px 70px rgba(0,0,0,.35); }
+.modal__visual { background: linear-gradient(180deg, #fbfbf8, #f1f1ec); border: 1px solid var(--line); }
+.modal__form h3, .panel-carrito__head h3 { text-transform: uppercase; letter-spacing: .6px; font-weight: 800; }
+.panel-carrito { box-shadow: -14px 0 44px rgba(0,0,0,.22); border-left: 1px solid var(--line); }
+.item-carrito__foto, .item-carrito__icono { border: 1px solid var(--line); border-radius: 10px; }
+.resumen-linea--total { padding-top: 10px; border-top: 1px dashed var(--line); font-size: 1.25rem; }
+.campo span { font-weight: 700; text-transform: uppercase; letter-spacing: .6px; font-size: .75rem; }
+.campo input, .campo select, .campo textarea, .amigo-anadir input, .cupon__fila input {
+  background: #fff; transition: border-color .15s, box-shadow .15s;
+}
+.campo input:focus, .campo select:focus, .campo textarea:focus {
+  outline: none; border-color: var(--pitch-600); box-shadow: 0 0 0 3px rgba(31,92,58,.16);
+}
+.segmentado { box-shadow: inset 0 0 0 1px var(--line); }
+.segmentado button { transition: background .15s, color .15s; }
+.stepper button { transition: background .15s, border-color .15s; }
+.stepper button:hover { background: #eef6f0; border-color: var(--pitch-600); }
+.parche-opcion { transition: border-color .15s, background .15s; }
+.parche-opcion:hover { border-color: var(--pitch-600); background: #f4faf6; }
+.pago-paypal, .pedido-indicaciones, .amigo-descuento { border-radius: 12px; }
+
+/* ---- Pie de página ---- */
+.footer { background: var(--pitch-950); color: rgba(255,255,255,.7); padding-top: 44px; padding-bottom: 54px; margin-top: 30px; }
+.footer p { color: rgba(255,255,255,.7); }
+.footer__contacto a, .pago-paypal a { color: var(--amber); }
+.footer__legal-link { color: rgba(255,255,255,.6); }
+.footer__legal-link:hover { color: #fff; }
+.footer .pago-paypal, .footer .pago-paypal p { color: var(--ink); }
+.footer .pago-paypal a { color: var(--amber-dark); }
+
+/* ---- Botón flotante de contacto ---- */
+.contacto-flotante { box-shadow: 0 12px 28px rgba(255,183,3,.45); border: 2px solid #fff; }
+
+/* ---- Scrollbars discretas ---- */
+.menu-list, .vista__body, .panel-carrito, .modal, .search-resultados, .resenas__lista { scrollbar-width: thin; scrollbar-color: #c9cfc9 transparent; }
