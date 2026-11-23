@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=3">
+<link rel="stylesheet" href="css/style.css?v=4">
 <style>
   /* Estilos propios del menú lateral ampliado (ligas, equipos y botas).
      No se ha tocado css/style.css: todo vive aquí, dentro de index.html. */
@@ -112,29 +112,29 @@
 </style>
 <style id="rediseno-tienda">
 /* =========================================================
-   REDISEÑO TIENDA v3 — negro + lima, estilo editorial deportivo
+   REDISEÑO TIENDA v4 — azul marino + naranja, estilo tienda deportiva premium
    Solo estilos visuales: no cambian textos, enlaces, ids,
    clases ni los estados que usa el JS (.abierto, .activo,
    .mostrar, .visible).
 ========================================================= */
 :root {
-  --accent: #c8f31d;
-  --pitch-950: #0a0a0a; --pitch-800: #141414; --pitch-600: #1a1a1a;
-  --amber: #c8f31d; --amber-dark: #5f7d00;
-  --ink: #0a0a0a; --muted: #55584f;
-  --chalk: #f1f1ec; --line: #d9d9d2;
+  --accent: #ff6a1a;
+  --pitch-950: #0b1f3a; --pitch-800: #12305a; --pitch-600: #0b1f3a;
+  --amber: #ff6a1a; --amber-dark: #c2410c;
+  --ink: #0b1f3a; --muted: #4f5b6e;
+  --chalk: #f2f5fa; --line: #d8dfeb;
   --radius: 6px;
   --shadow: none;
-  --hard: 5px 5px 0 #0a0a0a;
+  --hard: 5px 5px 0 #0b1f3a;
   --ease: cubic-bezier(.2,.7,.2,1);
 }
 body { background: #fff; }
-:focus-visible { outline: 3px solid #0a0a0a; outline-offset: 2px; }
+:focus-visible { outline: 3px solid #0b1f3a; outline-offset: 2px; }
 .topbar :focus-visible, .drawer :focus-visible, .footer :focus-visible, .vista__bar :focus-visible { outline-color: var(--accent); }
 h2 { font-weight: 800; text-transform: uppercase; letter-spacing: .5px; line-height: 1; font-size: clamp(2rem, 5vw, 3.2rem); }
 
 /* ---------- CABECERA NEGRA ---------- */
-.topbar { background: #0a0a0a; border-bottom: 3px solid var(--accent); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.topbar { background: #0b1f3a; border-bottom: 3px solid var(--accent); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .topbar__inner { min-height: 72px; }
 .hamburger { align-items: flex-start; gap: 6px; padding: 8px; }
 .hamburger span { width: 26px; height: 3px; background: #fff; border-radius: 0; transition: width .2s var(--ease); }
@@ -145,28 +145,28 @@ h2 { font-weight: 800; text-transform: uppercase; letter-spacing: .5px; line-hei
 .brand .brand__texto span { color: var(--accent); }
 .brand__logo { border-radius: 50%; box-shadow: 0 0 0 2px var(--accent); }
 .search-btn, .cart-btn { color: #fff; }
-.search-btn:hover, .cart-btn:hover { background: rgba(200,243,29,.18); transform: none; }
-#cartCount { background: var(--accent); color: #0a0a0a; box-shadow: 0 0 0 2px #0a0a0a; font-weight: 800; }
-.search-bar { background: #111; }
-.search-bar.abierto { border-top: 1px solid #262626; }
-.search-bar__inner input { background: #1d1d1d; border: 2px solid #333; color: #fff; border-radius: 6px; }
-.search-bar__inner input::placeholder { color: #9a9a92; }
+.search-btn:hover, .cart-btn:hover { background: rgba(255,106,26,.18); transform: none; }
+#cartCount { background: var(--accent); color: #0b1f3a; box-shadow: 0 0 0 2px #0b1f3a; font-weight: 800; }
+.search-bar { background: #0f2848; }
+.search-bar.abierto { border-top: 1px solid #1b3358; }
+.search-bar__inner input { background: #16315a; border: 2px solid #35557f; color: #fff; border-radius: 6px; }
+.search-bar__inner input::placeholder { color: #9fb0c8; }
 .search-bar__inner input:focus { outline: none; border-color: var(--accent); box-shadow: none; }
 .search-bar__inner button { color: #fff; }
-.search-bar__inner button:hover { background: #262626; }
-.search-resultado { background: #1a1a1a; border: 1px solid #2c2c2c; border-radius: 6px; }
-.search-resultado:hover { background: #242424; border-color: var(--accent); transform: none; }
+.search-bar__inner button:hover { background: #1b3358; }
+.search-resultado { background: #16315a; border: 1px solid #2a4a7c; border-radius: 6px; }
+.search-resultado:hover { background: #1d3d6e; border-color: var(--accent); transform: none; }
 .search-resultado__info strong { color: #fff; }
-.search-resultado__info small, .search-resultados__vacio { color: #a5a59d; }
+.search-resultado__info small, .search-resultados__vacio { color: #a9b8cf; }
 
 /* ---------- MENÚ LATERAL (hamburguesa) ---------- */
 .overlay-menu { background: rgba(0,0,0,.72); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
-.drawer { width: 90%; max-width: 420px; background: #0a0a0a; color: #fff; border-right: 4px solid var(--accent); box-shadow: none; }
+.drawer { width: 90%; max-width: 420px; background: #0b1f3a; color: #fff; border-right: 4px solid var(--accent); box-shadow: none; }
 .drawer.abierto { box-shadow: 24px 0 60px rgba(0,0,0,.5); }
-.drawer-header { background: var(--accent); color: #0a0a0a; padding: 18px 16px; border-bottom: 4px solid #0a0a0a; }
-.drawer-header h4 { color: #0a0a0a; font-size: 2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; }
-.drawer-header button { background: #0a0a0a; color: var(--accent); width: 42px; height: 42px; border-radius: 6px; font-size: 1.6rem; }
-.drawer-header button:hover { background: #262626; }
+.drawer-header { background: var(--accent); color: #0b1f3a; padding: 18px 16px; border-bottom: 4px solid #0b1f3a; }
+.drawer-header h4 { color: #0b1f3a; font-size: 2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; }
+.drawer-header button { background: #0b1f3a; color: var(--accent); width: 42px; height: 42px; border-radius: 6px; font-size: 1.6rem; }
+.drawer-header button:hover { background: #1b3358; }
 .menu-list { padding: 6px 0 28px; }
 .menu-list li a, .menu-list li button, .menu-list details.menu-ligas > summary {
   color: #fff; background: none; font-family: 'Barlow Condensed', sans-serif; font-size: 1.5rem; font-weight: 700;
@@ -175,38 +175,38 @@ h2 { font-weight: 800; text-transform: uppercase; letter-spacing: .5px; line-hei
   transition: background .15s, color .15s, padding-left .2s var(--ease), border-color .15s;
 }
 .menu-list li a:hover, .menu-list li button:hover, .menu-list details.menu-ligas > summary:hover {
-  background: var(--accent); color: #0a0a0a; padding-left: 28px; border-left-color: #0a0a0a;
+  background: var(--accent); color: #0b1f3a; padding-left: 28px; border-left-color: #0b1f3a;
 }
 .menu-list details.menu-ligas[open] > summary { background: rgba(255,255,255,.08); border-left-color: var(--accent); }
-.menu-list details.menu-ligas[open] > summary:hover { background: var(--accent); border-left-color: #0a0a0a; }
+.menu-list details.menu-ligas[open] > summary:hover { background: var(--accent); border-left-color: #0b1f3a; }
 .menu-icon { font-size: 1.3rem; }
 .submenu-ligas { padding: 6px 0 10px; margin: 0; background: rgba(255,255,255,.04); max-height: 58vh; }
 .menu-list details.submenu-liga > summary { color: var(--accent); font-family: 'Barlow Condensed', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; padding: 10px 20px; }
-.menu-list details.submenu-liga[open] > summary { color: #0a0a0a; background: var(--accent); }
+.menu-list details.submenu-liga[open] > summary { color: #0b1f3a; background: var(--accent); }
 .submenu-equipos { padding: 4px 0 6px 20px; margin: 0; }
 .menu-list .btn-equipo-menu {
   display: block; width: 100%; color: rgba(255,255,255,.85); font-family: 'Inter', sans-serif; font-size: .95rem; font-weight: 500;
   text-transform: none; letter-spacing: 0; padding: 9px 16px; opacity: 1;
   border: none; border-left: 2px solid rgba(255,255,255,.2); text-decoration: none;
 }
-.menu-list .btn-equipo-menu:hover { background: var(--accent); color: #0a0a0a; border-left-color: #0a0a0a; padding-left: 22px; text-decoration: none; }
+.menu-list .btn-equipo-menu:hover { background: var(--accent); color: #0b1f3a; border-left-color: #0b1f3a; padding-left: 22px; text-decoration: none; }
 .menu-list li.menu-proximamente { color: rgba(255,255,255,.55); font-family: 'Barlow Condensed', sans-serif; font-size: 1.3rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 16px 20px; opacity: 1; }
-.etiqueta-proximamente { background: var(--accent); color: #0a0a0a; font-weight: 800; border-radius: 4px; letter-spacing: .6px; }
+.etiqueta-proximamente { background: var(--accent); color: #0b1f3a; font-weight: 800; border-radius: 4px; letter-spacing: .6px; }
 
 /* ---------- PORTADA LIMA ---------- */
 .hero {
-  margin: 0; border-radius: 0; padding: 88px 28px 96px; color: #0a0a0a; overflow: hidden;
+  margin: 0; border-radius: 0; padding: 88px 28px 96px; color: #0b1f3a; overflow: hidden;
   background-color: var(--accent);
   background-image: repeating-linear-gradient(120deg, rgba(0,0,0,.055) 0 26px, rgba(0,0,0,0) 26px 52px);
-  border-bottom: 4px solid #0a0a0a;
+  border-bottom: 4px solid #0b1f3a;
 }
 .hero__content { max-width: 1100px; padding: 0 12px; }
-.hero .hero__kicker { display: inline-block; background: #0a0a0a; color: var(--accent); padding: 7px 16px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1.6px; font-size: .85rem; margin-bottom: 18px; }
-.hero__title { color: #0a0a0a; font-size: clamp(3rem, 11vw, 6.4rem); line-height: .92; font-weight: 800; text-transform: uppercase; letter-spacing: -.5px; }
-.hero__sub, .hero p { color: #0a0a0a; }
+.hero .hero__kicker { display: inline-block; background: #0b1f3a; color: var(--accent); padding: 7px 16px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1.6px; font-size: .85rem; margin-bottom: 18px; }
+.hero__title { color: #0b1f3a; font-size: clamp(3rem, 11vw, 6.4rem); line-height: .92; font-weight: 800; text-transform: uppercase; letter-spacing: -.5px; }
+.hero__sub, .hero p { color: #0b1f3a; }
 .hero__sub { font-size: 1.1rem; font-weight: 500; max-width: 540px; }
 .hero__ctas { margin-top: 34px; gap: 12px; }
-.hero__crack { display: none; border: 3px solid #0a0a0a; border-radius: 4px; box-shadow: 8px 8px 0 #0a0a0a; opacity: 1; }
+.hero__crack { display: none; border: 3px solid #0b1f3a; border-radius: 4px; box-shadow: 8px 8px 0 #0b1f3a; opacity: 1; }
 @media (min-width: 1100px) {
   .hero { overflow: visible; margin-bottom: 64px; padding: 120px 40px 130px; }
   .hero__crack { display: block; }
@@ -217,21 +217,21 @@ h2 { font-weight: 800; text-transform: uppercase; letter-spacing: .5px; line-hei
 }
 
 /* ---------- BOTONES ---------- */
-.btn { padding: 14px 30px; border-radius: 6px; border: 2px solid #0a0a0a; text-transform: uppercase; letter-spacing: 1px; font-size: .95rem; font-weight: 800; transition: transform .15s var(--ease), box-shadow .15s var(--ease), background .15s, color .15s; }
-.btn--primary { background: var(--accent); color: #0a0a0a; box-shadow: 4px 4px 0 #0a0a0a; }
-.btn--primary:hover { background: var(--accent); transform: translate(-2px,-2px); box-shadow: 7px 7px 0 #0a0a0a; }
-.btn--primary:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #0a0a0a; }
-.btn--ghost { background: #fff; color: #0a0a0a; border-color: #0a0a0a; box-shadow: 4px 4px 0 #0a0a0a; }
-.btn--ghost:hover { background: #0a0a0a; color: var(--accent); border-color: #0a0a0a; transform: translate(-2px,-2px); box-shadow: 7px 7px 0 #0a0a0a; }
-.hero .btn--primary { background: #0a0a0a; color: var(--accent); box-shadow: 4px 4px 0 rgba(0,0,0,.35); }
-.hero .btn--primary:hover { background: #262626; box-shadow: 7px 7px 0 rgba(0,0,0,.35); }
-.hero .btn--ghost { background: transparent; color: #0a0a0a; box-shadow: none; }
-.hero .btn--ghost:hover { background: #0a0a0a; color: var(--accent); box-shadow: none; }
+.btn { padding: 14px 30px; border-radius: 6px; border: 2px solid #0b1f3a; text-transform: uppercase; letter-spacing: 1px; font-size: .95rem; font-weight: 800; transition: transform .15s var(--ease), box-shadow .15s var(--ease), background .15s, color .15s; }
+.btn--primary { background: var(--accent); color: #0b1f3a; box-shadow: 4px 4px 0 #0b1f3a; }
+.btn--primary:hover { background: var(--accent); transform: translate(-2px,-2px); box-shadow: 7px 7px 0 #0b1f3a; }
+.btn--primary:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #0b1f3a; }
+.btn--ghost { background: #fff; color: #0b1f3a; border-color: #0b1f3a; box-shadow: 4px 4px 0 #0b1f3a; }
+.btn--ghost:hover { background: #0b1f3a; color: var(--accent); border-color: #0b1f3a; transform: translate(-2px,-2px); box-shadow: 7px 7px 0 #0b1f3a; }
+.hero .btn--primary { background: #0b1f3a; color: var(--accent); box-shadow: 4px 4px 0 rgba(0,0,0,.35); }
+.hero .btn--primary:hover { background: #1b3358; box-shadow: 7px 7px 0 rgba(0,0,0,.35); }
+.hero .btn--ghost { background: transparent; color: #0b1f3a; box-shadow: none; }
+.hero .btn--ghost:hover { background: #0b1f3a; color: var(--accent); box-shadow: none; }
 .btn--full { text-align: center; }
 
 /* ---------- BARRA DE PRECIOS ---------- */
-.franja-precios { background: #0a0a0a; color: #fff; padding: 16px 24px; text-transform: uppercase; letter-spacing: 1.2px; font-size: .92rem; font-weight: 600; border: none; }
-.franja-precios strong { color: #0a0a0a; background: var(--accent); padding: 2px 9px; border-radius: 4px; }
+.franja-precios { background: #0b1f3a; color: #fff; padding: 16px 24px; text-transform: uppercase; letter-spacing: 1.2px; font-size: .92rem; font-weight: 600; border: none; }
+.franja-precios strong { color: #0b1f3a; background: var(--accent); padding: 2px 9px; border-radius: 4px; }
 .franja-precios__sep { background: rgba(255,255,255,.25); }
 
 /* ---------- SECCIONES ---------- */
@@ -243,80 +243,80 @@ h2 { font-weight: 800; text-transform: uppercase; letter-spacing: .5px; line-hei
 
 /* ---------- TARJETAS ---------- */
 .tarjeta, .equipo-escudo-card, .liga-card, .hub__card, .escudo-item, .camiseta-item, .paso, .oferta-card, .resena, .sugerencia__card, .resenas__form-card {
-  border: 2px solid #0a0a0a; border-radius: 8px; box-shadow: none; background: #fff;
+  border: 2px solid #0b1f3a; border-radius: 8px; box-shadow: none; background: #fff;
   transition: transform .18s var(--ease), box-shadow .18s var(--ease), background .15s;
 }
 .tarjeta:hover, .equipo-escudo-card:hover, .liga-card:hover, .hub__card:hover, .escudo-item:hover, .camiseta-item:hover {
-  transform: translate(-3px,-3px); box-shadow: var(--hard); border-color: #0a0a0a;
+  transform: translate(-3px,-3px); box-shadow: var(--hard); border-color: #0b1f3a;
 }
-.tarjeta__visual, .equipo-escudo-card__shield { background: var(--chalk); border-bottom: 2px solid #0a0a0a; }
+.tarjeta__visual, .equipo-escudo-card__shield { background: var(--chalk); border-bottom: 2px solid #0b1f3a; }
 .tarjeta__cuerpo { padding: 14px 14px 16px; }
 .tarjeta__cuerpo h4 { font-size: 1.2rem; text-transform: uppercase; font-weight: 800; letter-spacing: .3px; }
-.tarjeta__precio { display: inline-block; background: #0a0a0a; color: var(--accent); padding: 3px 11px; border-radius: 4px; font-size: .95rem; font-weight: 800; }
+.tarjeta__precio { display: inline-block; background: #0b1f3a; color: var(--accent); padding: 3px 11px; border-radius: 4px; font-size: .95rem; font-weight: 800; }
 .tarjeta__foto, .camiseta-item__img img, .escudo-item__img img { transition: transform .35s var(--ease); }
 .tarjeta:hover .tarjeta__foto, .camiseta-item:hover img, .escudo-item:hover img { transform: scale(1.06); }
 .equipo-escudo-card__body h3 { text-transform: uppercase; font-weight: 800; }
-.equipo-mini-camiseta { border: 1.5px solid #0a0a0a; border-radius: 4px; }
+.equipo-mini-camiseta { border: 1.5px solid #0b1f3a; border-radius: 4px; }
 .equipo-mini-camiseta:hover { background: var(--accent); }
-.equipo-escudo-card__cta { color: #0a0a0a; text-transform: uppercase; letter-spacing: .8px; font-weight: 800; }
+.equipo-escudo-card__cta { color: #0b1f3a; text-transform: uppercase; letter-spacing: .8px; font-weight: 800; }
 .liga-card span, .hub__card strong { text-transform: uppercase; letter-spacing: .6px; font-weight: 800; }
 .hub__card strong { font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; }
 .hub__card { padding: 36px 20px; }
-.liga-card.activo { background: var(--accent); border-color: #0a0a0a; box-shadow: var(--hard); transform: translate(-3px,-3px); }
-.liga-tab { border: 2px solid #0a0a0a; border-radius: 6px; text-transform: uppercase; letter-spacing: .6px; font-size: .8rem; font-weight: 700; color: #0a0a0a; background: #fff; }
-.liga-tab:hover { background: var(--accent); color: #0a0a0a; border-color: #0a0a0a; }
-.liga-tab.activo { background: #0a0a0a; color: var(--accent); border-color: #0a0a0a; }
+.liga-card.activo { background: var(--accent); border-color: #0b1f3a; box-shadow: var(--hard); transform: translate(-3px,-3px); }
+.liga-tab { border: 2px solid #0b1f3a; border-radius: 6px; text-transform: uppercase; letter-spacing: .6px; font-size: .8rem; font-weight: 700; color: #0b1f3a; background: #fff; }
+.liga-tab:hover { background: var(--accent); color: #0b1f3a; border-color: #0b1f3a; }
+.liga-tab.activo { background: #0b1f3a; color: var(--accent); border-color: #0b1f3a; }
 
 /* ---------- VISTAS COMPLETAS ---------- */
 .vista { background: #fff; }
-.vista__bar { background: #0a0a0a; color: #fff; border-bottom: 4px solid var(--accent); box-shadow: none; }
+.vista__bar { background: #0b1f3a; color: #fff; border-bottom: 4px solid var(--accent); box-shadow: none; }
 .vista__bar h2 { color: #fff; text-transform: uppercase; letter-spacing: 1.5px; font-size: 1.3rem; }
-.vista__btn { background: var(--accent); color: #0a0a0a; border-radius: 6px; text-transform: uppercase; letter-spacing: .6px; font-size: .8rem; font-weight: 800; }
+.vista__btn { background: var(--accent); color: #0b1f3a; border-radius: 6px; text-transform: uppercase; letter-spacing: .6px; font-size: .8rem; font-weight: 800; }
 .vista__btn:hover { background: #fff; }
 
 /* ---------- TABLA, OFERTAS, PASOS, RESEÑAS ---------- */
-.tabla-scroll table { border: 2px solid #0a0a0a; border-radius: 8px; box-shadow: none; }
-.tabla-scroll thead th { background: #0a0a0a; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; padding: 15px 16px; }
+.tabla-scroll table { border: 2px solid #0b1f3a; border-radius: 8px; box-shadow: none; }
+.tabla-scroll thead th { background: #0b1f3a; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; padding: 15px 16px; }
 .tabla-scroll tbody tr:nth-child(even) { background: var(--chalk); }
-.tabla-scroll tbody tr:hover { background: rgba(200,243,29,.35); }
-.tabla-scroll tbody td:first-child { color: #0a0a0a; font-weight: 800; }
+.tabla-scroll tbody tr:hover { background: rgba(255,106,26,.16); }
+.tabla-scroll tbody td:first-child { color: #0b1f3a; font-weight: 800; }
 .oferta-card, .sugerencia__card, .resenas__form-card { border-left: 10px solid var(--accent); padding: 28px; }
 .oferta-card__tag, .modal__categoria { text-transform: uppercase; letter-spacing: 1.2px; color: var(--amber-dark); }
-.paso { padding: 26px 22px; box-shadow: 5px 5px 0 #0a0a0a; }
-.paso__num { background: var(--accent); color: #0a0a0a; border: 2px solid #0a0a0a; width: 42px; height: 42px; border-radius: 6px; }
+.paso { padding: 26px 22px; box-shadow: 5px 5px 0 #0b1f3a; }
+.paso__num { background: var(--accent); color: #0b1f3a; border: 2px solid #0b1f3a; width: 42px; height: 42px; border-radius: 6px; }
 .paso h4 { text-transform: uppercase; font-size: 1.2rem; font-weight: 800; }
 .resena__estrellas, .resena-estrella.activa { color: #f5a000; }
 
 /* ---------- MODALES, CARRITO, FORMULARIOS ---------- */
 .overlay { background: rgba(0,0,0,.72); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
-.modal { border: 3px solid #0a0a0a; border-radius: 10px; box-shadow: 8px 8px 0 var(--accent); }
-.modal__visual { background: var(--chalk); border: 2px solid #0a0a0a; border-radius: 8px; }
-.modal__cerrar { color: #0a0a0a; }
+.modal { border: 3px solid #0b1f3a; border-radius: 10px; box-shadow: 8px 8px 0 var(--accent); }
+.modal__visual { background: var(--chalk); border: 2px solid #0b1f3a; border-radius: 8px; }
+.modal__cerrar { color: #0b1f3a; }
 .modal__cerrar:hover { background: var(--accent); }
 .modal__form h3, .panel-carrito__head h3 { text-transform: uppercase; letter-spacing: .6px; font-weight: 800; }
-.panel-carrito { border-left: 4px solid #0a0a0a; box-shadow: -16px 0 50px rgba(0,0,0,.3); }
-.item-carrito__foto, .item-carrito__icono { border: 2px solid #0a0a0a; border-radius: 6px; }
-.resumen-linea--total { padding-top: 12px; border-top: 3px solid #0a0a0a; font-size: 1.35rem; }
-.campo span { text-transform: uppercase; letter-spacing: .7px; font-size: .74rem; font-weight: 800; color: #0a0a0a; }
+.panel-carrito { border-left: 4px solid #0b1f3a; box-shadow: -16px 0 50px rgba(0,0,0,.3); }
+.item-carrito__foto, .item-carrito__icono { border: 2px solid #0b1f3a; border-radius: 6px; }
+.resumen-linea--total { padding-top: 12px; border-top: 3px solid #0b1f3a; font-size: 1.35rem; }
+.campo span { text-transform: uppercase; letter-spacing: .7px; font-size: .74rem; font-weight: 800; color: #0b1f3a; }
 .campo input, .campo select, .campo textarea, .amigo-anadir input, .amigo-anadir--col textarea, .cupon__fila input {
-  background: #fff; border: 2px solid #0a0a0a; border-radius: 6px; transition: box-shadow .15s;
+  background: #fff; border: 2px solid #0b1f3a; border-radius: 6px; transition: box-shadow .15s;
 }
-.campo input:focus, .campo select:focus, .campo textarea:focus { outline: none; border-color: #0a0a0a; box-shadow: 4px 4px 0 var(--accent); }
-.segmentado { border: 2px solid #0a0a0a; border-radius: 6px; }
-.segmentado button { background: #fff; color: #0a0a0a; font-weight: 700; }
-.segmentado button.activo { background: #0a0a0a; color: var(--accent); }
-.stepper button { border: 2px solid #0a0a0a; border-radius: 6px; background: #fff; }
-.stepper button:hover { background: var(--accent); border-color: #0a0a0a; }
-.parche-opcion { border: 2px solid #0a0a0a; border-radius: 6px; }
-.parche-opcion:hover { background: rgba(200,243,29,.3); }
-.pago-paypal, .pedido-indicaciones, .amigo-descuento { background: rgba(200,243,29,.22); border: 2px solid #0a0a0a; border-radius: 8px; }
+.campo input:focus, .campo select:focus, .campo textarea:focus { outline: none; border-color: #0b1f3a; box-shadow: 4px 4px 0 var(--accent); }
+.segmentado { border: 2px solid #0b1f3a; border-radius: 6px; }
+.segmentado button { background: #fff; color: #0b1f3a; font-weight: 700; }
+.segmentado button.activo { background: #0b1f3a; color: var(--accent); }
+.stepper button { border: 2px solid #0b1f3a; border-radius: 6px; background: #fff; }
+.stepper button:hover { background: var(--accent); border-color: #0b1f3a; }
+.parche-opcion { border: 2px solid #0b1f3a; border-radius: 6px; }
+.parche-opcion:hover { background: rgba(255,106,26,.3); }
+.pago-paypal, .pedido-indicaciones, .amigo-descuento { background: rgba(255,106,26,.22); border: 2px solid #0b1f3a; border-radius: 8px; }
 .pago-paypal a, .footer__contacto a, .legal-panel a { color: var(--amber-dark); }
-.legal-tab { border: 2px solid #0a0a0a; color: #0a0a0a; border-radius: 6px; }
-.legal-tab.activo { background: #0a0a0a; color: var(--accent); border-color: #0a0a0a; }
-.talla-cantidad, .amigo-lista li { border: 2px solid #0a0a0a; }
+.legal-tab { border: 2px solid #0b1f3a; color: #0b1f3a; border-radius: 6px; }
+.legal-tab.activo { background: #0b1f3a; color: var(--accent); border-color: #0b1f3a; }
+.talla-cantidad, .amigo-lista li { border: 2px solid #0b1f3a; }
 
 /* ---------- PIE DE PÁGINA ---------- */
-.footer { background: #0a0a0a; color: rgba(255,255,255,.75); border-top: 6px solid var(--accent); padding-top: 56px; padding-bottom: 70px; margin-top: 40px; }
+.footer { background: #0b1f3a; color: rgba(255,255,255,.75); border-top: 6px solid var(--accent); padding-top: 56px; padding-bottom: 70px; margin-top: 40px; }
 .footer p { color: rgba(255,255,255,.75); }
 .footer .footer__contacto a { color: var(--accent); }
 .footer__legal-link { color: rgba(255,255,255,.6); }
@@ -324,12 +324,12 @@ h2 { font-weight: 800; text-transform: uppercase; letter-spacing: .5px; line-hei
 .footer__crack { border: 3px solid var(--accent); border-radius: 4px; box-shadow: none; }
 
 /* ---------- FLOTANTES ---------- */
-.contacto-flotante { background: var(--accent); color: #0a0a0a; border: 2px solid #0a0a0a; box-shadow: 4px 4px 0 #0a0a0a; }
-.contacto-flotante:hover { background: #fff; transform: translate(-2px,-2px); box-shadow: 6px 6px 0 #0a0a0a; }
-#tk-chat-bubble { background: #0a0a0a !important; border: 2px solid var(--accent); box-shadow: 4px 4px 0 var(--accent) !important; }
-#tk-chat-header, #tk-chat-send, .tk-chat-msg.user { background: #0a0a0a !important; }
+.contacto-flotante { background: var(--accent); color: #0b1f3a; border: 2px solid #0b1f3a; box-shadow: 4px 4px 0 #0b1f3a; }
+.contacto-flotante:hover { background: #fff; transform: translate(-2px,-2px); box-shadow: 6px 6px 0 #0b1f3a; }
+#tk-chat-bubble { background: #0b1f3a !important; border: 2px solid var(--accent); box-shadow: 4px 4px 0 var(--accent) !important; }
+#tk-chat-header, #tk-chat-send, .tk-chat-msg.user { background: #0b1f3a !important; }
 #tk-chat-header { border-bottom: 3px solid var(--accent); }
-#tk-chat-window { border: 2px solid #0a0a0a; border-radius: 10px; }
+#tk-chat-window { border: 2px solid #0b1f3a; border-radius: 10px; }
 
 body:has(.drawer.abierto) #tk-chat-bubble, body:has(.drawer.abierto) .contacto-flotante { visibility: hidden; }
 
@@ -340,8 +340,8 @@ body:has(.drawer.abierto) #tk-chat-bubble, body:has(.drawer.abierto) .contacto-f
   .hero__content { padding: 0; }
   .hero__ctas .btn { flex: 1 1 100%; text-align: center; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-  .tarjeta:hover, .equipo-escudo-card:hover, .liga-card:hover, .hub__card:hover, .escudo-item:hover, .camiseta-item:hover, .liga-card.activo { box-shadow: 3px 3px 0 #0a0a0a; transform: translate(-1px,-1px); }
-  .paso { box-shadow: 3px 3px 0 #0a0a0a; }
+  .tarjeta:hover, .equipo-escudo-card:hover, .liga-card:hover, .hub__card:hover, .escudo-item:hover, .camiseta-item:hover, .liga-card.activo { box-shadow: 3px 3px 0 #0b1f3a; transform: translate(-1px,-1px); }
+  .paso { box-shadow: 3px 3px 0 #0b1f3a; }
   .modal { box-shadow: 5px 5px 0 var(--accent); }
   .drawer { width: 92%; }
   .menu-list li a, .menu-list li button, .menu-list details.menu-ligas > summary { font-size: 1.4rem; padding: 14px 18px; }
@@ -351,6 +351,25 @@ body:has(.drawer.abierto) #tk-chat-bubble, body:has(.drawer.abierto) .contacto-f
   .topbar__inner { min-height: 64px; }
   .brand__logo { height: 44px; width: 44px; }
 }
+
+/* ---------- v4: portada azul marino con naranja ---------- */
+.hero {
+  color: #fff; border-bottom: 4px solid var(--accent);
+  background-color: #0b1f3a;
+  background-image:
+    radial-gradient(900px 480px at 85% 0%, rgba(255,106,26,.30), transparent 60%),
+    radial-gradient(700px 440px at 0% 100%, rgba(37,99,235,.40), transparent 60%),
+    repeating-linear-gradient(120deg, rgba(255,255,255,.04) 0 26px, rgba(255,255,255,0) 26px 52px);
+}
+.hero .hero__kicker { background: var(--accent); color: #0b1f3a; font-weight: 800; }
+.hero__title { color: #fff; }
+.hero__sub, .hero p { color: rgba(255,255,255,.9); }
+.hero__crack { border: 3px solid #fff; box-shadow: 8px 8px 0 var(--accent); }
+.hero .btn--primary { background: var(--accent); color: #0b1f3a; border-color: var(--accent); box-shadow: 4px 4px 0 rgba(0,0,0,.4); }
+.hero .btn--primary:hover { background: #ff8a4c; border-color: #ff8a4c; box-shadow: 7px 7px 0 rgba(0,0,0,.4); }
+.hero .btn--ghost { background: transparent; color: #fff; border-color: #fff; box-shadow: none; }
+.hero .btn--ghost:hover { background: #fff; color: #0b1f3a; border-color: #fff; box-shadow: none; }
+.topbar { border-bottom-color: var(--accent); }
 
 </style>
 </head>
