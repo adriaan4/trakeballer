@@ -1385,7 +1385,7 @@ fetch('/api/camisetas-admin')
     if (pilaVistas.length) pintarVista(); // por si abrieron una pantalla antes de que llegaran
   })
   .catch(e => { panelDebugEscudos('app.js NUEVO cargado, pero /api/camisetas-admin falló', [String(e)]); /* sin conexión con el servidor: se queda el catálogo normal */ });
-document.getElementById('hubLogosMundial').innerHTML = '<img class="hub__foto" src="img/marca/mundial-campeones.webp" alt="Selección campeona del Mundial">';
+document.getElementById('hubLogosMundial').innerHTML = '<img class="hub__foto" src="img/marca/mundial-campeones-2.webp" alt="Selección campeona del Mundial">';
 document.getElementById('hubLogosLigas').innerHTML = ['inglaterra', 'espana', 'italia', 'alemania'].map(n => `<img src="img/escudos/ligas/${n}.webp" alt="">`).join('');
 // Los enlaces antiguos "Ver selecciones" / "Ver equipos" abren directamente estas pantallas
 document.querySelectorAll('a[href="#selecciones"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); abrirMundiales(); }));
