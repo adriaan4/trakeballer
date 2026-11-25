@@ -13,7 +13,7 @@
 <meta property="og:title" content="Trakeballer — Tienda de Camisetas de Fútbol">
 <meta property="og:description" content="Camisetas de fútbol actuales y retro de clubes y selecciones, personalizadas con nombre y dorsal.">
 <meta property="og:image" content="https://trakeballer-ut6z.onrender.com/img/marca/logo-trakeballer.png">
-<link rel="icon" type="image/png" href="img/marca/logo-trakeballer-header.png">
+<link rel="icon" type="image/png" href="img/marca/logo-trakeballer-header.webp">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -923,7 +923,7 @@ html { scroll-padding-top: 130px; }
       <span></span><span></span><span></span>
     </button>
     <a href="#inicio" class="brand">
-      <img src="img/marca/logo-trakeballer.png" alt="Trakeballer" class="brand__logo">
+      <img src="img/marca/logo-trakeballer.webp" alt="Trakeballer" class="brand__logo">
       <span class="brand__texto">TRAKE<span>BALLER</span></span>
     </a>
     <button class="search-btn" id="btnAbrirBuscador" aria-label="Buscar camiseta">🔍</button>
@@ -1215,10 +1215,10 @@ html { scroll-padding-top: 130px; }
 
 <section class="hero" id="inicio">
   <div class="hero__field" aria-hidden="true"></div>
-  <img src="img/jugadores/haaland.jpg" alt="" aria-hidden="true" class="hero__crack hero__crack--izq-arriba">
-  <img src="img/jugadores/pedri.jpg" alt="" aria-hidden="true" class="hero__crack hero__crack--izq-abajo">
-  <img src="img/jugadores/oblak.jpg" alt="" aria-hidden="true" class="hero__crack hero__crack--der-arriba">
-  <img src="img/jugadores/aubameyang.jpg" alt="" aria-hidden="true" class="hero__crack hero__crack--der-abajo">
+  <img src="img/jugadores/haaland.webp" alt="" aria-hidden="true" class="hero__crack hero__crack--izq-arriba">
+  <img src="img/jugadores/pedri.webp" alt="" aria-hidden="true" class="hero__crack hero__crack--izq-abajo">
+  <img src="img/jugadores/oblak.webp" alt="" aria-hidden="true" class="hero__crack hero__crack--der-arriba">
+  <img src="img/jugadores/aubameyang.webp" alt="" aria-hidden="true" class="hero__crack hero__crack--der-abajo">
   <div class="hero__content">
     <p class="hero__kicker">Personalízala en 30 segundos</p>
     <h1 class="hero__title">Tu nombre.<br>Tu dorsal.<br>Tu leyenda.</h1>
@@ -1292,8 +1292,8 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
 </div>
 
 <section class="seccion" id="ofertas">
-  <img src="img/jugadores/pedri.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--izq seccion__crack--baja">
-  <img src="img/jugadores/aubameyang.jpg" alt="" aria-hidden="true" class="seccion__crack seccion__crack--der seccion__crack--baja">
+  <img src="img/jugadores/pedri.webp" alt="" aria-hidden="true" class="seccion__crack seccion__crack--izq seccion__crack--baja">
+  <img src="img/jugadores/aubameyang.webp" alt="" aria-hidden="true" class="seccion__crack seccion__crack--der seccion__crack--baja">
   <div class="seccion__head">
   <h2>Ofertas especiales</h2>
   <p>Envío gratis a partir de 6 camisetas.</p>
@@ -1401,7 +1401,7 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
 </section>
 
 <footer class="footer">
-  <img src="img/jugadores/haaland.jpg" alt="" aria-hidden="true" class="footer__crack">
+  <img src="img/jugadores/haaland.webp" alt="" aria-hidden="true" class="footer__crack">
   <p> · ⚽Trakeballer · Tienda de camisetas de fútbol personalizadas · ⚽ </p>
   <p class="footer__contacto">
     ¿Dudas con tu pedido? Escríbenos a
@@ -1870,7 +1870,7 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
 </script>
 
 <!-- ============================================================
-     CHAT CON IA (asistente virtual de Trakeballer)
+     CHAT DE SOPORTE (mensajes privados con Trakeballer)
      ============================================================ -->
 <style>
   #tk-chat-bubble {
@@ -1889,6 +1889,19 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
     cursor: pointer;
     box-shadow: 0 4px 14px rgba(0,0,0,0.3);
     z-index: 99999;
+  }
+  #tk-chat-bubble.tk-nuevo::after {
+    content: '1';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background: #e11d48;
+    color: #fff;
+    font: 700 12px/20px system-ui, sans-serif;
+    text-align: center;
   }
   #tk-chat-window {
     position: fixed;
@@ -1917,6 +1930,13 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
     padding: 12px 16px;
     font-weight: 600;
   }
+  #tk-chat-header small {
+    display: block;
+    font-weight: 400;
+    font-size: 12px;
+    opacity: 0.8;
+    margin-top: 2px;
+  }
   #tk-chat-messages {
     flex: 1;
     padding: 12px;
@@ -1933,6 +1953,7 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
     font-size: 14px;
     line-height: 1.4;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
   .tk-chat-msg.user {
     align-self: flex-end;
@@ -1943,6 +1964,30 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
     align-self: flex-start;
     background: #e9e9e9;
     color: #222;
+  }
+  .tk-chat-msg.sistema {
+    align-self: center;
+    background: transparent;
+    color: #777;
+    font-size: 12px;
+    text-align: center;
+    max-width: 94%;
+  }
+  #tk-chat-contacto {
+    display: none;
+    gap: 6px;
+    padding: 8px 10px;
+    background: #fff;
+    border-top: 1px solid #eee;
+  }
+  #tk-chat-contacto input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 7px 9px;
+    font-size: 13px;
+    outline: none;
   }
   #tk-chat-input-area {
     display: flex;
@@ -1963,82 +2008,172 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
     padding: 0 16px;
     cursor: pointer;
   }
+  #tk-chat-send:disabled { opacity: 0.6; cursor: default; }
 </style>
 
-<div id="tk-chat-bubble">💬</div>
+<div id="tk-chat-bubble" role="button" aria-label="Abrir chat de soporte" tabindex="0">💬</div>
 
 <div id="tk-chat-window">
-  <div id="tk-chat-header">Asistente Trakeballer</div>
+  <div id="tk-chat-header">Soporte Trakeballer<small>Mensajes privados · te respondemos lo antes posible</small></div>
   <div id="tk-chat-messages"></div>
+  <div id="tk-chat-contacto">
+    <input id="tk-chat-nombre" type="text" maxlength="60" placeholder="Tu nombre (opcional)" autocomplete="name">
+    <input id="tk-chat-email" type="email" maxlength="120" placeholder="Email para avisarte (opcional)" autocomplete="email">
+  </div>
   <div id="tk-chat-input-area">
-    <input id="tk-chat-input" type="text" placeholder="Escribe tu pregunta..." />
+    <input id="tk-chat-input" type="text" maxlength="1000" placeholder="Escribe tu mensaje..." />
     <button id="tk-chat-send">Enviar</button>
   </div>
 </div>
 
 <script>
   (function () {
+    var CLAVE_TOKEN = 'tk_soporte_token';
+    var CLAVE_VISTO = 'tk_soporte_visto';
+
     var bubble = document.getElementById('tk-chat-bubble');
     var win = document.getElementById('tk-chat-window');
     var messagesEl = document.getElementById('tk-chat-messages');
+    var contactoEl = document.getElementById('tk-chat-contacto');
+    var nombreEl = document.getElementById('tk-chat-nombre');
+    var emailEl = document.getElementById('tk-chat-email');
     var input = document.getElementById('tk-chat-input');
     var sendBtn = document.getElementById('tk-chat-send');
-    var history = [];
 
-    bubble.addEventListener('click', function () {
-      win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
-      if (messagesEl.children.length === 0) {
-        addMessage('bot', '¡Hola! ⚽ Soy el asistente de Trakeballer. Pregúntame sobre equipos, tallas, precios, envíos o cómo hacer tu pedido.');
-      }
-    });
+    var token = guardado(CLAVE_TOKEN);
+    var ultimoTs = 0;      // ts del último mensaje que ya está pintado
+    var abierto = false;
+    var temporizador = null;
+    var cargando = false;
 
-    function addMessage(role, text) {
+    function guardado(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+    function guardar(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    function borrar(k) { try { localStorage.removeItem(k); } catch (e) {} }
+
+    function pintar(texto, clase) {
       var div = document.createElement('div');
-      div.className = 'tk-chat-msg ' + (role === 'user' ? 'user' : 'bot');
-      div.textContent = text;
+      div.className = 'tk-chat-msg ' + clase;
+      div.textContent = texto;            // textContent: nunca interpreta HTML
       messagesEl.appendChild(div);
       messagesEl.scrollTop = messagesEl.scrollHeight;
+      return div;
     }
 
-    function sendMessage() {
-      var text = input.value.trim();
-      if (!text) return;
-      addMessage('user', text);
-      history.push({ role: 'user', content: text });
-      input.value = '';
+    function pintarMensajes(lista) {
+      lista.forEach(function (m) {
+        if (m.ts <= ultimoTs) return;
+        pintar(m.texto, m.de === 'cliente' ? 'user' : 'bot');
+        ultimoTs = m.ts;
+      });
+    }
+
+    function saludo() {
+      pintar('¡Hola! ⚽ Escríbenos tu duda sobre pedidos, tallas, envíos o lo que necesites. Es un chat privado: solo lo vemos nosotros. Si dejas tu email, te avisamos cuando respondamos aunque cierres la web.', 'sistema');
+    }
+
+    function cabeceras() {
+      return token ? { 'Content-Type': 'application/json', 'x-soporte-token': token } : { 'Content-Type': 'application/json' };
+    }
+
+    function reiniciar() {            // la conversación ya no existe en el servidor
+      token = ''; ultimoTs = 0;
+      borrar(CLAVE_TOKEN); borrar(CLAVE_VISTO);
+      messagesEl.innerHTML = '';
+      saludo();
+      contactoEl.style.display = 'flex';
+    }
+
+    function consultar() {
+      if (!token || cargando) return Promise.resolve();
+      cargando = true;
+      return fetch('/api/soporte/mensajes?desde=' + ultimoTs + '&abierto=' + (abierto ? '1' : '0'), { headers: cabeceras(), cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || d.ok === false) return;
+          if (d.existe === false) { if (abierto) reiniciar(); return; }
+          if (abierto) {
+            pintarMensajes(d.mensajes || []);
+            var tienda = (d.mensajes || []).filter(function (m) { return m.de === 'tienda'; });
+            if (tienda.length) guardar(CLAVE_VISTO, String(ultimoTs));
+          } else {
+            var visto = Number(guardado(CLAVE_VISTO)) || 0;
+            var hayNuevo = (d.mensajes || []).some(function (m) { return m.de === 'tienda' && m.ts > visto; });
+            bubble.classList.toggle('tk-nuevo', hayNuevo);
+          }
+        })
+        .catch(function () {})
+        .then(function () { cargando = false; });
+    }
+
+    function programar() {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(function () {
+        if (document.hidden && !abierto) { programar(); return; }
+        consultar().then(programar);
+      }, abierto ? 5000 : 45000);
+    }
+
+    function abrir() {
+      abierto = true;
+      win.style.display = 'flex';
+      bubble.classList.remove('tk-nuevo');
+      if (messagesEl.children.length === 0) {
+        saludo();
+        if (!token) contactoEl.style.display = 'flex';
+      }
+      if (token) {
+        // Al abrir cargamos el historial completo (solo la primera vez).
+        var primera = ultimoTs === 0;
+        consultar().then(function () { if (primera && ultimoTs === 0) { /* sin mensajes aún */ } });
+      }
+      input.focus();
+      programar();
+    }
+
+    function cerrar() {
+      abierto = false;
+      win.style.display = 'none';
+      programar();
+    }
+
+    bubble.addEventListener('click', function () { if (abierto) cerrar(); else abrir(); });
+    bubble.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); bubble.click(); } });
+
+    function enviar() {
+      var texto = input.value.trim();
+      if (!texto) return;
       sendBtn.disabled = true;
 
-      var thinkingDiv = document.createElement('div');
-      thinkingDiv.className = 'tk-chat-msg bot';
-      thinkingDiv.textContent = 'Escribiendo...';
-      messagesEl.appendChild(thinkingDiv);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
+      var cuerpo = { texto: texto };
+      if (!token) {
+        if (nombreEl.value.trim()) cuerpo.nombre = nombreEl.value.trim();
+        if (emailEl.value.trim()) cuerpo.email = emailEl.value.trim();
+      }
 
-      fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history }),
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          thinkingDiv.remove();
-          var reply = data.reply || data.error || 'Ocurrió un error.';
-          addMessage('bot', reply);
-          history.push({ role: 'assistant', content: reply });
+      fetch('/api/soporte/mensaje', { method: 'POST', headers: cabeceras(), body: JSON.stringify(cuerpo) })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (d) {
+          if (!d.ok) { pintar(d.error || 'No se pudo enviar. Inténtalo de nuevo.', 'sistema'); return; }
+          input.value = '';
+          if (d.token && d.token !== token) {
+            // conversación nueva: empezamos limpios con el historial que devuelve el servidor
+            token = d.token;
+            guardar(CLAVE_TOKEN, token);
+            messagesEl.innerHTML = '';
+            ultimoTs = 0;
+            contactoEl.style.display = 'none';
+          }
+          pintarMensajes(d.mensajes || []);
         })
-        .catch(function () {
-          thinkingDiv.remove();
-          addMessage('bot', 'Error de conexión, inténtalo de nuevo.');
-        })
-        .finally(function () {
-          sendBtn.disabled = false;
-        });
+        .catch(function () { pintar('Error de conexión, inténtalo de nuevo.', 'sistema'); })
+        .then(function () { sendBtn.disabled = false; });
     }
 
-    sendBtn.addEventListener('click', sendMessage);
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') sendMessage();
-    });
+    sendBtn.addEventListener('click', enviar);
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') enviar(); });
+
+    // Si ya hay conversación, comprobamos de vez en cuando si hay respuesta nueva (punto rojo).
+    if (token) { consultar(); programar(); }
   })();
 </script>
 

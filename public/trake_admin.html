@@ -60,14 +60,46 @@
   .camis .etq b { color:#facc15; }
   .camis button { width:100%; margin-top:6px; padding:5px; }
   #avisoCld { display:none; background:#3b1d1d; border:1px solid #f87171; color:#fecaca; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-size:0.88rem; }
+  /* Seguimiento de envío */
+  .seguimiento { margin-top:10px; padding:10px; background:#222; border:1px solid #333; border-radius:8px; }
+  .seguimiento h3 { margin:0 0 8px; font-size:0.9rem; color:#facc15; }
+  .seguimiento .fila { display:flex; gap:8px; flex-wrap:wrap; }
+  .seguimiento select, .seguimiento input { margin:0 0 8px; flex:1; min-width:150px; }
+  .seguimiento .acciones { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .seguimiento .nota { font-size:0.8rem; color:#aaa; }
+  .seguimiento .ok { color:#4ade80; }
+  .seguimiento .err { color:#f87171; }
+  .seguimiento a { color:#7dd3fc; }
+  /* Mensajes de soporte */
+  .tab-badge { display:inline-block; min-width:18px; padding:0 5px; margin-left:6px; border-radius:9px; background:#e11d48; color:#fff; font-size:0.75rem; line-height:18px; text-align:center; }
+  .soporte { display:flex; gap:14px; align-items:stretch; min-height:420px; }
+  .soporte-lista { width:300px; max-width:42%; background:#1c1c1c; border:1px solid #333; border-radius:10px; overflow-y:auto; max-height:70vh; }
+  .conv-item { padding:10px 12px; border-bottom:1px solid #2a2a2a; cursor:pointer; }
+  .conv-item:hover { background:#222; }
+  .conv-item.sel { background:#173324; }
+  .conv-item .quien { font-weight:bold; font-size:0.92rem; display:flex; justify-content:space-between; gap:8px; }
+  .conv-item .quien .punto { background:#e11d48; color:#fff; border-radius:9px; padding:0 6px; font-size:0.72rem; line-height:18px; }
+  .conv-item .snip { font-size:0.8rem; color:#999; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .conv-item .hora { font-size:0.72rem; color:#666; margin-top:2px; }
+  .soporte-chat { flex:1; min-width:0; background:#1c1c1c; border:1px solid #333; border-radius:10px; display:flex; flex-direction:column; max-height:70vh; }
+  .soporte-cab { padding:10px 14px; border-bottom:1px solid #333; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .soporte-cab small { color:#aaa; display:block; }
+  .soporte-msgs { flex:1; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:8px; min-height:240px; }
+  .burbuja { max-width:80%; padding:8px 12px; border-radius:12px; font-size:0.92rem; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .burbuja.cliente { align-self:flex-start; background:#2a2a2a; }
+  .burbuja.tienda { align-self:flex-end; background:#14532d; }
+  .burbuja small { display:block; color:#999; font-size:0.7rem; margin-top:3px; }
+  .soporte-resp { display:flex; gap:8px; padding:10px 14px; border-top:1px solid #333; }
+  .soporte-resp textarea { flex:1; margin:0; padding:8px; border-radius:6px; border:1px solid #444; background:#222; color:#eee; font:inherit; resize:vertical; min-height:44px; max-height:160px; }
+  @media (max-width:700px) { .soporte { flex-direction:column; } .soporte-lista { width:auto; max-width:none; max-height:220px; } }
 </style>
 </head>
 <body>
 
 <header style="display:flex;align-items:center;justify-content:center;gap:16px;padding:16px 0;">
-  <img src="/leon.png" alt="" style="height:230px;">
-  <img src="/logo.png" alt="Trakeballer" style="height:230px;">
-  <img src="/leon.png" alt="" style="height:230px;">
+  <img src="/leon.webp" alt="" style="height:230px;">
+  <img src="/logo.webp" alt="Trakeballer" style="height:230px;">
+  <img src="/leon.webp" alt="" style="height:230px;">
 </header>
 
 <div id="login">
@@ -81,6 +113,7 @@
   <div class="tabs">
     <button id="tabBtnPedidos" class="activo" onclick="verTab('pedidos')">📦 Pedidos</button>
     <button id="tabBtnCamisetas" onclick="verTab('camisetas')">👕 Subir camisetas</button>
+    <button id="tabBtnMensajes" onclick="verTab('mensajes')">💬 Mensajes<span id="badgeMensajes" class="tab-badge" style="display:none;"></span></button>
   </div>
 
   <div id="tabPedidos">
@@ -93,6 +126,17 @@
     <button id="fTodos" onclick="setFiltro('todos')">Todos</button>
   </div>
   <div id="lista"></div>
+  </div>
+
+  <div id="tabMensajes" style="display:none;">
+    <h1>Mensajes de clientes</h1>
+    <p style="color:#aaa;font-size:0.85rem;margin-top:-8px;">Chats privados de la web. Si el cliente dejó su email y no tiene el chat abierto, recibe tu respuesta también por correo.</p>
+    <div class="soporte">
+      <div class="soporte-lista" id="listaConv"><p style="padding:12px;color:#888;">Cargando…</p></div>
+      <div class="soporte-chat" id="chatConv">
+        <div style="padding:30px;color:#888;text-align:center;">Elige una conversación de la lista.</div>
+      </div>
+    </div>
   </div>
 
   <div id="tabCamisetas" style="display:none;">
@@ -160,6 +204,7 @@
 let CLAVE = '';
 let PEDIDOS = [];
 let FILTRO = 'pendientes';
+let TAB_ACTUAL = 'pedidos';
 
 const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -182,6 +227,7 @@ async function entrar() {
     PEDIDOS = data.pedidos;
     document.getElementById('avisoDisco').style.display = data.almacenamientoPersistente === false ? 'block' : 'none';
     pintarPedidos();
+    refrescarMensajes();
   } catch (e) {
     estado.textContent = 'Error de conexión.';
   }
@@ -262,9 +308,230 @@ function pintarPedidos() {
       </ul>
       ${desgloseHTML(p)}
       <p class="total">TOTAL: ${Number(p.total || 0).toFixed(2)}€</p>
+      ${seguimientoHTML(p)}
     </div>
   `).join('');
 }
+
+
+/* =========================================================
+   SEGUIMIENTO DEL ENVÍO (código + correo al cliente)
+========================================================= */
+const TRANSPORTISTAS = [
+  ['correos', 'Correos'], ['seur', 'SEUR'], ['dhl', 'DHL'], ['ups', 'UPS'],
+  ['17track', '17TRACK (internacional)'], ['otro', 'Otro (pega tu enlace)']
+];
+const EDITANDO_SEG = new Set();
+
+function seguimientoHTML(p) {
+  const sg = p.seguimiento;
+  if (sg && !EDITANDO_SEG.has(p.id)) {
+    const enlace = sg.enlace && /^https?:\/\//i.test(sg.enlace)
+      ? ` · <a href="${esc(sg.enlace)}" target="_blank" rel="noopener">abrir seguimiento</a>` : '';
+    const correo = sg.correoEnviado
+      ? `<span class="ok">✔ correo enviado${sg.correoFecha ? ' (' + esc(sg.correoFecha) + ')' : ''}</span>`
+      : `<span class="err">✖ correo NO enviado</span>`;
+    return `<div class="seguimiento">
+      <h3>📦 Enviado · ${esc(sg.transportista)} · <strong>${esc(sg.codigo)}</strong></h3>
+      <p class="nota">${esc(sg.fecha || '')}${enlace} · ${correo}</p>
+      <div class="acciones">
+        ${p.cliente && p.cliente.email ? `<button class="btn-gris" onclick="guardarSeguimiento(${p.id}, true)">✉ Reenviar correo</button>` : '<span class="nota">Sin email del cliente: no se le puede avisar.</span>'}
+        <button class="btn-gris" onclick="editarSeguimiento(${p.id}, true)">Cambiar código</button>
+        <button class="btn-rojo" onclick="quitarSeguimiento(${p.id})">Quitar</button>
+      </div>
+      <div class="nota" id="segMsg-${p.id}"></div>
+    </div>`;
+  }
+
+  const prev = sg || {};
+  const opciones = TRANSPORTISTAS.map(([v, n]) => `<option value="${v}" ${(prev.transportistaId || 'correos') === v ? 'selected' : ''}>${n}</option>`).join('');
+  const tieneEmail = !!(p.cliente && p.cliente.email);
+  return `<div class="seguimiento">
+    <h3>📦 Código de seguimiento</h3>
+    <div class="fila">
+      <select id="segTrans-${p.id}">${opciones}</select>
+      <input id="segCod-${p.id}" type="text" maxlength="60" placeholder="Código de seguimiento" value="${esc(prev.codigo || '')}">
+    </div>
+    <input id="segEnlace-${p.id}" type="text" maxlength="300" placeholder="Enlace de seguimiento (opcional; si lo dejas vacío se genera solo)" value="">
+    <div class="acciones">
+      <button class="btn-verde" onclick="guardarSeguimiento(${p.id}, false)">${tieneEmail ? '💾 Guardar y avisar al cliente por correo' : '💾 Guardar'}</button>
+      ${sg ? `<button class="btn-gris" onclick="editarSeguimiento(${p.id}, false)">Cancelar</button>` : ''}
+      ${tieneEmail ? `<span class="nota">Se enviará a ${esc(p.cliente.email)}</span>` : '<span class="nota">Este pedido no tiene email: se guardará pero no se puede avisar.</span>'}
+    </div>
+    <div class="nota" id="segMsg-${p.id}"></div>
+  </div>`;
+}
+
+function editarSeguimiento(id, editar) {
+  if (editar) EDITANDO_SEG.add(id); else EDITANDO_SEG.delete(id);
+  pintarPedidos();
+}
+
+async function guardarSeguimiento(id, soloReenviar) {
+  const p = PEDIDOS.find(x => x.id === id);
+  if (!p) return;
+  const msg = document.getElementById('segMsg-' + id);
+  let cuerpo;
+  if (soloReenviar && p.seguimiento) {
+    cuerpo = { codigo: p.seguimiento.codigo, transportista: p.seguimiento.transportistaId || 'otro', enlace: p.seguimiento.enlace || '', enviarCorreo: true };
+  } else {
+    const codigo = document.getElementById('segCod-' + id).value.trim();
+    if (!codigo) { msg.className = 'nota err'; msg.textContent = 'Escribe el código de seguimiento.'; return; }
+    cuerpo = {
+      codigo,
+      transportista: document.getElementById('segTrans-' + id).value,
+      enlace: document.getElementById('segEnlace-' + id).value.trim(),
+      enviarCorreo: !!(p.cliente && p.cliente.email)
+    };
+  }
+  msg.className = 'nota'; msg.textContent = 'Guardando…';
+  try {
+    const data = await apiAdmin(`/api/pedidos/${id}/seguimiento`, { method: 'POST', body: JSON.stringify(cuerpo) });
+    p.seguimiento = data.pedido.seguimiento;
+    EDITANDO_SEG.delete(id);
+    pintarPedidos();
+    const m2 = document.getElementById('segMsg-' + id);
+    if (m2) {
+      if (data.correo && data.correo.ok) { m2.className = 'nota ok'; m2.textContent = '✔ Guardado y correo enviado al cliente.'; }
+      else if (cuerpo.enviarCorreo) { m2.className = 'nota err'; m2.textContent = 'Guardado, pero el correo NO se envió: ' + ((data.correo && data.correo.motivo) || 'error desconocido'); }
+    }
+  } catch (e) {
+    msg.className = 'nota err'; msg.textContent = e.message;
+  }
+}
+
+async function quitarSeguimiento(id) {
+  if (!confirm('¿Quitar el código de seguimiento de este pedido? (No se envía ningún correo.)')) return;
+  try {
+    await apiAdmin(`/api/pedidos/${id}/seguimiento`, { method: 'DELETE' });
+    const p = PEDIDOS.find(x => x.id === id);
+    if (p) delete p.seguimiento;
+    EDITANDO_SEG.delete(id);
+    pintarPedidos();
+  } catch (e) { alert(e.message); }
+}
+
+/* =========================================================
+   PESTAÑA: MENSAJES (chat de soporte)
+========================================================= */
+let CONV_ABIERTA = '';
+let CONV_ULTIMO_TS = 0;
+let POLL_MENSAJES = null;
+
+function horaCorta(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const hoy = new Date();
+  const hora = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  return d.toDateString() === hoy.toDateString() ? hora : d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }) + ' ' + hora;
+}
+
+function pintarBadge(n) {
+  const b = document.getElementById('badgeMensajes');
+  b.style.display = n > 0 ? 'inline-block' : 'none';
+  b.textContent = n;
+}
+
+async function cargarConversaciones() {
+  const cont = document.getElementById('listaConv');
+  try {
+    const data = await apiAdmin('/api/admin/soporte');
+    pintarBadge(data.noLeidos || 0);
+    if (!data.conversaciones.length) {
+      cont.innerHTML = '<p style="padding:12px;color:#888;">Todavía no hay mensajes.</p>';
+      return;
+    }
+    cont.innerHTML = data.conversaciones.map(c => `
+      <div class="conv-item ${c.id === CONV_ABIERTA ? 'sel' : ''}" onclick="abrirConversacion('${c.id}')">
+        <div class="quien"><span>${esc(c.nombre || 'Cliente sin nombre')}</span>${c.noLeidos ? `<span class="punto">${c.noLeidos}</span>` : ''}</div>
+        <div class="snip">${c.ultimoDe === 'tienda' ? 'Tú: ' : ''}${esc(c.ultimoTexto)}</div>
+        <div class="hora">${esc(horaCorta(c.ultimoTs))}${c.email ? ' · ' + esc(c.email) : ''}</div>
+      </div>`).join('');
+  } catch (e) {
+    cont.innerHTML = '<p style="padding:12px;color:#f87171;">' + esc(e.message) + '</p>';
+  }
+}
+
+function pintarConversacion(conv, conservarBorrador) {
+  const chat = document.getElementById('chatConv');
+  const borrador = conservarBorrador && document.getElementById('respTexto') ? document.getElementById('respTexto').value : '';
+  const msgs = conv.mensajes.map(m => `
+    <div class="burbuja ${m.de === 'tienda' ? 'tienda' : 'cliente'}">${esc(m.texto)}<small>${m.de === 'tienda' ? 'Tú' : esc(conv.nombre || 'Cliente')} · ${esc(horaCorta(m.ts))}</small></div>`).join('');
+  chat.innerHTML = `
+    <div class="soporte-cab">
+      <div><strong>${esc(conv.nombre || 'Cliente sin nombre')}</strong>
+        <small>${conv.email ? esc(conv.email) : 'Sin email: solo verá tu respuesta si abre el chat de la web'}</small></div>
+      <button class="btn-rojo" onclick="borrarConversacion('${conv.id}')">Borrar</button>
+    </div>
+    <div class="soporte-msgs" id="msgsConv">${msgs}</div>
+    <div class="soporte-resp">
+      <textarea id="respTexto" maxlength="2000" placeholder="Escribe tu respuesta… (Ctrl+Enter para enviar)"></textarea>
+      <button class="btn-verde" id="respBtn" onclick="enviarRespuesta()">Enviar</button>
+    </div>
+    <div class="nota" id="respMsg" style="padding:0 14px 10px;font-size:0.8rem;color:#aaa;"></div>`;
+  const ta = document.getElementById('respTexto');
+  ta.value = borrador;
+  ta.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) enviarRespuesta(); });
+  const m = document.getElementById('msgsConv');
+  m.scrollTop = m.scrollHeight;
+  CONV_ULTIMO_TS = conv.ultimoTs || 0;
+}
+
+async function abrirConversacion(id) {
+  CONV_ABIERTA = id;
+  try {
+    const data = await apiAdmin('/api/admin/soporte/' + id);
+    pintarConversacion(data.conversacion, false);
+    cargarConversaciones();
+  } catch (e) {
+    document.getElementById('chatConv').innerHTML = '<div style="padding:30px;color:#f87171;">' + esc(e.message) + '</div>';
+  }
+}
+
+async function enviarRespuesta() {
+  const ta = document.getElementById('respTexto');
+  const texto = ta.value.trim();
+  if (!texto || !CONV_ABIERTA) return;
+  const btn = document.getElementById('respBtn');
+  btn.disabled = true;
+  try {
+    const data = await apiAdmin(`/api/admin/soporte/${CONV_ABIERTA}/responder`, { method: 'POST', body: JSON.stringify({ texto }) });
+    pintarConversacion(data.conversacion, false);
+    const msg = document.getElementById('respMsg');
+    msg.textContent = data.correo && data.correo.ok ? '✔ Enviado. También se avisó al cliente por correo.' : '✔ Enviado.';
+    cargarConversaciones();
+  } catch (e) {
+    document.getElementById('respMsg').textContent = '⚠️ ' + e.message;
+    btn.disabled = false;
+  }
+}
+
+async function borrarConversacion(id) {
+  if (!confirm('¿Borrar esta conversación para siempre?')) return;
+  try {
+    await apiAdmin('/api/admin/soporte/' + id, { method: 'DELETE' });
+    CONV_ABIERTA = '';
+    document.getElementById('chatConv').innerHTML = '<div style="padding:30px;color:#888;text-align:center;">Conversación borrada.</div>';
+    cargarConversaciones();
+  } catch (e) { alert(e.message); }
+}
+
+// Refresco automático: la lista/bandeja cada 10 s si estás en Mensajes; el contador cada 30 s en el resto.
+async function refrescarMensajes() {
+  if (!CLAVE) return;
+  if (TAB_ACTUAL === 'mensajes') {
+    await cargarConversaciones();
+    if (CONV_ABIERTA && !(document.getElementById('respTexto') && document.getElementById('respTexto').value.trim())) {
+      try {
+        const data = await apiAdmin('/api/admin/soporte/' + CONV_ABIERTA);
+        if ((data.conversacion.ultimoTs || 0) !== CONV_ULTIMO_TS) pintarConversacion(data.conversacion, true);
+      } catch (_) { /* si se borró, se queda como está */ }
+    }
+  } else {
+    try { pintarBadge((await apiAdmin('/api/admin/soporte')).noLeidos || 0); } catch (_) {}
+  }
+}
+setInterval(refrescarMensajes, 10000);
 
 /* =========================================================
    PESTAÑA: SUBIR CAMISETAS (Cloudinary)
@@ -284,9 +551,13 @@ const slugEquipo = t => 'adm-' + normTxt(t).replace(/ /g, '-');
 function verTab(t) {
   document.getElementById('tabPedidos').style.display = t === 'pedidos' ? 'block' : 'none';
   document.getElementById('tabCamisetas').style.display = t === 'camisetas' ? 'block' : 'none';
+  document.getElementById('tabMensajes').style.display = t === 'mensajes' ? 'block' : 'none';
   document.getElementById('tabBtnPedidos').classList.toggle('activo', t === 'pedidos');
   document.getElementById('tabBtnCamisetas').classList.toggle('activo', t === 'camisetas');
+  document.getElementById('tabBtnMensajes').classList.toggle('activo', t === 'mensajes');
+  TAB_ACTUAL = t;
   if (t === 'camisetas' && !CAMIS_CARGADAS) iniciarCamisetas();
+  if (t === 'mensajes') cargarConversaciones();
 }
 
 async function apiAdmin(ruta, opciones = {}) {
