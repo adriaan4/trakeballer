@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Real Garra Balonpié</title>
+<link rel="icon" href="escudo.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;500&display=swap">
+<style>
+:root{--bg:#0d0b09;--ink:#f6eedb;--gold:#e2ab2c;--red:#a01f22;--card:#1a1512;--line:#3b2e1f}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1200px 500px at 50% -100px,#2a1d0c,var(--bg));background-attachment:fixed;color:var(--ink);font:400 17px/1.5 Barlow,system-ui,sans-serif}
+h1,h2,.big{font-family:"Barlow Condensed",Impact,sans-serif;font-weight:800;margin:0}
+h1,h2{color:var(--gold)}
+nav{display:flex;gap:6px;align-items:center;padding:10px 18px;border-bottom:3px solid var(--gold);position:sticky;top:0;background:var(--bg);flex-wrap:wrap;z-index:2}
+nav img{height:46px;margin-right:8px}
+nav a{color:var(--ink);text-decoration:none;font:600 20px "Barlow Condensed",sans-serif;padding:4px 14px;border-radius:99px}
+nav a.on{background:var(--gold);color:#0d0b09}
+main{max-width:1000px;margin:0 auto;padding:24px 18px 60px}
+.home{display:grid;grid-template-columns:1fr 300px;gap:28px;align-items:start}
+@media(max-width:780px){.home{grid-template-columns:1fr}}
+.hero{text-align:center;padding:10px 0}
+.crest{width:min(260px,60vw);filter:drop-shadow(0 8px 24px rgba(226,171,44,.25))}
+.sub{margin:4px 0;opacity:.8;font-size:18px}
+.big{font-size:clamp(52px,12vw,110px);line-height:1;color:var(--gold);font-variant-numeric:tabular-nums}
+.units{display:flex;justify-content:center;gap:clamp(10px,3vw,28px)}
+.units small{display:block;font-size:15px;opacity:.7}
+.pend{font-size:clamp(34px,8vw,60px);background:var(--red);color:var(--ink);display:inline-block;padding:6px 22px;border:3px solid var(--gold);transform:rotate(-2deg)}
+.salon{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--gold);border-radius:12px;padding:16px}
+.hit{border-left:4px solid var(--red);padding:6px 0 6px 12px;margin-top:12px}
+.hit small{display:block;opacity:.7}.hit b{font:800 24px "Barlow Condensed",sans-serif;color:var(--gold)}.hit span{display:block;font-size:14px;opacity:.7}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:16px}
+.p{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--red);border-radius:10px;padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+.cands{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.pbtns{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:14px 0}
+.pbtn{font:800 clamp(20px,5vw,28px) "Barlow Condensed",sans-serif;padding:14px 8px;border-radius:10px;border:2px solid var(--gold);background:var(--card);color:var(--gold);text-transform:uppercase;overflow-wrap:anywhere;line-height:1.1}
+.pbtn:hover{background:var(--gold);color:#0d0b09}
+.cand{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--red);border-radius:10px;padding:12px 8px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:space-between;min-width:0}
+.cand b{font:800 clamp(18px,4.8vw,30px) "Barlow Condensed",sans-serif;color:var(--gold);overflow-wrap:anywhere;line-height:1.1}
+.cand button{width:100%;padding:6px 4px}
+.cand.sel{border-color:var(--gold);background:#2a1d0c}
+.tag{background:var(--gold);color:#0d0b09;font:800 15px "Barlow Condensed",sans-serif;padding:2px 10px;border-radius:99px}
+.pv{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--red);border-radius:10px;padding:12px 14px;margin-top:10px}
+.vh{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.banner{background:var(--red);border:3px solid var(--gold);border-radius:12px;padding:14px 18px;margin:14px 0}
+.banner b{font:800 34px "Barlow Condensed",sans-serif;display:block}
+button,input{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+button{cursor:pointer;background:var(--gold);color:#0d0b09;font-weight:500;border-color:var(--gold)}
+button.mine{background:var(--red);color:var(--ink)}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.bar{height:8px;background:var(--line);border-radius:4px;margin:8px 0 4px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--red),var(--gold))}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;align-items:center}
+.msg{min-height:24px;font-weight:500;color:var(--gold)}
+ol.rank{padding-left:22px}
+dialog{background:var(--card);color:var(--ink);border:3px solid var(--gold);border-radius:14px;text-align:center;padding:24px 34px}
+dialog::backdrop{background:rgba(0,0,0,.75)}
+dialog b{display:block;font:800 clamp(36px,9vw,64px) "Barlow Condensed",sans-serif;color:var(--gold)}
+[hidden]{display:none}
+@media(prefers-reduced-motion:no-preference){.bar i{transition:width .5s}}
+</style></head><body>
+<nav><img src="escudo.png" alt="Escudo Real Garra Balonpié"><a href="#inicio">Inicio</a><a href="#mvp">MVP</a><a href="#admin">Admin</a></nav>
+<main>
+<section id="inicio" hidden><div class="home">
+ <div class="hero"><img class="crest" src="escudo.png" alt="Escudo Real Garra Balonpié"><h2>Siguiente partido</h2><p class="sub" id="rival"></p><div id="count"></div><p class="sub" id="fecha"></p></div>
+ <aside class="salon"><h2>Salón del MVP</h2><div id="salon"></div></aside>
+</div></section>
+
+<section id="mvp" hidden><h1 id="mvpTitulo">MVP del partido</h1>
+ <div id="ultimo"></div>
+ <p>Pulsa el nombre de tu MVP para votar: <b>solo se puede votar una vez</b>.</p>
+ <p class="msg" id="vmsg"></p><div id="miVoto"></div>
+ <div class="pbtns" id="votos"></div>
+ <h2 style="margin-top:28px">Votos de esta votación</h2><div id="ranking"></div>
+ <h2 style="margin-top:28px">Clasificación de MVPs</h2><ol class="rank" id="rank"></ol>
+</section>
+
+<section id="admin" hidden><h1>Administración</h1>
+ <div class="row" id="loginRow"><input id="pw" type="password" placeholder="Contraseña"><button id="login">Entrar</button></div>
+ <div id="panel" hidden>
+  <h2>Próximo partido</h2><div class="row"><input id="fecha-in" type="datetime-local"><input id="rivalIn" placeholder="Rival"><button id="saveMatch">Guardar partido</button><button id="delMatch" class="ghost">Borrar partido</button></div>
+  <h2>Votación MVP</h2><div class="row"><input id="roundRival" placeholder="Rival del partido votado"><button id="saveRound">Guardar rival</button><button id="closeRound">Cerrar votación y mostrar MVP</button></div>
+  <h3>Votos de esta votación <small>(quitar un voto deja votar otra vez a esa persona)</small></h3><div id="adminVotes"></div>
+  <h2 style="margin-top:20px">Jugadores</h2><div class="row"><input id="pn" placeholder="Nombre del jugador"><button id="addP">Añadir jugador</button></div>
+  <div class="grid" id="adminList"></div>
+  <h2 style="margin-top:20px">MVPs anteriores</h2><div id="adminHist"></div>
+  <h2 style="margin-top:20px">Copia de seguridad</h2><div class="row"><button id="exportBtn">Descargar datos (JSON)</button><label class="row">Restaurar: <input id="importFile" type="file" accept=".json"></label></div>
+ </div>
+ <p class="msg" id="amsg"></p>
+</section>
+</main>
+<dialog id="dlg"><h2>MVP del Garra vs <span id="dlgRival"></span></h2><b id="dlgTxt"></b><p><button id="dlgOk">Cerrar</button></p></dialog>
+<script>
+const $=s=>document.querySelector(s);
+let dev='';try{dev=localStorage.dev||(localStorage.dev=(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now().toString(36)))}catch{dev=Math.random().toString(36).slice(2)}
+let S={players:[],next:{},round:{votes:[]},history:[],mine:null},pw=sessionStorage.getItem('pw')||'',timer,filled=false;
+const api=async(u,m='GET',b,h={})=>{const r=await fetch(u,{method:m,headers:{'Content-Type':'application/json',...h},body:b&&JSON.stringify(b)});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'Error');return d};
+const adm=(u,m,b)=>api(u,m,b,{'x-admin':pw});
+const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const mv=h=>Array.isArray(h.mvps)?h.mvps:[];
+const names=h=>mv(h).map(m=>esc(m.name)).join(' y ')+(mv(h).length>1?' (empate)':'');
+const top1=h=>(mv(h)[0]||{}).votes||0;
+const loc=iso=>{if(!iso)return'';const d=new Date(iso);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
+async function load(){S=await api('/api/state?d='+encodeURIComponent(dev));render()}
+function render(){
+ const fut=S.next.date&&new Date(S.next.date)>Date.now();
+ $('#rival').textContent=fut&&S.next.rival?'Garra vs '+S.next.rival:'';
+ $('#fecha').textContent=fut?new Date(S.next.date).toLocaleString('es-ES',{dateStyle:'full',timeStyle:'short'}):'';
+ $('#salon').innerHTML=S.history.map(h=>`<div class="hit"><small>MVP del Garra vs ${esc(h.rival)}</small><b>${names(h)}</b><span>${top1(h)} de ${h.totalVotes||0} votos</span></div>`).join('')||'<p>Aún no hay MVPs. Vota en la pestaña MVP.</p>';
+ try{renderMvp()}catch(e){console.error(e)}
+ $('#adminList').innerHTML=S.players.map(p=>`<div class="p"><b>${esc(p.name)}</b><button class="ghost" data-d="${p.id}">Borrar</button></div>`).join('')||'<p>No hay jugadores.</p>';
+ $('#adminVotes').innerHTML=S.round.votes.map((v,i)=>`<div class="pv vh"><span>Voto ${i+1} → <b>${esc(v.playerName)}</b>${v.name?' <small>('+esc(v.name)+')</small>':''}</span><button class="ghost" data-rv="${v.id}">Quitar voto</button></div>`).join('')||'<p>Todavía no hay votos.</p>';
+ $('#adminHist').innerHTML=S.history.map(h=>`<div class="pv vh"><span><b>${names(h)}</b> · Garra vs ${esc(h.rival)} (${top1(h)} de ${h.totalVotes||0} votos)</span><button class="ghost" data-h="${h.id}">Borrar MVP</button></div>`).join('')||'<p>No hay MVPs guardados.</p>';
+ if(!filled){$('#fecha-in').value=loc(S.next.date);$('#rivalIn').value=S.next.rival||'';$('#roundRival').value=S.round.rival||'';filled=true}
+ tick()}
+function renderMvp(){
+ $('#mvpTitulo').textContent=S.round.rival?'MVP del Garra vs '+S.round.rival:'MVP del partido';
+ const l=S.history[0];
+ $('#ultimo').innerHTML=l?`<div class="banner">Último MVP · Garra vs ${esc(l.rival)}<b>${names(l)}</b></div>`:'';
+ const votes=S.round.votes,mine=S.mine,mp=mine&&S.players.find(p=>p.id===mine.playerId);
+ $('#miVoto').innerHTML=mine?`<div class="banner">Ya has votado<b>${mp?esc(mp.name):'tu MVP'}</b></div>`:'';
+ // botones de jugadores; al votar desaparecen y el voto entra en la lista de abajo
+ $('#votos').hidden=!!mine;
+ $('#votos').innerHTML=S.players.map(p=>`<button class="pbtn" data-v="${p.id}" data-n="${esc(p.name)}">${esc(p.name)}</button>`).join('')||'<p>Aún no hay jugadores.</p>';
+ // lista: solo los votados, de más a menos votos
+ const cnt=id=>votes.filter(v=>v.playerId===id);
+ const ranked=S.players.map(p=>({p,vs:cnt(p.id)})).filter(x=>x.vs.length).sort((a,b)=>b.vs.length-a.vs.length||a.p.name.localeCompare(b.p.name));
+ const top=ranked.length?ranked[0].vs.length:1;
+ $('#ranking').innerHTML=ranked.map(({p,vs})=>{const pos=ranked.findIndex(x=>x.vs.length===vs.length)+1;
+  return `<div class="pv"><div class="vh"><b>${pos}. ${esc(p.name)}</b><span>${vs.length} voto${vs.length==1?'':'s'}</span></div><div class="bar"><i style="width:${vs.length/top*100}%"></i></div>${mine&&mine.playerId===p.id?'<span class="tag">Tu voto</span>':''}</div>`}).join('')||'<p>Todavía no ha votado nadie.</p>';
+ const tot={};S.history.forEach(h=>mv(h).forEach(m=>tot[m.name]=(tot[m.name]||0)+1));
+ $('#rank').innerHTML=Object.entries(tot).sort((a,b)=>b[1]-a[1]).map(([n,c])=>`<li>${esc(n)} — ${c} MVP${c>1?'s':''}</li>`).join('')||'<li style="list-style:none">Todavía no hay clasificación.</li>'}
+function tick(){clearInterval(timer);const el=$('#count');const t=S.next.date?new Date(S.next.date)-Date.now():-1;
+ if(t<=0){el.innerHTML='<span class="big pend">Siguiente partido por confirmar</span>';return}
+ const f=()=>{let d=new Date(S.next.date)-Date.now();if(d<=0){tick();return}
+  el.innerHTML='<div class="units">'+[['días',864e5],['horas',36e5],['min',6e4],['seg',1e3]].map(([l,m])=>{const v=Math.floor(d/m);d-=v*m;return `<div><span class="big">${String(v).padStart(2,'0')}</span><small>${l}</small></div>`}).join('')+'</div>'};
+ f();timer=setInterval(f,1000)}
+document.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;
+ try{
+  if(b.dataset.v){
+   if(!confirm('¿Votar a '+b.dataset.n+'? Solo puedes votar una vez y no podrás cambiarlo.'))return;
+   await api('/api/vote','POST',{playerId:+b.dataset.v,device:dev});$('#vmsg').textContent='Voto registrado';await load()}
+  if(b.dataset.d&&confirm('¿Borrar jugador? Se borran sus votos actuales; el historial de MVPs se mantiene.')){await adm('/api/players/'+b.dataset.d,'DELETE');await load()}
+  if(b.dataset.h&&confirm('¿Borrar este MVP del historial?')){await adm('/api/history/'+b.dataset.h,'DELETE');await load()}
+  if(b.dataset.rv){await adm('/api/votes/'+b.dataset.rv,'DELETE');await load()}
+ }catch(err){$('#vmsg').textContent=$('#amsg').textContent=err.message}});
+function showPanel(){$('#panel').hidden=false;$('#loginRow').hidden=true}
+$('#login').onclick=async()=>{pw=$('#pw').value;try{await adm('/api/admin/check');sessionStorage.pw=pw;showPanel();$('#amsg').textContent=''}catch{pw='';$('#amsg').textContent='Contraseña incorrecta'}};
+if(pw)adm('/api/admin/check').then(showPanel).catch(()=>{pw='';sessionStorage.removeItem('pw')});
+const act=(sel,fn,ok)=>$(sel).onclick=async()=>{try{await fn();if(ok)$('#amsg').textContent=ok;await load()}catch(e){$('#amsg').textContent=e.message}};
+act('#saveMatch',()=>adm('/api/match','PUT',{date:$('#fecha-in').value?new Date($('#fecha-in').value).toISOString():'',rival:$('#rivalIn').value}),'Partido guardado');
+$('#delMatch').onclick=async()=>{if(!confirm('¿Borrar el próximo partido (fecha y rival)?'))return;
+ try{await adm('/api/match','PUT',{date:'',rival:''});$('#fecha-in').value='';$('#rivalIn').value='';$('#amsg').textContent='Partido borrado';await load()}catch(e){$('#amsg').textContent=e.message}};
+act('#saveRound',()=>adm('/api/round','PUT',{rival:$('#roundRival').value}),'Rival de la votación guardado');
+act('#addP',async()=>{await adm('/api/players','POST',{name:$('#pn').value});$('#pn').value=''},'Jugador añadido');
+$('#closeRound').onclick=async()=>{if(!confirm('¿Cerrar la votación y mostrar el MVP?'))return;
+ try{const e=await adm('/api/round/close','POST');filled=false;await load();$('#dlgRival').textContent=e.rival;$('#dlgTxt').innerHTML=names(e);$('#dlg').showModal()}catch(err){$('#amsg').textContent=err.message}};
+$('#dlgOk').onclick=()=>$('#dlg').close();
+$('#exportBtn').onclick=async()=>{const r=await fetch('/api/export',{headers:{'x-admin':pw}});const a=document.createElement('a');a.href=URL.createObjectURL(await r.blob());a.download='garra-datos.json';a.click()};
+$('#importFile').onchange=async e=>{const f=e.target.files[0];if(!f||!confirm('Esto reemplaza todos los datos actuales por los del archivo. ¿Seguro?'))return;
+ try{await adm('/api/import','POST',JSON.parse(await f.text()));filled=false;$('#amsg').textContent='Datos restaurados';await load()}catch(err){$('#amsg').textContent=err.message}};
+function route(){const h=(location.hash||'#inicio').slice(1);document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!==h);document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.hash==='#'+h))}
+addEventListener('hashchange',route);route();load();setInterval(load,30000);
+</script></body></html>
