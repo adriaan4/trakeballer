@@ -1213,3 +1213,6 @@ body:has(.drawer.abierto) #tk-chat-bubble, body:has(.drawer.abierto) .contacto-f
 .hero .btn--ghost { background: transparent; color: #fff; border-color: #fff; box-shadow: none; }
 .hero .btn--ghost:hover { background: #fff; color: #0b1f3a; border-color: #fff; box-shadow: none; }
 .topbar { border-bottom-color: var(--accent); }
+
+/* Foto de la tarjeta Mundiales (una sola imagen en vez de 4 escudos) */
+.hub__logos img.hub__foto { width: 100%; height: auto; max-height: 120px; aspect-ratio: 16/9; object-fit: cover; border-radius: 10px; }
