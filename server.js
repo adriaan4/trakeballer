@@ -22,7 +22,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const EMAIL_TIENDA = 'trakeballer@gmail.com';
-// IBAN para pagos por transferencia (se puede cambiar con la variable IBAN_TIENDA en Render)
+// Dirección pública de la web (en Suga). Se puede cambiar con la variable SITE_URL.
+const URL_WEB_POR_DEFECTO = 'https://kzgklji1u038-production-0phliq16.europe-west1.suga.run';
+// IBAN para pagos por transferencia (se puede cambiar con la variable IBAN_TIENDA en Suga)
 const IBAN_TIENDA = process.env.IBAN_TIENDA || 'ES72 2100 4996 9122 0039 6729';
 
 app.set('trust proxy', 1);
@@ -36,8 +38,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Carpeta donde se guardan los PEDIDOS (trake_admin) y los CÓDIGOS DE DESCUENTO
 // (admin-descuentos). Para que no se pierdan al redesplegar hace falta un disco
-// persistente: en Render, crea un "Disk" con Mount Path /var/data (se detecta solo)
-// o pon la variable DATA_DIR con la ruta del disco.
+// persistente: pon la variable DATA_DIR con la ruta de un almacenamiento persistente
+// (o usa Upstash, más abajo). Si existe /var/data y se puede escribir, también se usa.
 function elegirCarpetaDatos() {
   if (process.env.DATA_DIR) return { dir: process.env.DATA_DIR, persistente: true };
   try {
@@ -166,7 +168,7 @@ function guardarJSONSeguro(archivo, datos) {
 
 // ============================================================
 // PEDIDOS EN UPSTASH REDIS (base de datos externa: no se borran al redesplegar)
-// Variables necesarias (en Render > Environment):
+// Variables necesarias (variables de entorno de Suga):
 //   UPSTASH_REDIS_REST_URL   = https://xxxx.upstash.io
 //   UPSTASH_REDIS_REST_TOKEN = el token REST de la base de datos
 // Si no están puestas, se sigue usando orders.json como antes.
@@ -625,7 +627,7 @@ setInterval(() => {
 
 // --- Acceso de administrador (usuario + contraseña) ---
 // Por defecto: usuario "trakeballer". La contraseña NO está en claro en el código,
-// solo su hash. Puedes cambiarla poniendo ADMIN_USER y ADMIN_PASS en Render.
+// solo su hash. Puedes cambiarla poniendo ADMIN_USER y ADMIN_PASS en Suga.
 const sha256 = txt => crypto.createHash('sha256').update(String(txt)).digest();
 const ADMIN_USER = process.env.ADMIN_USER || 'trakeballer';
 const ADMIN_PASS_HASH = process.env.ADMIN_PASS
@@ -1578,8 +1580,8 @@ app.delete('/api/pedidos/:id/seguimiento', async (req, res) => {
 // ============================================================
 // ADMIN: SUBIR CAMISETAS A CLOUDINARY
 // Las fotos Y sus datos (sección, liga, equipo, normal/retro, nombre) se guardan
-// en Cloudinary (tag + contexto), así NO se pierden al redesplegar en Render.
-// Variable necesaria en Render: CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+// en Cloudinary (tag + contexto), así NO se pierden al redesplegar.
+// Variable necesaria en Suga: CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
 // ============================================================
 
 const CLD_CARPETA = 'trakeballer/camisetas';
@@ -1602,7 +1604,7 @@ function exigirCloudinary(res) {
   if (!cfg) {
     res.status(503).json({
       ok: false,
-      error: 'Cloudinary no está configurado. En Render añade la variable CLOUDINARY_URL (cloudinary://API_KEY:API_SECRET@CLOUD_NAME) y redespliega.'
+      error: 'Cloudinary no está configurado. En Suga añade la variable CLOUDINARY_URL (cloudinary://API_KEY:API_SECRET@CLOUD_NAME) y redespliega.'
     });
     return null;
   }
@@ -1715,7 +1717,7 @@ app.get('/api/admin/camisetas', async (req, res) => {
 });
 
 // Admin: valida los datos y devuelve la firma para subir UNA foto directamente a Cloudinary
-// (el secreto nunca sale del servidor y las fotos no pasan por Render).
+// (el secreto nunca sale del servidor y las fotos no pasan por el servidor).
 app.post('/api/admin/camisetas/firma', (req, res) => {
   if (!comprobarAdmin(req, res)) return;
   const cfg = exigirCloudinary(res);
@@ -1950,7 +1952,7 @@ function mensajesPublicos(conv, desde = 0) {
 }
 
 function urlWeb() {
-  return String(process.env.SITE_URL || process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL || '').replace(/\/$/, '');
+  return String(process.env.SITE_URL || process.env.PUBLIC_URL || URL_WEB_POR_DEFECTO).replace(/\/$/, '');
 }
 
 // ---------------- Público: el cliente escribe y lee su conversación ----------------
@@ -2171,7 +2173,7 @@ app.listen(PORT, () => {
   console.log(`[email] EMAIL_FROM: ${process.env.EMAIL_FROM || 'NO CONFIGURADO'}`);
   console.log(`[email] SMTP: ${process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS ? 'CONFIGURADO (' + process.env.SMTP_HOST + ')' : 'NO CONFIGURADO'}`);
 
-  const URL_PUBLICA = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL;
+  const URL_PUBLICA = process.env.PUBLIC_URL;
  
   if (URL_PUBLICA) {
     setInterval(async () => {
@@ -2185,6 +2187,6 @@ app.listen(PORT, () => {
  
     console.log(`[keep-alive] Activo: ${URL_PUBLICA}`);
   } else {
-    console.log('[keep-alive] Desactivado (no hay RENDER_EXTERNAL_URL)');
+    console.log('[keep-alive] Desactivado (no hay PUBLIC_URL)');
   }
 });

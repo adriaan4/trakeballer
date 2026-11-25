@@ -86,7 +86,7 @@
   <div id="tabPedidos">
   <h1>Pedidos recibidos</h1>
   <div id="avisoDisco" style="display:none;background:#3b1d1d;border:1px solid #f87171;color:#fecaca;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:0.88rem;">
-    ⚠️ El servidor no tiene un disco persistente: estos pedidos se borrarán la próxima vez que se reinicie o redesplegue la web. Añade un Disk en Render (Mount Path <code>/var/data</code>).
+    ⚠️ El servidor no tiene almacenamiento persistente: estos pedidos se borrarán la próxima vez que se reinicie o redespliegue la web. Configura almacenamiento persistente en Suga (carpeta <code>DATA_DIR</code>) o usa la base de datos Upstash.
   </div>
   <div class="filtros">
     <button id="fPendientes" class="activo" onclick="setFiltro('pendientes')">Pendientes</button>
@@ -99,7 +99,7 @@
     <h1>Subir camisetas</h1>
     <div id="avisoCld"></div>
     <div id="avisoApp" style="display:none;background:#3b2d12;border:1px solid #facc15;color:#fde68a;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:0.88rem;">
-      ⚠️ La tienda todavía tiene el <b>app.js antiguo</b>: por eso los escudos salen como si fueran camisetas. Sube el app.js nuevo (<code>public/js/app.js</code>), espera al deploy de Render y recarga la tienda con Ctrl+F5.
+      ⚠️ La tienda todavía tiene el <b>app.js antiguo</b>: por eso los escudos salen como si fueran camisetas. Sube el app.js nuevo (<code>public/js/app.js</code>), espera a que Suga termine el despliegue y recarga la tienda con Ctrl+F5.
     </div>
 
     <div class="caja">

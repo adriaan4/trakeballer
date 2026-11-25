@@ -62,30 +62,14 @@ git push -u origin main
 
 > El archivo `.gitignore` ya excluye `node_modules`, `.env` y `orders.json`, así que nunca subirás tus contraseñas ni pedidos por error.
 
-### ¿Error "failed to read dockerfile: open Dockerfile: no such file or directory"?
+## 4. Despliegue en Suga
 
-Significa que el servicio se creó con el tipo **Docker** en vez de **Node**. Tienes dos formas de arreglarlo:
+La tienda está publicada en Suga: https://kzgklji1u038-production-0phliq16.europe-west1.suga.run/
 
-- **Opción A (recomendada, sin Docker):** en Render, entra en tu servicio → **Settings** → **Environment**, cambia el tipo de entorno de `Docker` a `Node`, y deja el **Build Command** como `npm install` y el **Start Command** como `npm start`.
-- **Opción B (con Docker):** este proyecto ya incluye un `Dockerfile` en la raíz, así que si prefieres mantener el entorno como `Docker`, simplemente vuelve a desplegar (Manual Deploy → Deploy latest commit) y Render lo detectará automáticamente. Asegúrate de que el `Dockerfile` esté subido a la raíz de tu repositorio de GitHub, junto a `package.json`.
-
-## 4. Desplegar en Render
-
-1. Entra en https://render.com y crea una cuenta (puedes registrarte con tu cuenta de GitHub).
-2. Pulsa **New +** → **Web Service**.
-3. Conecta tu repositorio de GitHub `trakeballer`.
-4. Configura:
-   - **Environment**: `Node`
-   - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
-5. En la pestaña **Environment**, añade las mismas variables que tienes en tu `.env` (EMAIL_USER, EMAIL_PASS, EMAIL_TO, TWILIO_..., etc.). No subas nunca el archivo `.env` real a GitHub; en Render se configuran ahí directamente.
-6. Pulsa **Create Web Service**. Render instalará todo y te dará una URL pública, por ejemplo `https://trakeballer.onrender.com`.
-
-### Dominio propio (opcional)
-Si tienes un dominio comprado (Namecheap, GoDaddy, etc.):
-1. En Render, dentro de tu servicio, ve a **Settings → Custom Domains** y añade tu dominio.
-2. Render te dará un registro CNAME (o A) que debes añadir en el panel de tu proveedor de dominio.
-3. Espera unos minutos/horas a que se propague el DNS y Render activará el HTTPS automáticamente.
+- El servicio se despliega desde el repositorio de GitHub `trakeballer`: cada vez que subes cambios a `main`, hay que esperar a que termine el despliegue.
+- Arranque: `npm start` (el proyecto incluye un `Dockerfile` en la raíz).
+- Las variables de entorno (las mismas de tu `.env`: SMTP_*, EMAIL_FROM, EMAIL_TO, CLOUDINARY_URL, UPSTASH_*, ADMIN_*, etc.) se configuran en el panel de Suga, nunca en GitHub.
+- Opcional: `SITE_URL` con la dirección pública de la web (si cambia, por ejemplo con un dominio propio). Por defecto se usa la dirección de Suga de arriba.
 
 ## 5. Estructura del proyecto
 
@@ -118,11 +102,11 @@ Los pedidos (panel `/trake_admin.html`) y los códigos (`/admin-descuentos.html`
 `orders.json` y `descuentos.json` dentro de la carpeta de datos:
 
 - Si existe la variable `DATA_DIR`, se usa esa carpeta.
-- Si no, y existe `/var/data` (disco de Render), se usa esa.
+- Si no, y existe `/var/data` y se puede escribir, se usa esa.
 - Si no, se usa la carpeta del código, que **se borra en cada redespliegue**. En ese caso los dos paneles
   muestran un aviso en rojo.
 
-Para que no se pierdan nunca: en Render, **Disks → Add Disk → Mount Path `/var/data`**.
+Para que no se pierdan nunca: usa almacenamiento persistente en Suga (y pon su ruta en `DATA_DIR`) o configura Upstash.
 Cada guardado es atómico y deja una copia `.bak` por si el archivo se corrompe.
 
 ## 6. Seguimiento de envíos y chat de soporte
@@ -138,11 +122,11 @@ Se puede reenviar el correo, cambiar el código o quitarlo.
 - En trake_admin → pestaña **Mensajes** ves todas las conversaciones, con contador de sin leer, y respondes.
 - Te llega un correo (a `EMAIL_TO`) cuando alguien escribe (como mucho uno cada 15 min por conversación).
 - Si el cliente dejó su email y no tiene el chat abierto, tu respuesta también le llega por correo.
-- Se guarda en Upstash (si está configurado) o en `soporte.json` dentro de `DATA_DIR` (necesita disco persistente en Render, como los pedidos).
+- Se guarda en Upstash (si está configurado) o en `soporte.json` dentro de `DATA_DIR` (necesita almacenamiento persistente, como los pedidos).
 - Variable opcional `SITE_URL` (p. ej. `https://tutienda.com`) para los enlaces de los correos.
 
 ## 7. Imágenes
 
-Todas las imágenes de la tienda están en formato **WebP** (excepto SVG y `img/marca/logo-trakeballer.png`, que se
-conserva en PNG porque lo usa la vista previa al compartir el enlace). Al subir fotos nuevas, mejor en WebP o JPG/PNG
-ligeros. La carpeta `public/camis` (descargas de proveedores) se ha eliminado del proyecto.
+Las imágenes de la tienda están en formato **WebP**, excepto: los SVG, el logo (`img/marca/*.png`) y los escudos de
+Mundiales (`img/escudos/mundial/*.jpg`), que se han dejado en su formato original. La carpeta `public/camis`
+(descargas de proveedores) se ha eliminado del proyecto.
