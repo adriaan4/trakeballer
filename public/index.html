@@ -917,6 +917,10 @@ html { scroll-padding-top: 130px; }
 </style>
 </head>
 <body>
+<div class="tk-contactbar">
+  <a href="https://www.instagram.com/trakeballer/" target="_blank" rel="noopener noreferrer">📸 Instagram @trakeballer</a>
+  <a href="mailto:trakeballer@gmail.com">✉️ trakeballer@gmail.com</a>
+</div>
 
 <header class="topbar">
   <div class="topbar__inner">
@@ -1407,12 +1411,10 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
   <p class="footer__contacto">
     ¿Dudas con tu pedido? Escríbenos a
     <a href="mailto:trakeballer@gmail.com">trakeballer@gmail.com</a>
+    · Instagram: <a href="https://www.instagram.com/trakeballer/" target="_blank" rel="noopener noreferrer">@trakeballer</a>
   </p>
   <p class="footer__legal">
     <button type="button" id="btnAbrirLegalFooter" class="footer__legal-link">Aviso legal, privacidad y cookies</button>
-  </p>
-  <p class="footer__legal">
-    <a href="admin-descuentos.html" class="footer__legal-link" rel="nofollow">Acceso admin</a>
   </p>
 </footer>
 
@@ -1874,6 +1876,25 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
      CHAT DE SOPORTE (mensajes privados con Trakeballer)
      ============================================================ -->
 <style>
+  /* Franja de contacto (Instagram y correo) arriba de todo */
+  .tk-contactbar { background: #0b1f3a; color: #fff; display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 22px; padding: 7px 12px; font-size: 13px; font-weight: 600; border-bottom: 3px solid var(--accent); }
+  .tk-contactbar a { color: #fff; text-decoration: none; }
+  .tk-contactbar a:hover { color: var(--accent); text-decoration: underline; }
+  @media (max-width: 480px) { .tk-contactbar { font-size: 12px; gap: 4px 14px; } }
+  /* Botón de Instagram, al lado de la burbuja del chat */
+  #tk-insta {
+    position: fixed; bottom: 20px; left: 90px; width: 58px; height: 58px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; color: #fff; text-decoration: none;
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+    border: 2px solid #0b1f3a; box-shadow: 4px 4px 0 #0b1f3a; z-index: 99999; transition: transform .15s;
+  }
+  #tk-insta:hover { transform: translate(-2px,-2px); }
+  #tk-insta svg { width: 28px; height: 28px; }
+  body:has(.drawer.abierto) #tk-insta { visibility: hidden; }
+  @media (max-width: 480px) {
+    #tk-insta { left: 72px; bottom: 14px; width: 48px; height: 48px; }
+    #tk-insta svg { width: 24px; height: 24px; }
+  }
   #tk-chat-bubble {
     position: fixed;
     bottom: 20px;
@@ -2013,6 +2034,7 @@ Nuestra red de distribución opera a nivel internacional, por lo que los tiempos
 </style>
 
 <div id="tk-chat-bubble" role="button" aria-label="Abrir chat de soporte" tabindex="0">💬</div>
+<a id="tk-insta" href="https://www.instagram.com/trakeballer/" target="_blank" rel="noopener noreferrer" aria-label="Síguenos en Instagram" title="Instagram @trakeballer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
 
 <div id="tk-chat-window">
   <div id="tk-chat-header">Soporte Trakeballer<small>Mensajes privados · te respondemos lo antes posible</small></div>
