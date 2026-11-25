@@ -124,3 +124,25 @@ Los pedidos (panel `/trake_admin.html`) y los códigos (`/admin-descuentos.html`
 
 Para que no se pierdan nunca: en Render, **Disks → Add Disk → Mount Path `/var/data`**.
 Cada guardado es atómico y deja una copia `.bak` por si el archivo se corrompe.
+
+## 6. Seguimiento de envíos y chat de soporte
+
+**Código de seguimiento** (trake_admin → Pedidos): en cada pedido hay un apartado "Código de seguimiento".
+Eliges el transportista, pegas el código y pulsas *Guardar y avisar al cliente por correo*: el cliente recibe un
+email con el código y un botón para seguir el envío (si el pedido no tiene email, se guarda sin avisar).
+Se puede reenviar el correo, cambiar el código o quitarlo.
+
+**Chat de soporte** (reemplaza al asistente con IA, que ya no existe; `GROQ_API_KEY` ya no hace falta):
+- En la web, el botón 💬 abre un chat privado: cada visitante solo ve su propia conversación (la identifica un código
+  secreto guardado en su navegador). Puede dejar nombre y email de forma opcional.
+- En trake_admin → pestaña **Mensajes** ves todas las conversaciones, con contador de sin leer, y respondes.
+- Te llega un correo (a `EMAIL_TO`) cuando alguien escribe (como mucho uno cada 15 min por conversación).
+- Si el cliente dejó su email y no tiene el chat abierto, tu respuesta también le llega por correo.
+- Se guarda en Upstash (si está configurado) o en `soporte.json` dentro de `DATA_DIR` (necesita disco persistente en Render, como los pedidos).
+- Variable opcional `SITE_URL` (p. ej. `https://tutienda.com`) para los enlaces de los correos.
+
+## 7. Imágenes
+
+Todas las imágenes de la tienda están en formato **WebP** (excepto SVG y `img/marca/logo-trakeballer.png`, que se
+conserva en PNG porque lo usa la vista previa al compartir el enlace). Al subir fotos nuevas, mejor en WebP o JPG/PNG
+ligeros. La carpeta `public/camis` (descargas de proveedores) se ha eliminado del proyecto.

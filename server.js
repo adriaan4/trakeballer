@@ -61,6 +61,7 @@ const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
 const DESCUENTOS_FILE = path.join(DATA_DIR, 'descuentos.json');
 const SUGERENCIAS_FILE = path.join(__dirname, 'sugerencias.json');
 const RESENAS_FILE = path.join(__dirname, 'resenas.json');
+const SOPORTE_FILE = path.join(DATA_DIR, 'soporte.json');
 
 function inicializarArchivo(ruta) {
   try {
@@ -89,11 +90,13 @@ function migrarArchivoAntiguo(nombre) {
 
 migrarArchivoAntiguo('orders.json');
 migrarArchivoAntiguo('descuentos.json');
+migrarArchivoAntiguo('soporte.json');
 
 inicializarArchivo(ORDERS_FILE);
 inicializarArchivo(SUGERENCIAS_FILE);
 inicializarArchivo(RESENAS_FILE);
 inicializarArchivo(DESCUENTOS_FILE);
+inicializarArchivo(SOPORTE_FILE);
 
 console.log(`[datos] Carpeta de datos: ${DATA_DIR} (${ALMACENAMIENTO_PERSISTENTE ? 'persistente' : 'NO persistente: se borra al redesplegar'})`);
 // (los pedidos van a Upstash si están las variables UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN)
@@ -176,6 +179,7 @@ const REDIS_PEDIDOS = 'trakeballer:pedidos'; // hash: campo = id del pedido, val
 const REDIS_SUGERENCIAS = 'trakeballer:sugerencias'; // campo = id
 const REDIS_RESENAS = 'trakeballer:resenas'; // campo = id
 const REDIS_DESCUENTOS = 'trakeballer:descuentos'; // campo = código
+const REDIS_SOPORTE = 'trakeballer:soporte'; // campo = id de la conversación
 
 // Ejecuta UN comando de Redis por la API REST de Upstash. Lanza error si falla.
 async function redis(comando) {
@@ -239,13 +243,13 @@ async function guardarPedido(pedido) {
   throw new Error('No se pudo generar un id libre para el pedido');
 }
 
-// Marca un pedido como listo / no listo. Devuelve el pedido o null si no existe.
-async function marcarPedidoListo(id, listo) {
+// Cambia un pedido ya guardado: mutar(pedido) modifica el objeto. Devuelve el pedido o null si no existe.
+async function actualizarPedido(id, mutar) {
   if (!USA_REDIS) {
     const pedidos = leerJSONSeguro(ORDERS_FILE);
     const pedido = pedidos.find(p => p.id === id);
     if (!pedido) return null;
-    pedido.listo = listo;
+    mutar(pedido);
     guardarJSONSeguro(ORDERS_FILE, pedidos);
     return pedido;
   }
@@ -253,9 +257,14 @@ async function marcarPedidoListo(id, listo) {
   const texto = await redis(['HGET', REDIS_PEDIDOS, String(id)]);
   if (!texto) return null;
   const pedido = JSON.parse(texto);
-  pedido.listo = listo;
+  mutar(pedido);
   await redis(['HSET', REDIS_PEDIDOS, String(id), JSON.stringify(pedido)]);
   return pedido;
+}
+
+// Marca un pedido como listo / no listo. Devuelve el pedido o null si no existe.
+function marcarPedidoListo(id, listo) {
+  return actualizarPedido(id, p => { p.listo = listo; });
 }
 
 // Al arrancar: si una colección está vacía en Redis y existe su archivo .json antiguo,
@@ -266,7 +275,8 @@ async function migrarARedis() {
     { clave: REDIS_PEDIDOS, archivo: ORDERS_FILE, campo: x => x.id, nombre: 'pedidos' },
     { clave: REDIS_SUGERENCIAS, archivo: SUGERENCIAS_FILE, campo: x => x.id, nombre: 'sugerencias' },
     { clave: REDIS_RESENAS, archivo: RESENAS_FILE, campo: x => x.id, nombre: 'reseñas' },
-    { clave: REDIS_DESCUENTOS, archivo: DESCUENTOS_FILE, campo: x => x.codigo, nombre: 'códigos de descuento' }
+    { clave: REDIS_DESCUENTOS, archivo: DESCUENTOS_FILE, campo: x => x.codigo, nombre: 'códigos de descuento' },
+    { clave: REDIS_SOPORTE, archivo: SOPORTE_FILE, campo: x => x.id, nombre: 'conversaciones de soporte' }
   ];
 
   for (const c of colecciones) {
@@ -1431,6 +1441,141 @@ app.post('/api/pedidos/:id/listo', async (req, res) => {
 });
 
 // ============================================================
+// ADMIN: CÓDIGO DE SEGUIMIENTO DEL ENVÍO (+ correo al cliente)
+// ============================================================
+
+const TRANSPORTISTAS = {
+  correos: { nombre: 'Correos', url: c => `https://www.correos.es/es/es/herramientas/localizador/envios/detalle?tracking-number=${encodeURIComponent(c)}` },
+  seur: { nombre: 'SEUR', url: c => `https://www.seur.com/livetracking/?segOnlineIdentificador=${encodeURIComponent(c)}` },
+  dhl: { nombre: 'DHL', url: c => `https://www.dhl.com/es-es/home/tracking.html?tracking-id=${encodeURIComponent(c)}` },
+  ups: { nombre: 'UPS', url: c => `https://www.ups.com/track?tracknum=${encodeURIComponent(c)}` },
+  '17track': { nombre: '17TRACK (internacional)', url: c => `https://t.17track.net/es#nums=${encodeURIComponent(c)}` },
+  otro: { nombre: 'Otro', url: null }
+};
+
+function enlaceSeguimiento(transportistaId, codigo, enlacePropio) {
+  if (enlacePropio) return enlacePropio;
+  const t = TRANSPORTISTAS[transportistaId];
+  return t && t.url ? t.url(codigo) : '';
+}
+
+function formatearSeguimientoTexto(pedido) {
+  const sg = pedido.seguimiento;
+  return `¡Hola ${pedido.cliente?.nombre || ''}!
+
+Tu pedido #${pedido.id} de Trakeballer ya está en camino 📦
+
+Transportista: ${sg.transportista}
+Código de seguimiento: ${sg.codigo}
+${sg.enlace ? `Seguir el envío: ${sg.enlace}\n` : ''}
+Recuerda que el seguimiento puede tardar unas horas (a veces un par de días) en mostrar movimientos.
+
+Si tienes cualquier duda, escríbenos a ${EMAIL_TIENDA} o por el chat de soporte de la web.
+
+- Trakeballer`;
+}
+
+function formatearSeguimientoHTML(pedido) {
+  const sg = pedido.seguimiento;
+  const boton = sg.enlace
+    ? `<p style="margin:22px 0;"><a href="${escapeHTML(sg.enlace)}" style="background:#0b1f3a;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block;">Seguir mi envío</a></p>`
+    : '';
+  return `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:20px;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif;color:#222;">
+<div style="max-width:560px;margin:auto;background:#ffffff;padding:25px;border-radius:12px;">
+  <h2 style="margin-top:0;">¡Hola ${escapeHTML(pedido.cliente?.nombre || '')}! 📦</h2>
+  <p>Tu pedido <strong>#${pedido.id}</strong> de Trakeballer <strong>ya está en camino</strong>.</p>
+  <div style="background:#f7f7f7;border-radius:10px;padding:15px;">
+    <p style="margin:4px 0;"><strong>Transportista:</strong> ${escapeHTML(sg.transportista)}</p>
+    <p style="margin:4px 0;"><strong>Código de seguimiento:</strong> <span style="font-size:17px;letter-spacing:1px;">${escapeHTML(sg.codigo)}</span></p>
+  </div>
+  ${boton}
+  <p style="color:#666;font-size:14px;">El seguimiento puede tardar unas horas (a veces un par de días) en mostrar movimientos.</p>
+  <p style="color:#666;font-size:14px;">Dudas: escríbenos a <strong>${EMAIL_TIENDA}</strong> o por el chat de soporte de la web.<br>- Trakeballer</p>
+</div>
+</body>
+</html>`;
+}
+
+// Guarda (o cambia) el código de seguimiento y avisa al cliente por correo.
+app.post('/api/pedidos/:id/seguimiento', async (req, res) => {
+  try {
+    if (!comprobarAdmin(req, res)) return;
+
+    const id = Number(req.params.id);
+    const codigo = String(req.body?.codigo || '').trim();
+    const transportistaId = Object.prototype.hasOwnProperty.call(TRANSPORTISTAS, req.body?.transportista) ? req.body.transportista : 'otro';
+    const enlacePropio = String(req.body?.enlace || '').trim();
+    const enviarCorreo = req.body?.enviarCorreo !== false;
+
+    if (!/^[A-Za-z0-9._\/ -]{4,60}$/.test(codigo)) {
+      return res.status(400).json({ ok: false, error: 'El código de seguimiento debe tener entre 4 y 60 caracteres (letras, números, - . _ /).' });
+    }
+    if (enlacePropio && !/^https?:\/\/[^\s"'<>]{4,300}$/i.test(enlacePropio)) {
+      return res.status(400).json({ ok: false, error: 'El enlace de seguimiento debe empezar por http:// o https://' });
+    }
+
+    const pedido = await actualizarPedido(id, p => {
+      p.seguimiento = {
+        codigo,
+        transportista: TRANSPORTISTAS[transportistaId].nombre,
+        transportistaId,
+        enlace: enlaceSeguimiento(transportistaId, codigo, enlacePropio),
+        fecha: new Date().toLocaleString('es-ES'),
+        correoEnviado: false,
+        correoFecha: (p.seguimiento && p.seguimiento.codigo === codigo) ? (p.seguimiento.correoFecha || '') : ''
+      };
+    });
+    if (!pedido) return res.status(404).json({ ok: false, error: 'Pedido no encontrado.' });
+
+    let correo = { ok: false, motivo: 'no se pidió enviar correo' };
+    const email = pedido.cliente && pedido.cliente.email;
+
+    if (enviarCorreo) {
+      if (!email) {
+        correo = { ok: false, motivo: 'Este pedido no tiene email del cliente.' };
+      } else {
+        correo = await enviarEmail(
+          email,
+          `Tu pedido #${pedido.id} ya está en camino 📦`,
+          formatearSeguimientoTexto(pedido),
+          pedido.cliente.nombre,
+          formatearSeguimientoHTML(pedido)
+        );
+        if (correo.ok) {
+          const fechaCorreo = new Date().toLocaleString('es-ES');
+          await actualizarPedido(id, p => {
+            p.seguimiento.correoEnviado = true;
+            p.seguimiento.correoFecha = fechaCorreo;
+          });
+          pedido.seguimiento.correoEnviado = true;
+          pedido.seguimiento.correoFecha = fechaCorreo;
+        }
+      }
+    }
+
+    res.json({ ok: true, pedido, correo });
+  } catch (error) {
+    console.error('[seguimiento] Error:', error);
+    res.status(500).json({ ok: false, error: 'Error interno al guardar el seguimiento.' });
+  }
+});
+
+app.delete('/api/pedidos/:id/seguimiento', async (req, res) => {
+  try {
+    if (!comprobarAdmin(req, res)) return;
+    const pedido = await actualizarPedido(Number(req.params.id), p => { delete p.seguimiento; });
+    if (!pedido) return res.status(404).json({ ok: false, error: 'Pedido no encontrado.' });
+    res.json({ ok: true, pedido });
+  } catch (error) {
+    console.error('[seguimiento] Error borrando:', error);
+    res.status(500).json({ ok: false, error: 'Error interno al quitar el seguimiento.' });
+  }
+});
+
+// ============================================================
 // ADMIN: SUBIR CAMISETAS A CLOUDINARY
 // Las fotos Y sus datos (sección, liga, equipo, normal/retro, nombre) se guardan
 // en Cloudinary (tag + contexto), así NO se pierden al redesplegar en Render.
@@ -1722,191 +1867,287 @@ app.get('/sitemap.xml', (req, res) => {
 });
 
 // ============================================================
-// CHAT CON IA (widget de la web)
+// CHAT DE SOPORTE (mensajes privados cliente <-> tienda)
+// - Cada visitante tiene su propia conversación privada. La web guarda en el
+//   navegador un código secreto (token) que solo conoce ese visitante.
+// - Tú contestas desde trake_admin > pestaña "Mensajes".
+// - Los datos van a Upstash (si está configurado) o a soporte.json.
 // ============================================================
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const CHAT_MODEL = 'openai/gpt-oss-120b';
+const SOPORTE_MAX_TEXTO = 1000;
+const SOPORTE_MAX_MENSAJES = 300;
+const SOPORTE_AVISO_CADA_MS = 15 * 60 * 1000; // como mucho 1 correo cada 15 min por conversación
+const SOPORTE_VISTO_MS = 60 * 1000;           // si el cliente miró el chat hace menos de 1 min, no se le escribe por correo
+const RE_ID_SOPORTE = /^[a-f0-9]{32}$/;
+const RE_EMAIL = /^[^\s@<>"']{1,64}@[^\s@<>"']{1,200}\.[^\s@<>"']{2,}$/;
 
-// ------------------------------------------------------------
-// Carga del catálogo real (catalogo_trakeballers_ia.json) y lo
-// convierte en texto para dárselo a la IA como contexto.
-// El archivo DEBE estar en la misma carpeta que este server.js
-// (si lo mueves a otra carpeta, cambia la ruta de abajo).
-// ------------------------------------------------------------
-
-function cargarCatalogoIA() {
-  try {
-    const ruta = path.join(__dirname, 'catalogo_trakeballers_ia.json');
-    const catalogo = JSON.parse(fs.readFileSync(ruta, 'utf8'));
-    const lineas = [];
-
-    lineas.push('');
-    lineas.push('CATÁLOGO REAL DE TRAKEBALLER');
-    lineas.push(
-      'Usa ÚNICAMENTE esta lista para saber qué equipos y camisetas hay disponibles. ' +
-      'Ignora mayúsculas/minúsculas y acentos al comparar. Si el cliente pregunta por un ' +
-      'equipo que SÍ aparece aquí, confírmalo y, si quieres, menciona algún modelo concreto ' +
-      '(actual y/o retro si tiene). Si el equipo NO aparece en esta lista, di claramente que ' +
-      'no está en el catálogo y ofrécele dejar una sugerencia en la web. No inventes equipos, ' +
-      'modelos, temporadas ni tallas que no estén aquí. Si preguntan por una talla concreta, ' +
-      'indica que el catálogo no especifica stock por talla, salvo que aquí se indique lo contrario.'
-    );
-    lineas.push('');
-
-    if (Array.isArray(catalogo.selecciones) && catalogo.selecciones.length) {
-      lineas.push('SELECCIONES NACIONALES:');
-      catalogo.selecciones.forEach(sel => {
-        lineas.push(`- ${sel.nombre}`);
-      });
-      lineas.push('');
-    }
-
-    if (Array.isArray(catalogo.clubes) && catalogo.clubes.length) {
-      lineas.push('CLUBES (versión actual):');
-      catalogo.clubes.forEach(club => {
-        lineas.push(`- ${club.nombre}${club.liga ? ` (${club.liga})` : ''}`);
-      });
-      lineas.push('');
-    }
-
-    if (Array.isArray(catalogo.retro) && catalogo.retro.length) {
-      lineas.push('CAMISETAS RETRO:');
-      catalogo.retro.forEach(r => {
-        lineas.push(`- ${r.nombre}${r.equipo ? ` — ${r.equipo}` : ''}`);
-      });
-    }
-
-    console.log(`[catalogo-ia] Catálogo cargado: ${catalogo.selecciones?.length || 0} selecciones, ${catalogo.clubes?.length || 0} clubes, ${catalogo.retro?.length || 0} retro.`);
-
-    return lineas.join('\n');
-  } catch (error) {
-    console.error('[catalogo-ia] No se pudo cargar catalogo_trakeballers_ia.json:', error.message);
-    return '';
-  }
+// Evita que dos mensajes a la vez se pisen al guardar (una sola instancia del servidor).
+let colaSoporte = Promise.resolve();
+function enSerie(fn) {
+  const r = colaSoporte.then(fn);
+  colaSoporte = r.catch(() => {});
+  return r;
 }
 
-const CATALOGO_IA_TEXTO = cargarCatalogoIA();
+// Última vez que cada cliente tuvo el chat abierto (solo en memoria, no hace falta guardarlo).
+const SOPORTE_VISTOS = new Map();
+setInterval(() => {
+  const limite = Date.now() - 60 * 60 * 1000;
+  for (const [k, v] of SOPORTE_VISTOS) if (v < limite) SOPORTE_VISTOS.delete(k);
+}, 10 * 60 * 1000).unref();
 
-const KNOWLEDGE_BASE = `
-Eres el asistente virtual de Trakeballer, una tienda online de camisetas de
-fútbol personalizadas (actuales y retro), de clubes y selecciones de todo
-el mundo (Premier League, La Liga, Serie A, Bundesliga, Ligue 1, MLS, Liga MX,
-Brasileirao, Liga Portugal, Eredivisie, liga saudí, J1 League, etc.).
+async function leerConversaciones() {
+  if (USA_REDIS) return parsearPedidosRedis(await redis(['HGETALL', REDIS_SOPORTE]));
+  return leerJSONSeguro(SOPORTE_FILE);
+}
 
-PRODUCTO Y PERSONALIZACIÓN
-- Camiseta versión actual: 22,99€. Versión retro: 27,99€.
-- Se puede elegir versión local, visitante o modelo retro.
-- Incluye personalización con nombre y dorsal sin coste extra.
-- Se pueden añadir parches opcionales, también sin coste extra.
-- Tallas disponibles: XS, S, M, L, XL, XXL, y tallas de niño (8, 10, 12).
-- Pedido mínimo: 2 camisetas.
+async function leerConversacion(id) {
+  if (!RE_ID_SOPORTE.test(String(id || ''))) return null;
+  if (USA_REDIS) {
+    const texto = await redis(['HGET', REDIS_SOPORTE, id]);
+    return texto ? JSON.parse(texto) : null;
+  }
+  return leerJSONSeguro(SOPORTE_FILE).find(c => c.id === id) || null;
+}
 
-ENVÍO
-- Coste de envío: 5€ en pedidos de menos de 6 camisetas.
-- Envío gratis a partir de 6 camisetas.
-- Plazo de entrega habitual: unos 15 días. En casos puntuales (mucha demanda,
-  aduanas, festivos como Navidad, Black Friday o Año Nuevo Chino, o grandes
-  torneos como Mundial/Eurocopa/Copa América) puede llegar hasta 20-25 días.
+async function guardarConversacion(conv) {
+  if (USA_REDIS) {
+    await redis(['HSET', REDIS_SOPORTE, conv.id, JSON.stringify(conv)]);
+    return;
+  }
+  const lista = leerJSONSeguro(SOPORTE_FILE);
+  const i = lista.findIndex(c => c.id === conv.id);
+  if (i >= 0) lista[i] = conv; else lista.push(conv);
+  guardarJSONSeguro(SOPORTE_FILE, lista);
+}
 
-OFERTAS POR CANTIDAD
-- 6 camisetas: 130€ normales / 150€ retro (envío gratis incluido).
-- 10 camisetas: 200€ normales / 240€ retro.
-- 15 camisetas: 330€ normales / 400€ retro.
+async function borrarConversacion(id) {
+  if (!RE_ID_SOPORTE.test(String(id || ''))) return false;
+  if (USA_REDIS) return (await redis(['HDEL', REDIS_SOPORTE, id])) === 1;
+  const lista = leerJSONSeguro(SOPORTE_FILE);
+  const resto = lista.filter(c => c.id !== id);
+  if (resto.length === lista.length) return false;
+  guardarJSONSeguro(SOPORTE_FILE, resto);
+  return true;
+}
 
-AMIGO INVISIBLE FUTBOLERO
-- Se puede organizar un "amigo invisible" de camisetas para grupos: el
-  cliente indica cuántas personas son y cuántas camisetas por talla quieren
-  (sin elegir equipo, nombre ni dorsal), y Trakeballer las elige al azar
-  y las prepara.
+function errorSoporte(status, mensaje) {
+  const e = new Error(mensaje);
+  e.status = status;
+  return e;
+}
 
-CÓMO SE COMPRA (proceso en 5 pasos)
-1. Elegir selección o club en el catálogo.
-2. Personalizar: versión actual/retro, talla, nombre, dorsal y parches.
-3. Añadir al carrito (se puede repetir para varias camisetas y aprovechar
-   descuentos por cantidad).
-4. Confirmar el pedido con los datos de envío y contacto.
-5. Pagar por PayPal o por transferencia bancaria:
-   - PayPal: enviando el importe a trakeballer@gmail.com como "Amigos y
-     familiares", SIN poner concepto ni mensaje en el pago.
-   - Transferencia bancaria: el IBAN le llega al cliente en el correo del
-     pedido (hay que haber puesto el email al hacer el pedido). No des el
-     IBAN por el chat; indica que lo recibirá en el correo del pedido y
-     que debe poner el número de pedido como concepto.
-   Después, en ambos casos, hay que enviar el comprobante de pago y el
-   número/captura del pedido a trakeballer@gmail.com para que preparen el envío.
+function responderErrorSoporte(res, error, mensajePorDefecto) {
+  if (error && error.status) return res.status(error.status).json({ ok: false, error: error.message });
+  console.error('[soporte] Error:', error);
+  res.status(500).json({ ok: false, error: mensajePorDefecto });
+}
 
-DEVOLUCIONES
-- Al ser productos personalizados (nombre y dorsal a elección del cliente),
-  no se admiten devoluciones salvo defecto de fabricación.
+function mensajesPublicos(conv, desde = 0) {
+  return (conv.mensajes || [])
+    .filter(m => m.ts > desde)
+    .map(m => ({ de: m.de, texto: m.texto, ts: m.ts }));
+}
 
-CONTACTO Y SUGERENCIAS
-- Dudas o incidencias con un pedido: trakeballer@gmail.com.
-- Si un cliente busca una camiseta que no está en el catálogo, puede dejar
-  una sugerencia en la web (o decírtelo a ti) indicando qué camiseta quiere.
+function urlWeb() {
+  return String(process.env.SITE_URL || process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_URL || '').replace(/\/$/, '');
+}
 
-PRIVACIDAD
-- Solo se recogen los datos necesarios para el pedido (nombre, dirección,
-  teléfono y, si se indica, email). No se comparten con terceros salvo
-  obligación legal ni se usan con fines publicitarios.
-- La web usa localStorage solo para recordar el carrito en el propio
-  navegador del cliente; no hay cookies de publicidad ni de seguimiento.
+// ---------------- Público: el cliente escribe y lee su conversación ----------------
 
-INSTRUCCIONES PARA TI (el asistente)
-- Responde siempre en español, de forma breve, cercana y clara.
-- Usa el CATÁLOGO REAL que se te proporciona a continuación para saber qué
-  equipos y camisetas existen realmente. No lo inventes.
-- Si te preguntan por un equipo o camiseta concreta que NO aparece en el
-  catálogo, dile al usuario que no está disponible ahora mismo, sugiérele
-  dejar una sugerencia en la web, y ofrécete a ayudarle con cualquier otra
-  duda (precio, tallas, envío, personalización, pago...).
-- No inventes plazos, precios, equipos ni políticas que no estén en esta
-  información.
-- Si preguntan algo que no tiene que ver con la tienda, responde con
-  amabilidad y redirige la conversación hacia cómo puedes ayudarles con su
-  pedido.
-`;
-
-app.post('/api/chat', async (req, res) => {
+app.post('/api/soporte/mensaje', async (req, res) => {
   try {
-    const { messages } = req.body || {};
-
-    if (!GROQ_API_KEY) {
-      return res.status(500).json({ error: 'Falta configurar GROQ_API_KEY en Render.' });
-    }
-    if (!Array.isArray(messages)) {
-      return res.status(400).json({ error: "Formato inválido: se esperaba 'messages'." });
+    if (superaLimite('soporte:' + req.ip, 30, 10 * 60 * 1000)) {
+      return res.status(429).json({ ok: false, error: 'Estás enviando demasiados mensajes. Espera unos minutos.' });
     }
 
-    const respuesta = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: CHAT_MODEL,
-        messages: [
-          { role: 'system', content: KNOWLEDGE_BASE + CATALOGO_IA_TEXTO },
-          ...messages,
-        ],
-        max_tokens: 500,
-      }),
+    const texto = String(req.body?.texto ?? '').trim().slice(0, SOPORTE_MAX_TEXTO);
+    if (!texto) return res.status(400).json({ ok: false, error: 'Escribe un mensaje.' });
+
+    const token = String(req.get('x-soporte-token') || req.body?.token || '');
+    const nombre = String(req.body?.nombre ?? '').trim().slice(0, 60);
+    const emailTexto = String(req.body?.email ?? '').trim().slice(0, 120);
+    if (emailTexto && !RE_EMAIL.test(emailTexto)) {
+      return res.status(400).json({ ok: false, error: 'Ese email no parece válido. Revísalo o déjalo en blanco.' });
+    }
+
+    const { conv, nueva, avisar } = await enSerie(async () => {
+      let c = await leerConversacion(token);
+      let esNueva = false;
+
+      if (!c) {
+        if (superaLimite('soporte-nuevo:' + req.ip, 5, 60 * 60 * 1000)) {
+          throw errorSoporte(429, 'Has abierto demasiadas conversaciones seguidas. Inténtalo más tarde.');
+        }
+        c = { id: crypto.randomBytes(16).toString('hex'), creado: new Date().toLocaleString('es-ES'), creadoTs: Date.now(), nombre: '', email: '', noLeidos: 0, mensajes: [] };
+        esNueva = true;
+      }
+
+      if ((c.mensajes || []).length >= SOPORTE_MAX_MENSAJES) {
+        throw errorSoporte(400, 'Esta conversación es muy larga. Escríbenos a ' + EMAIL_TIENDA + '.');
+      }
+
+      if (nombre) c.nombre = nombre;
+      if (emailTexto) c.email = emailTexto;
+
+      const ahora = Date.now();
+      c.mensajes.push({ de: 'cliente', texto, ts: ahora });
+      c.ultimoTs = ahora;
+      c.noLeidos = (c.noLeidos || 0) + 1;
+
+      const debeAvisar = esNueva || ahora - (c.avisadoTs || 0) > SOPORTE_AVISO_CADA_MS;
+      if (debeAvisar) c.avisadoTs = ahora;
+
+      await guardarConversacion(c);
+      SOPORTE_VISTOS.set(c.id, ahora);
+      return { conv: c, nueva: esNueva, avisar: debeAvisar };
     });
 
-    if (!respuesta.ok) {
-      const errText = await respuesta.text();
-      console.error('[chat] Error de Groq:', errText);
-      return res.status(502).json({ error: 'Error al contactar con la IA.' });
+    res.json({ ok: true, token: conv.id, nueva, mensajes: mensajesPublicos(conv) });
+
+    // Aviso por correo a la tienda (en segundo plano: nunca afecta al cliente)
+    if (avisar) {
+      const quien = conv.nombre || 'Cliente sin nombre';
+      const contacto = conv.email ? ` (${conv.email})` : '';
+      const enlace = urlWeb() ? `${urlWeb()}/trake_admin.html` : 'trake_admin > Mensajes';
+      enviarEmail(
+        process.env.EMAIL_TO || EMAIL_TIENDA,
+        `💬 Mensaje nuevo de ${quien} - Trakeballer`,
+        `${quien}${contacto} te ha escrito en el chat de soporte:\n\n${texto}\n\nResponde desde: ${enlace} (pestaña Mensajes)`,
+        '',
+        `<p><strong>${escapeHTML(quien)}</strong>${escapeHTML(contacto)} te ha escrito en el chat de soporte:</p>
+         <blockquote style="border-left:4px solid #0b1f3a;margin:12px 0;padding:6px 12px;background:#f5f5f5;">${escapeHTML(texto).replace(/\n/g, '<br>')}</blockquote>
+         <p>Responde desde <strong>trake_admin → Mensajes</strong>.</p>`
+      ).catch(e => console.error('[soporte] Aviso por correo fallido:', e.message));
+    }
+  } catch (error) {
+    responderErrorSoporte(res, error, 'No se pudo enviar el mensaje. Inténtalo de nuevo.');
+  }
+});
+
+app.get('/api/soporte/mensajes', async (req, res) => {
+  try {
+    if (superaLimite('soporte-leer:' + req.ip, 600, 10 * 60 * 1000)) {
+      return res.status(429).json({ ok: false, error: 'Demasiadas consultas.' });
     }
 
-    const data = await respuesta.json();
-    const reply = data.choices?.[0]?.message?.content ?? 'Lo siento, no pude generar una respuesta.';
-    res.json({ reply });
+    const token = String(req.get('x-soporte-token') || '');
+    const desde = Math.max(0, Number(req.query.desde) || 0);
+    const conv = await leerConversacion(token);
 
+    // Si el token no existe (o se borró la conversación) el cliente empezará una nueva.
+    if (!conv) return res.json({ ok: true, existe: false, mensajes: [] });
+
+    // Solo anotamos que el cliente está mirando si la ventana está abierta (abierto=1).
+    if (req.query.abierto === '1') SOPORTE_VISTOS.set(conv.id, Date.now());
+
+    res.set('Cache-Control', 'no-store');
+    res.json({ ok: true, existe: true, mensajes: mensajesPublicos(conv, desde) });
   } catch (error) {
-    console.error('[chat] Error:', error);
-    res.status(500).json({ error: 'Error interno del servidor.' });
+    responderErrorSoporte(res, error, 'No se pudieron leer los mensajes.');
+  }
+});
+
+// ---------------- Admin: bandeja de mensajes ----------------
+
+app.get('/api/admin/soporte', async (req, res) => {
+  try {
+    if (!comprobarAdmin(req, res)) return;
+
+    const lista = (await leerConversaciones())
+      .map(c => {
+        const ultimo = (c.mensajes || [])[(c.mensajes || []).length - 1] || {};
+        return {
+          id: c.id,
+          nombre: c.nombre || '',
+          email: c.email || '',
+          creado: c.creado || '',
+          ultimoTs: c.ultimoTs || 0,
+          noLeidos: c.noLeidos || 0,
+          ultimoDe: ultimo.de || '',
+          ultimoTexto: String(ultimo.texto || '').slice(0, 90)
+        };
+      })
+      .sort((a, b) => b.ultimoTs - a.ultimoTs);
+
+    res.set('Cache-Control', 'no-store');
+    res.json({ ok: true, conversaciones: lista, noLeidos: lista.reduce((s, c) => s + (c.noLeidos > 0 ? 1 : 0), 0) });
+  } catch (error) {
+    responderErrorSoporte(res, error, 'No se pudo leer la bandeja.');
+  }
+});
+
+app.get('/api/admin/soporte/:id', async (req, res) => {
+  try {
+    if (!comprobarAdmin(req, res)) return;
+
+    const conv = await enSerie(async () => {
+      const c = await leerConversacion(req.params.id);
+      if (c && c.noLeidos) {
+        c.noLeidos = 0;
+        await guardarConversacion(c);
+      }
+      return c;
+    });
+    if (!conv) return res.status(404).json({ ok: false, error: 'Conversación no encontrada.' });
+
+    res.set('Cache-Control', 'no-store');
+    res.json({ ok: true, conversacion: conv });
+  } catch (error) {
+    responderErrorSoporte(res, error, 'No se pudo abrir la conversación.');
+  }
+});
+
+app.post('/api/admin/soporte/:id/responder', async (req, res) => {
+  try {
+    if (!comprobarAdmin(req, res)) return;
+
+    const texto = String(req.body?.texto ?? '').trim().slice(0, 2000);
+    if (!texto) return res.status(400).json({ ok: false, error: 'Escribe la respuesta.' });
+
+    const conv = await enSerie(async () => {
+      const c = await leerConversacion(req.params.id);
+      if (!c) throw errorSoporte(404, 'Conversación no encontrada (puede que se haya borrado).');
+      const ahora = Date.now();
+      c.mensajes.push({ de: 'tienda', texto, ts: ahora });
+      c.ultimoTs = ahora;
+      c.noLeidos = 0;
+      await guardarConversacion(c);
+      return c;
+    });
+
+    // Si el cliente dejó su email y no tiene el chat abierto, se le avisa por correo.
+    let correo = { ok: false, motivo: conv.email ? 'el cliente tiene el chat abierto' : 'el cliente no dejó email' };
+    const visto = SOPORTE_VISTOS.get(conv.id) || 0;
+    if (conv.email && Date.now() - visto > SOPORTE_VISTO_MS) {
+      const web = urlWeb();
+      correo = await enviarEmail(
+        conv.email,
+        'Tienes una respuesta de Trakeballer 💬',
+        `¡Hola${conv.nombre ? ' ' + conv.nombre : ''}!\n\nTe hemos respondido en el chat de soporte:\n\n${texto}\n\n${web ? 'Puedes seguir la conversación en ' + web + ' (botón de chat, abajo a la izquierda).' : 'Puedes seguir la conversación desde el chat de la web.'}\n\n- Trakeballer`,
+        conv.nombre || '',
+        `<p>¡Hola${conv.nombre ? ' ' + escapeHTML(conv.nombre) : ''}!</p>
+         <p>Te hemos respondido en el chat de soporte:</p>
+         <blockquote style="border-left:4px solid #0b1f3a;margin:12px 0;padding:6px 12px;background:#f5f5f5;">${escapeHTML(texto).replace(/\n/g, '<br>')}</blockquote>
+         <p>${web ? `Puedes seguir la conversación en <a href="${escapeHTML(web)}">${escapeHTML(web)}</a> (botón de chat, abajo a la izquierda).` : 'Puedes seguir la conversación desde el chat de la web.'}</p>
+         <p>- Trakeballer</p>`
+      );
+    }
+
+    res.json({ ok: true, conversacion: conv, correo });
+  } catch (error) {
+    responderErrorSoporte(res, error, 'No se pudo enviar la respuesta.');
+  }
+});
+
+app.delete('/api/admin/soporte/:id', async (req, res) => {
+  try {
+    if (!comprobarAdmin(req, res)) return;
+    const borrada = await enSerie(() => borrarConversacion(req.params.id));
+    if (!borrada) return res.status(404).json({ ok: false, error: 'Conversación no encontrada.' });
+    res.json({ ok: true });
+  } catch (error) {
+    responderErrorSoporte(res, error, 'No se pudo borrar la conversación.');
   }
 });
 
