@@ -915,6 +915,171 @@ html { scroll-padding-top: 130px; }
 @media(prefers-reduced-motion:reduce) { #drawerMenu,.overlay-menu { transition:none; } }
 
 </style>
+
+<style id="tk-diseno">
+/* =========================================================
+   DISEÑO "EN MOVIMIENTO" · solo presentación (CSS + decoración)
+   No toca la lógica: ningún id, clase ni script existente cambia.
+========================================================= */
+:root { --tk-naranja:#ff6a1a; --tk-azul:#0b1f3a; --tk-azul2:#173455; }
+html { scroll-behavior: smooth; }
+
+/* ---- Barra de progreso de scroll (solo navegadores compatibles) ---- */
+@supports (animation-timeline: scroll()) {
+  body::before {
+    content:''; position:fixed; top:0; left:0; right:0; height:4px; z-index:100000; pointer-events:none;
+    background: linear-gradient(90deg,#ff6a1a,#ffb27d,#ff6a1a); transform-origin:0 50%; transform:scaleX(0);
+    animation: tkProgreso linear both; animation-timeline: scroll(root block);
+  }
+}
+@keyframes tkProgreso { to { transform:scaleX(1); } }
+
+/* ---- Franja de contacto: brillo suave ---- */
+.tk-contactbar { background: linear-gradient(90deg,#0b1f3a,#173455,#0b1f3a); background-size:200% 100%; animation: tkDesliza 14s linear infinite; }
+@keyframes tkDesliza { to { background-position:200% 0; } }
+
+/* ---- PORTADA ---- */
+.hero .hero__content {
+  position:relative; overflow:hidden; isolation:isolate;
+  background:
+    radial-gradient(60% 90% at 8% 105%, rgba(255,106,26,.30) 0, transparent 60%),
+    radial-gradient(50% 80% at 95% -10%, rgba(80,140,255,.28) 0, transparent 60%),
+    linear-gradient(135deg,#0b1f3a 0%,#10294a 55%,#0b1f3a 100%);
+  background-size:140% 140%, 140% 140%, 100% 100%;
+  animation: tkAurora 12s ease-in-out infinite alternate, tkEntra .9s cubic-bezier(.2,.7,.2,1) both;
+}
+@keyframes tkAurora { 0% { background-position:0% 100%, 100% 0%, 0 0; } 100% { background-position:30% 70%, 70% 30%, 0 0; } }
+@keyframes tkEntra { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:none; } }
+
+/* líneas de campo muy sutiles */
+.hero .hero__content::before {
+  content:''; position:absolute; inset:0; z-index:-1; pointer-events:none; opacity:.55;
+  background:
+    repeating-linear-gradient(115deg, transparent 0 46px, rgba(255,255,255,.035) 46px 48px);
+}
+/* balón flotante decorativo */
+.hero .hero__content::after {
+  content:'⚽'; position:absolute; right:clamp(8px,4vw,56px); bottom:clamp(6px,3vw,34px); z-index:-1; pointer-events:none;
+  font-size:clamp(70px,13vw,190px); line-height:1; opacity:.16; filter:grayscale(.2);
+  animation: tkBalon 7s ease-in-out infinite;
+}
+@keyframes tkBalon {
+  0%,100% { transform:translateY(0) rotate(0deg); }
+  50% { transform:translateY(-22px) rotate(25deg); }
+}
+
+/* etiqueta con punto que late */
+.hero .hero__kicker { display:inline-flex; align-items:center; gap:8px; backdrop-filter: blur(4px); }
+.hero .hero__kicker::before {
+  content:''; width:9px; height:9px; border-radius:50%; background:#ff8a4c; flex:none;
+  box-shadow:0 0 0 0 rgba(255,138,76,.7); animation: tkLate 1.8s infinite;
+}
+@keyframes tkLate { 70% { box-shadow:0 0 0 10px rgba(255,138,76,0); } 100% { box-shadow:0 0 0 0 rgba(255,138,76,0); } }
+
+/* título con reflejo que recorre las letras */
+@supports ((-webkit-background-clip:text) or (background-clip:text)) {
+  .hero .hero__title {
+    background: linear-gradient(100deg,#fff 0%,#fff 38%,#ffc29c 50%,#fff 62%,#fff 100%);
+    background-size:260% 100%; -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent; color:transparent;
+    animation: tkBrillo 6s ease-in-out infinite;
+    padding-bottom:.16em; margin-bottom:-.16em; /* que el degradado no corte las letras con cola (y, g) */
+  }
+}
+@keyframes tkBrillo { 0%,35% { background-position:120% 0; } 75%,100% { background-position:-20% 0; } }
+
+/* aparición escalonada del texto */
+.hero .hero__kicker, .hero .hero__title, .hero .hero__sub, .hero .hero__ctas { animation-fill-mode:both; }
+.hero .hero__sub, .hero .hero__ctas { animation: tkSube .8s cubic-bezier(.2,.7,.2,1) both; }
+.hero .hero__sub:nth-of-type(2) { animation-delay:.25s; }
+.hero .hero__sub:nth-of-type(3) { animation-delay:.38s; }
+.hero .hero__sub:nth-of-type(4) { animation-delay:.5s; }
+.hero .hero__ctas { animation-delay:.62s; }
+@keyframes tkSube { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+
+/* botones: brillo y elevación */
+.hero .hero__ctas .btn { transition: transform .2s, background .2s, box-shadow .2s, border-color .2s; }
+.hero .hero__ctas .btn:hover { transform: translateY(-3px); box-shadow:0 10px 22px rgba(0,0,0,.28); }
+.hero .hero__ctas .btn--primary { position:relative; overflow:hidden; animation: tkPulso 2.8s ease-in-out infinite; }
+.hero .hero__ctas .btn--primary::after {
+  content:''; position:absolute; top:0; left:-60%; width:40%; height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent); transform:skewX(-20deg);
+  animation: tkBarrido 3.6s ease-in-out infinite;
+}
+@keyframes tkPulso { 0%,100% { box-shadow:0 0 0 0 rgba(255,138,76,.55); } 50% { box-shadow:0 0 0 10px rgba(255,138,76,0); } }
+@keyframes tkBarrido { 0%,55% { left:-60%; } 100% { left:130%; } }
+
+/* galería de jugadores: encuadre que se desplaza + realce al pasar el ratón */
+.hero .hero__crack {
+  animation: tkPanea 9s ease-in-out infinite alternate;
+  transition: filter .35s, transform .35s; filter:saturate(1.05);
+}
+.hero .hero__crack--izq-abajo { animation-delay:-2s; }
+.hero .hero__crack--der-arriba { animation-delay:-4s; }
+.hero .hero__crack--der-abajo { animation-delay:-6s; }
+.hero .hero__crack:hover { filter:saturate(1.25) brightness(1.06); transform:translateY(-4px); }
+@keyframes tkPanea { from { object-position:center 18%; } to { object-position:center 46%; } }
+
+/* ---- FRANJA DE MENSAJES QUE SE DESLIZA ---- */
+.tk-marquee {
+  position:relative; overflow:hidden; max-width:var(--page-width,1320px); width:calc(100% - 2 * var(--page-gutter,16px));
+  margin:14px auto 0; border-radius:14px; background:var(--tk-naranja); color:var(--tk-azul);
+  border:2px solid var(--tk-azul); box-shadow:4px 4px 0 var(--tk-azul);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent); mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);
+}
+.tk-marquee__track { display:flex; width:max-content; animation: tkMarquee 32s linear infinite; }
+.tk-marquee:hover .tk-marquee__track { animation-play-state:paused; }
+.tk-marquee__grupo { display:flex; flex:none; align-items:center; }
+.tk-marquee__grupo span { white-space:nowrap; padding:11px 22px; font:800 .86rem 'Inter',sans-serif; letter-spacing:.07em; text-transform:uppercase; }
+.tk-marquee__grupo span::after { content:'⚽'; margin-left:44px; font-size:.95rem; }
+@keyframes tkMarquee { to { transform:translateX(-50%); } }
+
+/* ---- SECCIONES: títulos y tarjetas ---- */
+.seccion__head h2 { position:relative; }
+.seccion__head h2::after {
+  content:''; display:block; height:4px; width:0; margin-top:6px; border-radius:4px;
+  background:linear-gradient(90deg,var(--tk-naranja),#ffb27d); animation: tkLinea 1.2s .3s cubic-bezier(.2,.7,.2,1) forwards;
+}
+@keyframes tkLinea { to { width:100%; } }
+
+.paso, .hub__card, .oferta-card, .resena { transition: transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s, border-color .25s; }
+.paso:hover, .oferta-card:hover, .resena:hover { transform:translateY(-6px); }
+.hub__card:hover { transform:translateY(-6px) scale(1.012); box-shadow:0 18px 34px rgba(11,31,58,.18); }
+.paso__num { transition: transform .35s; }
+.paso:hover .paso__num { transform:rotate(-10deg) scale(1.15); }
+.hub__logos img.hub__foto { transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+.hub__card:hover .hub__logos img.hub__foto { transform:scale(1.05); }
+.hub__logos img { transition: transform .3s; }
+.hub__card:hover .hub__logos img { transform:translateY(-3px); }
+
+/* aparición al hacer scroll (solo navegadores compatibles; si no, se ve todo normal) */
+@supports (animation-timeline: view()) {
+  .seccion__head, .paso, .hub__card, .oferta-card, .resena {
+    animation: tkReveal linear both; animation-timeline: view(); animation-range: entry 0% entry 38%;
+  }
+}
+@keyframes tkReveal { from { opacity:0; transform:translateY(34px) scale(.98); } to { opacity:1; transform:none; } }
+
+/* flotantes (chat, Instagram, correo) con un pequeño rebote al cargar */
+#tk-chat-bubble, #tk-insta, .contacto-flotante { animation: tkRebote .7s 1.2s cubic-bezier(.3,1.6,.5,1) both; }
+@keyframes tkRebote { from { opacity:0; transform:scale(.3) translateY(20px); } to { opacity:1; transform:none; } }
+
+/* ---- MÓVIL ---- */
+@media (max-width: 700px) {
+  .hero .hero__content::after { font-size:96px; right:-6px; bottom:-4px; opacity:.13; }
+  .tk-marquee { margin-top:10px; border-radius:11px; box-shadow:3px 3px 0 var(--tk-azul); }
+  .tk-marquee__grupo span { padding:9px 16px; font-size:.74rem; }
+  .tk-marquee__grupo span::after { margin-left:30px; }
+  .tk-marquee__track { animation-duration:24s; }
+}
+
+/* ---- Respeto a quien desactiva las animaciones ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior:auto !important; }
+  .hero .hero__title { -webkit-text-fill-color:#fff; color:#fff; background:none; }
+  body::before { display:none; }
+}
+</style>
 </head>
 <body>
 <div class="tk-contactbar">
@@ -1240,6 +1405,13 @@ Lo habitual son 2 semanas. En casos puntuales puede tardar hasta 20-25 días, pe
     </div>
   </div>
 </section>
+
+<div class="tk-marquee" aria-hidden="true">
+  <div class="tk-marquee__track">
+    <div class="tk-marquee__grupo"><span>Camisetas personalizadas</span><span>Nombre y dorsal a tu gusto</span><span>Selecciones y clubes</span><span>Actuales y retro</span><span>Envío a domicilio</span><span>Tu camiseta en unos 15 días</span><span>Pago por PayPal o transferencia</span></div>
+    <div class="tk-marquee__grupo"><span>Camisetas personalizadas</span><span>Nombre y dorsal a tu gusto</span><span>Selecciones y clubes</span><span>Actuales y retro</span><span>Envío a domicilio</span><span>Tu camiseta en unos 15 días</span><span>Pago por PayPal o transferencia</span></div>
+  </div>
+</div>
 
 <section class="seccion como-funciona" id="como-funciona">
   <div class="seccion__head">
